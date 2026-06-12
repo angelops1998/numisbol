@@ -29,8 +29,10 @@ class Coin(Base):
 
     # Económico
     estimated_value  = Column(Numeric(12, 2), nullable=True)
-    purchase_price   = Column(Numeric(12, 2), nullable=True)
     value_currency   = Column(String(3), nullable=False, default="BOB", server_default="BOB")
+    purchase_price   = Column(Numeric(12, 2), nullable=True)
+    purchase_currency= Column(String(3), nullable=False, default="BOB", server_default="BOB")
+    purchase_usd_rate= Column(Numeric(10, 2), nullable=True)  # tasa USD/BOB al momento de compra
     quantity         = Column(Integer, default=1, nullable=False)
 
     # Descripción e imagen

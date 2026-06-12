@@ -663,6 +663,8 @@ async def agregar(
     category: str = Form(""),
     estimated_value: str = Form(""),
     purchase_price: str = Form(""),
+    purchase_currency: str = Form("BOB"),
+    purchase_usd_rate: str = Form(""),
     value_currency: str = Form("BOB"),
     quantity: str = Form("1"),
     description: str = Form(""),
@@ -692,7 +694,10 @@ async def agregar(
                                "year": year, "country": country, "mint": mint,
                                "material": material, "condition": condition,
                                "category": category, "estimated_value": estimated_value,
-                               "purchase_price": purchase_price, "quantity": quantity,
+                               "purchase_price": purchase_price,
+                               "purchase_currency": purchase_currency,
+                               "purchase_usd_rate": purchase_usd_rate,
+                               "quantity": quantity,
                                "description": description, "is_public": bool(is_public),
                            }}),
             status_code=422)
@@ -701,27 +706,30 @@ async def agregar(
     save_custom_option(db, "currency_unit", currency_unit.strip(), ALL_CURRENCY_UNITS)
 
     es_billete = tipo == "billete"
+    pc = purchase_currency if purchase_currency in ("BOB", "USD") else "BOB"
     coin = Coin(
-        user_id        = user.id,
-        tipo           = "billete" if es_billete else "moneda",
-        name           = name.strip(),
-        denomination   = denomination.strip() or None,
-        currency_unit  = currency_unit.strip() or None,
-        assayer        = None if es_billete else (assayer.strip() or None),
-        year           = to_int(year),
-        country        = country.strip() or "Bolivia",
-        mint           = None if es_billete else (mint.strip() or None),
-        material       = None if es_billete else (material.strip() or None),
-        condition      = condition or None,
-        category       = category or None,
-        estimated_value= to_decimal(estimated_value),
-        purchase_price = to_decimal(purchase_price),
-        value_currency = value_currency if value_currency in ("BOB", "USD") else "BOB",
-        quantity       = max(1, to_int(quantity) or 1),
-        description    = description.strip() or None,
-        is_public      = bool(is_public),
-        image_url      = save_upload(image),
-        image_back_url = save_upload(image_back),
+        user_id          = user.id,
+        tipo             = "billete" if es_billete else "moneda",
+        name             = name.strip(),
+        denomination     = denomination.strip() or None,
+        currency_unit    = currency_unit.strip() or None,
+        assayer          = None if es_billete else (assayer.strip() or None),
+        year             = to_int(year),
+        country          = country.strip() or "Bolivia",
+        mint             = None if es_billete else (mint.strip() or None),
+        material         = None if es_billete else (material.strip() or None),
+        condition        = condition or None,
+        category         = category or None,
+        estimated_value  = to_decimal(estimated_value),
+        purchase_price   = to_decimal(purchase_price),
+        purchase_currency= pc,
+        purchase_usd_rate= to_decimal(purchase_usd_rate) if pc == "USD" else None,
+        value_currency   = value_currency if value_currency in ("BOB", "USD") else "BOB",
+        quantity         = max(1, to_int(quantity) or 1),
+        description      = description.strip() or None,
+        is_public        = bool(is_public),
+        image_url        = save_upload(image),
+        image_back_url   = save_upload(image_back),
     )
     db.add(coin)
     db.commit()
@@ -772,6 +780,8 @@ async def editar(
     category: str = Form(""),
     estimated_value: str = Form(""),
     purchase_price: str = Form(""),
+    purchase_currency: str = Form("BOB"),
+    purchase_usd_rate: str = Form(""),
     value_currency: str = Form("BOB"),
     quantity: str = Form("1"),
     description: str = Form(""),
@@ -794,20 +804,23 @@ async def editar(
     save_custom_option(db, "currency_unit", currency_unit.strip(), ALL_CURRENCY_UNITS)
 
     es_billete = tipo == "billete"
-    coin.tipo           = "billete" if es_billete else "moneda"
-    coin.name           = name.strip()
-    coin.denomination   = denomination.strip() or None
-    coin.currency_unit  = currency_unit.strip() or None
-    coin.assayer        = None if es_billete else (assayer.strip() or None)
-    coin.year           = to_int(year)
-    coin.country        = country.strip() or "Bolivia"
-    coin.mint           = None if es_billete else (mint.strip() or None)
-    coin.material       = None if es_billete else (material.strip() or None)
-    coin.condition      = condition or None
-    coin.category       = category or None
-    coin.estimated_value= to_decimal(estimated_value)
-    coin.purchase_price = to_decimal(purchase_price)
-    coin.value_currency = value_currency if value_currency in ("BOB", "USD") else "BOB"
+    pc = purchase_currency if purchase_currency in ("BOB", "USD") else "BOB"
+    coin.tipo            = "billete" if es_billete else "moneda"
+    coin.name            = name.strip()
+    coin.denomination    = denomination.strip() or None
+    coin.currency_unit   = currency_unit.strip() or None
+    coin.assayer         = None if es_billete else (assayer.strip() or None)
+    coin.year            = to_int(year)
+    coin.country         = country.strip() or "Bolivia"
+    coin.mint            = None if es_billete else (mint.strip() or None)
+    coin.material        = None if es_billete else (material.strip() or None)
+    coin.condition       = condition or None
+    coin.category        = category or None
+    coin.estimated_value = to_decimal(estimated_value)
+    coin.purchase_price  = to_decimal(purchase_price)
+    coin.purchase_currency = pc
+    coin.purchase_usd_rate = to_decimal(purchase_usd_rate) if pc == "USD" else None
+    coin.value_currency  = value_currency if value_currency in ("BOB", "USD") else "BOB"
     coin.quantity       = max(1, to_int(quantity) or 1)
     coin.description    = description.strip() or None
     coin.is_public      = bool(is_public)

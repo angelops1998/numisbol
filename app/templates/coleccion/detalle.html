@@ -98,7 +98,19 @@
                     {% if coin.purchase_price %}
                     <div class="detail-field">
                         <span class="detail-field-label">Precio de compra</span>
-                        <span class="detail-field-value">{{ cur_sym }} {{ "%.2f"|format(coin.purchase_price) }}</span>
+                        <span class="detail-field-value">
+                            {% if coin.purchase_currency == 'USD' %}
+                                US$ {{ "%.2f"|format(coin.purchase_price) }}
+                                {% if coin.purchase_usd_rate %}
+                                <span style="color:var(--text-dim);font-size:.85em">
+                                    ≈ Bs {{ "%.2f"|format(coin.purchase_price * coin.purchase_usd_rate) }}
+                                    (1 USD = Bs {{ "%.2f"|format(coin.purchase_usd_rate) }})
+                                </span>
+                                {% endif %}
+                            {% else %}
+                                Bs {{ "%.2f"|format(coin.purchase_price) }}
+                            {% endif %}
+                        </span>
                     </div>
                     {% endif %}
 
