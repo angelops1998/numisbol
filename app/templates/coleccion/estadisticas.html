@@ -93,14 +93,24 @@
                     <span class="stat-card-label">Materiales</span>
                 </div>
                 {% endif %}
-                {% if total_valor %}
+                {% if total_bob %}
                 <div class="stat-card">
-                    <span class="stat-card-value">Bs {{ "%.0f"|format(total_valor) }}</span>
-                    <span class="stat-card-label">Valor total estimado</span>
+                    <span class="stat-card-value">Bs {{ "%.0f"|format(total_bob) }}</span>
+                    <span class="stat-card-label">Valor total (BOB)</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-card-value">Bs {{ "%.0f"|format(valor_promedio) }}</span>
-                    <span class="stat-card-label">Valor promedio</span>
+                    <span class="stat-card-value">Bs {{ "%.0f"|format(promedio_bob) }}</span>
+                    <span class="stat-card-label">Valor promedio (BOB)</span>
+                </div>
+                {% endif %}
+                {% if total_usd %}
+                <div class="stat-card">
+                    <span class="stat-card-value">US$ {{ "%.0f"|format(total_usd) }}</span>
+                    <span class="stat-card-label">Valor total (USD)</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card-value">US$ {{ "%.0f"|format(promedio_usd) }}</span>
+                    <span class="stat-card-label">Valor promedio (USD)</span>
                 </div>
                 {% endif %}
             </div>

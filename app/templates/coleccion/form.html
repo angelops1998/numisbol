@@ -383,13 +383,13 @@
                             <label>Precio de compra</label>
                             <input type="hidden" id="purchase_currency" name="purchase_currency"
                                 value="{{ coin.purchase_currency if coin and coin.purchase_currency else 'BOB' }}">
-                            <div class="curr-toggle" style="margin-bottom:.5rem">
+                            <div class="curr-toggle" style="margin-bottom:.5rem;width:fit-content">
                                 <button type="button" id="pcBOB" class="curr-btn">Bs (BOB)</button>
                                 <button type="button" id="pcUSD" class="curr-btn">US$ (USD)</button>
                             </div>
                             <input type="number" id="purchase_price" name="purchase_price"
                                 value="{{ coin.purchase_price if coin and coin.purchase_price else '' }}"
-                                placeholder="0.00" min="0" step="0.01">
+                                placeholder="0.00" min="0" step="any">
                             <div id="usdRateGroup" class="pc-rate-row" style="display:none">
                                 <span class="pc-rate-label">1 USD =</span>
                                 <input type="number" id="purchase_usd_rate" name="purchase_usd_rate"

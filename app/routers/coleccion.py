@@ -520,10 +520,26 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
     total_monedas  = tipo_map.get("moneda", 0)
     total_billetes = tipo_map.get("billete", 0)
 
-    total_raw, valor_sum = agg()
-    total       = total_raw or 0
-    total_valor = float(valor_sum or 0)
-    valor_promedio = total_valor / total if total else 0
+    total_raw, _ = agg()
+    total = total_raw or 0
+
+    # Totales por moneda separados
+    valor_rows = (db.query(Coin.value_currency, func.sum(Coin.estimated_value), func.count(Coin.id))
+                  .filter(Coin.user_id == user.id, Coin.estimated_value != None))
+    if tipo_filter:
+        valor_rows = valor_rows.filter(Coin.tipo == tipo_filter)
+    valor_rows = valor_rows.group_by(Coin.value_currency).all()
+
+    total_bob = total_usd = 0.0
+    count_bob = count_usd = 0
+    for cur, s, n in valor_rows:
+        if cur == "USD":
+            total_usd = float(s or 0); count_usd = n
+        else:
+            total_bob = float(s or 0); count_bob = n
+
+    promedio_bob = total_bob / count_bob if count_bob else 0
+    promedio_usd = total_usd / count_usd if count_usd else 0
 
     por_pais      = group_count("country")
     por_material  = group_count("material")
@@ -555,8 +571,10 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
         "total": total,
         "total_monedas": total_monedas,
         "total_billetes": total_billetes,
-        "total_valor": total_valor,
-        "valor_promedio": valor_promedio,
+        "total_bob": total_bob,
+        "total_usd": total_usd,
+        "promedio_bob": promedio_bob,
+        "promedio_usd": promedio_usd,
         "por_pais": por_pais,
         "por_material": por_material,
         "por_categoria": por_categoria,
