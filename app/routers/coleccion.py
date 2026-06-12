@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from ..database import get_db
 from ..models.coin import Coin, CustomOption
+from ..models.setting import AppSetting
 from ..auth import get_current_user, get_current_user_optional
 
 router = APIRouter(prefix="/coleccion", tags=["coleccion"])
@@ -531,15 +532,21 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
     valor_rows = valor_rows.group_by(Coin.value_currency).all()
 
     total_bob = total_usd = 0.0
-    count_bob = count_usd = 0
+    count_con_valor = 0
     for cur, s, n in valor_rows:
         if cur == "USD":
-            total_usd = float(s or 0); count_usd = n
+            total_usd = float(s or 0)
         else:
-            total_bob = float(s or 0); count_bob = n
+            total_bob = float(s or 0)
+        count_con_valor += n
 
-    promedio_bob = total_bob / count_bob if count_bob else 0
-    promedio_usd = total_usd / count_usd if count_usd else 0
+    # Tasa de cambio configurada por admin
+    rate_row = db.query(AppSetting).filter(AppSetting.key == "usd_bob_rate").first()
+    usd_rate = float(rate_row.value) if rate_row and rate_row.value else None
+
+    # Total unificado en USD: los BOB se dividen por la tasa
+    total_usd_unificado = total_usd + (total_bob / usd_rate if usd_rate and total_bob else 0)
+    promedio_usd_unificado = total_usd_unificado / count_con_valor if count_con_valor else 0
 
     por_pais      = group_count("country")
     por_material  = group_count("material")
@@ -549,14 +556,22 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
     por_condicion = [(c.split(" → ")[0] if c else c, n) for c, n in cond_raw]
 
     # Distribución por siglo — GROUP BY en DB, no en Python
-    siglo_rows = (db.query(
-                     (Coin.year / 100 * 100).label("siglo"),
-                     func.count(Coin.id))
+    siglo_expr = (func.floor(Coin.year / 100) * 100).label("siglo")
+    siglo_rows = (db.query(siglo_expr, func.count(Coin.id))
                  .filter(Coin.user_id == user.id, Coin.year != None))
     if tipo_filter:
         siglo_rows = siglo_rows.filter(Coin.tipo == tipo_filter)
-    siglo_rows = siglo_rows.group_by("siglo").order_by("siglo").all()
-    por_siglo = [(int(s), n) for s, n in siglo_rows]
+    siglo_rows = siglo_rows.group_by(siglo_expr).order_by(siglo_expr).all()
+
+    def siglo_label(s):
+        s = int(s)
+        n = s // 100 + 1
+        sufijos = {1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",
+                   9:"IX",10:"X",11:"XI",12:"XII",13:"XIII",14:"XIV",15:"XV",
+                   16:"XVI",17:"XVII",18:"XVIII",19:"XIX",20:"XX",21:"XXI"}
+        return f"Siglo {sufijos.get(n, str(n))} ({s}s)"
+
+    por_siglo = [(siglo_label(s), n) for s, n in siglo_rows]
 
     sin_anio_q = db.query(func.count(Coin.id)).filter(Coin.user_id == user.id, Coin.year == None)
     if tipo_filter:
@@ -573,8 +588,9 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
         "total_billetes": total_billetes,
         "total_bob": total_bob,
         "total_usd": total_usd,
-        "promedio_bob": promedio_bob,
-        "promedio_usd": promedio_usd,
+        "usd_rate": usd_rate,
+        "total_usd_unificado": total_usd_unificado,
+        "promedio_usd_unificado": promedio_usd_unificado,
         "por_pais": por_pais,
         "por_material": por_material,
         "por_categoria": por_categoria,

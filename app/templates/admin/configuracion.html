@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Configuración — Admin NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/perfil.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb"><a href="/">Inicio</a> / Admin / Configuración</p>
+                    <h1 class="page-title">Configuración del sistema</h1>
+                </div>
+                <a href="/admin/anuncios" class="btn btn-outline">← Volver a admin</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width:540px">
+
+        {% if saved %}
+        <div class="alert alert-success" style="margin-bottom:1.5rem;padding:.75rem 1rem;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;color:#4ade80">
+            ✓ Configuración guardada correctamente.
+        </div>
+        {% endif %}
+
+        <div class="profile-section">
+            <h2 class="profile-section-title">Tipo de cambio USD / BOB</h2>
+            <p style="color:var(--text-dim);font-size:.9rem;margin-bottom:1.25rem">
+                Este valor se usa para convertir los valores estimados en dólares a bolivianos
+                en las estadísticas de la colección de todos los usuarios.
+            </p>
+            <form method="post" action="/admin/configuracion">
+                <div class="form-group" style="margin-bottom:1rem">
+                    <label for="usd_bob_rate">1 USD = ? BOB</label>
+                    <input type="number" id="usd_bob_rate" name="usd_bob_rate"
+                        value="{{ usd_rate }}" placeholder="Ej: 6.96" min="0.01" step="any"
+                        style="max-width:180px">
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

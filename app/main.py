@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from .database import engine, Base
-from .routers import auth, main as main_router, coleccion, recovery, mercado, perfil, anuncios, blog, moneda_publica
+from .routers import auth, main as main_router, coleccion, recovery, mercado, perfil, anuncios, blog, moneda_publica, admin
 from . import models  # noqa: F401 – registra los modelos en Base
 from .auth import NotAuthenticatedException
 
@@ -38,3 +38,4 @@ app.include_router(perfil.router)
 app.include_router(anuncios.router)
 app.include_router(blog.router)
 app.include_router(moneda_publica.router)
+app.include_router(admin.router)

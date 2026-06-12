@@ -995,8 +995,9 @@
 @media (max-width: 640px) {
     .stats-grid { gap: .6rem; }
     .stats-section { padding: 1rem; }
-    .stats-summary { gap: .5rem; }
+    .stats-summary { gap: .5rem; grid-template-columns: repeat(2, 1fr); }
     .stat-card { padding: .85rem 1rem; }
+    .stat-card--full { grid-column: span 2; text-align: center; }
 }
 
 /* ── Ver más en estadísticas ─────────────────────────────── */

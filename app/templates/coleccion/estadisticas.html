@@ -93,28 +93,18 @@
                     <span class="stat-card-label">Materiales</span>
                 </div>
                 {% endif %}
-                {% if total_bob %}
-                <div class="stat-card">
-                    <span class="stat-card-value">Bs {{ "%.0f"|format(total_bob) }}</span>
-                    <span class="stat-card-label">Valor total (BOB)</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-card-value">Bs {{ "%.0f"|format(promedio_bob) }}</span>
-                    <span class="stat-card-label">Valor promedio (BOB)</span>
-                </div>
-                {% endif %}
-                {% if total_usd %}
-                <div class="stat-card">
-                    <span class="stat-card-value">US$ {{ "%.0f"|format(total_usd) }}</span>
-                    <span class="stat-card-label">Valor total (USD)</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-card-value">US$ {{ "%.0f"|format(promedio_usd) }}</span>
-                    <span class="stat-card-label">Valor promedio (USD)</span>
+                {% if total_usd_unificado %}
+                <div class="stat-card stat-card--full">
+                    <span class="stat-card-value">US$ {{ "%.2f"|format(total_usd_unificado) }}</span>
+                    <span class="stat-card-label">Valor total estimado</span>
                 </div>
                 {% endif %}
             </div>
-            {{ stats_block("Por país", por_pais, "", section_class=("stats-section--full" if tipo == "billete" else "")) }}
+
+            <div class="stats-section {{ 'stats-section--full' if tipo == 'billete' else '' }}">
+                <h2 class="stats-section-title">Por país</h2>
+                <a href="/coleccion/paises" class="btn btn-outline" style="width:100%;text-align:center">Ver distribución por país →</a>
+            </div>
             {% if tipo != 'billete' %}
             {{ stats_block("Por material", por_material, "stats-bar-fill--mat") }}
             {% endif %}
@@ -125,6 +115,23 @@
             {{ stats_block("Por siglo", por_siglo, "stats-bar-fill--siglo", badge=false, section_class="stats-section--full") }}
             {{ stats_block("Por categoría", por_categoria, "stats-bar-fill--cat", section_class="stats-section--full") }}
         </div>
+
+        {% if total_usd_unificado and (total_bob or total_usd) %}
+        <p style="font-size:.8rem;color:var(--text-dim);margin-top:1rem;max-width:var(--container-width,1100px);margin-left:auto;margin-right:auto;padding:0 1.5rem;text-align:center">
+            {% if total_bob and total_usd and usd_rate %}
+                El valor total estimado incluye US$ {{ "%.2f"|format(total_usd) }} en monedas valuadas en dólares,
+                más Bs {{ "%.0f"|format(total_bob) }} en monedas valuadas en bolivianos
+                convertidos usando la tasa 1 USD = Bs {{ "%.2f"|format(usd_rate) }}
+                (= US$ {{ "%.2f"|format(total_bob / usd_rate) }}).
+            {% elif total_usd and not total_bob %}
+                Todas las monedas valuadas en dólares. Total directo sin conversión.
+            {% elif total_bob and not total_usd and usd_rate %}
+                Todas las monedas valuadas en bolivianos, convertidas a dólares usando la tasa 1 USD = Bs {{ "%.2f"|format(usd_rate) }}.
+            {% elif total_bob and not usd_rate %}
+                ⚠ Hay Bs {{ "%.0f"|format(total_bob) }} en monedas valuadas en bolivianos que no se pudieron convertir porque no hay tasa de cambio configurada.
+            {% endif %}
+        </p>
+        {% endif %}
 
         {% endif %}
     </div>
