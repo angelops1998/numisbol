@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+{% block title %}{% if post %}Editar artículo{% else %}Nuevo artículo{% endif %} — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/blog.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb">
+                        <a href="/blog">Blog</a> /
+                        {% if post %}<a href="/blog/{{ post.slug }}">{{ post.titulo | truncate(30) }}</a> / Editar
+                        {% else %}Nuevo artículo{% endif %}
+                    </p>
+                    <h1 class="page-title">{% if post %}Editar artículo{% else %}Escribir artículo{% endif %}</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width:860px">
+
+        {% if errors %}
+        <div class="alert alert-error" style="margin-bottom:1.5rem">
+            <span class="alert-icon">⚠</span>
+            <div>{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+        </div>
+        {% endif %}
+
+        <form method="post"
+              action="{% if post %}/blog/{{ post.slug }}/editar{% else %}/blog/nuevo/articulo{% endif %}"
+              enctype="multipart/form-data" class="blog-form" novalidate>
+
+            <div class="blog-form-layout">
+
+                <!-- ── Columna principal ───────────────────── -->
+                <div class="blog-form-main">
+
+                    <div class="form-group">
+                        <label for="titulo">Título del artículo</label>
+                        <input type="text" id="titulo" name="titulo"
+                               value="{{ post.titulo if post else (form.titulo if form else '') }}"
+                               placeholder="Un título claro y descriptivo..."
+                               required autofocus>
+                        <small id="slugPreview" class="blog-slug-preview"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="extracto">
+                            Extracto / resumen
+                            <span class="optional">(opcional)</span>
+                        </label>
+                        <textarea id="extracto" name="extracto" rows="3"
+                                  placeholder="Un breve resumen que aparecerá en la lista del blog (máx. 400 caracteres)..."
+                                  maxlength="400">{{ post.extracto if post and post.extracto else (form.extracto if form else '') }}</textarea>
+                        <small><span id="extractoCount">0</span>/400 caracteres</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contenido">Contenido del artículo</label>
+                        <!-- Barra de herramientas -->
+                        <div class="editor-toolbar">
+                            <button type="button" class="editor-btn" data-cmd="bold" title="Negrita"><strong>N</strong></button>
+                            <button type="button" class="editor-btn" data-cmd="italic" title="Cursiva"><em>C</em></button>
+                            <div class="editor-sep"></div>
+                            <button type="button" class="editor-btn" data-wrap='## ' data-mode="line" title="Título">H2</button>
+                            <button type="button" class="editor-btn" data-wrap='### ' data-mode="line" title="Subtítulo">H3</button>
+                            <div class="editor-sep"></div>
+                            <button type="button" class="editor-btn" data-wrap='- ' data-mode="line" title="Lista">• Lista</button>
+                        </div>
+                        <textarea id="contenido" name="contenido" rows="18"
+                                  placeholder="Escribí el contenido completo del artículo aquí...
+&#10;&#10;Podés usar párrafos separados con doble Enter.
+&#10;&#10;La barra de herramientas te ayuda a formatear el texto."
+                                  required>{{ post.contenido if post else (form.contenido if form else '') }}</textarea>
+                        <small id="contenidoCount">0 palabras</small>
+                    </div>
+
+                </div>
+
+                <!-- ── Columna lateral ────────────────────── -->
+                <div class="blog-form-side">
+
+                    <!-- Publicar -->
+                    <div class="blog-side-card">
+                        <h3 class="blog-side-title">Publicación</h3>
+                        <div class="form-group" style="margin:0">
+                            <label>Estado</label>
+                            <div class="blog-radio-group">
+                                <label class="blog-radio">
+                                    <input type="radio" name="publicado" value="si"
+                                           {% if not post or post.publicado %}checked{% endif %}>
+                                    <span>🌐 Publicado</span>
+                                </label>
+                                <label class="blog-radio">
+                                    <input type="radio" name="publicado" value="no"
+                                           {% if post and not post.publicado %}checked{% endif %}>
+                                    <span>📝 Borrador</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="blog-form-actions">
+                            <button type="submit" class="btn btn-primary btn-full btn-lg">
+                                {% if post %}Guardar cambios{% else %}Publicar artículo{% endif %}
+                            </button>
+                            <a href="{% if post %}/blog/{{ post.slug }}{% else %}/blog{% endif %}"
+                               class="btn btn-outline btn-full">Cancelar</a>
+                        </div>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div class="blog-side-card">
+                        <h3 class="blog-side-title">Categoría</h3>
+
+                        <!-- Select buscable -->
+                        <input type="hidden" name="categoria_id" id="categoria_id"
+                               value="{{ post.categoria_id if post and post.categoria_id else '' }}">
+
+                        <div class="searchable-select" id="catSelect">
+                            <div class="ss-display" tabindex="0" id="catDisplay">
+                                <span class="ss-value" id="catLabel">
+                                    {% if post and post.categoria %}{{ post.categoria.nombre }}
+                                    {% else %}Sin categoría{% endif %}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <div class="ss-search-wrap">
+                                    <input type="text" class="ss-search" placeholder="Buscar categoría..." autocomplete="off">
+                                </div>
+                                <ul class="ss-list" id="catList">
+                                    <li class="ss-option" data-value="">Sin categoría</li>
+                                    {% for c in categorias %}
+                                    <li class="ss-option {% if post and post.categoria_id == c.id %}ss-selected{% endif %}"
+                                        data-value="{{ c.id }}">{{ c.nombre }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="blog-nueva-cat" id="nuevaCatSection">
+                            <button type="button" class="blog-nueva-cat-toggle" id="nuevaCatToggle"
+                                    onclick="toggleNuevaCat()">+ Nueva categoría</button>
+                            <div class="blog-nueva-cat-form" id="nuevaCatForm">
+                                <input type="text" id="nuevaCatNombre"
+                                       placeholder="Nombre de la categoría"
+                                       onkeydown="if(event.key==='Enter'){event.preventDefault();crearCategoria();}"
+                                       style="display:block;width:100%;background:#2A2A34;border:1px solid #3E3E4E;border-radius:6px;padding:.65rem .9rem;color:#FFFFFF;font-size:15px;font-family:inherit;outline:none;box-sizing:border-box;">
+                                <div id="nuevaCatMsg" style="font-size:13px;min-height:1.2rem;color:#7DD4A8"></div>
+                                <button type="button" class="btn btn-outline btn-sm btn-full"
+                                        onclick="crearCategoria()">Crear categoría</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imagen de portada -->
+                    <div class="blog-side-card">
+                        <h3 class="blog-side-title">Imagen de portada</h3>
+                        <div class="blog-portada-preview {% if not post or not post.portada_url %}blog-portada-empty{% endif %}" id="portadaPreview">
+                            {% if post and post.portada_url %}
+                                <img src="{{ post.portada_url }}" alt="Portada actual">
+                            {% else %}
+                                <span>📷</span><p>Sin imagen</p>
+                            {% endif %}
+                        </div>
+                        <label class="btn btn-outline btn-sm btn-full" for="portada" style="margin-top:.75rem">
+                            {% if post and post.portada_url %}Cambiar portada{% else %}Subir portada{% endif %}
+                        </label>
+                        <input type="file" id="portada" name="portada" accept="image/*" class="visually-hidden">
+                    </div>
+
+                    <!-- Galería de imágenes -->
+                    <div class="blog-side-card">
+                        <h3 class="blog-side-title">Galería de imágenes</h3>
+
+                        {% if post and post.imagenes %}
+                        <div class="blog-galeria-actual" id="galeriaActual">
+                            {% for img in post.imagenes %}
+                            <div class="blog-galeria-thumb" id="thumb-{{ img.id }}">
+                                <img src="{{ img.url }}" alt="Imagen {{ loop.index }}">
+                                <label class="blog-galeria-del" title="Eliminar esta imagen">
+                                    <input type="checkbox" name="eliminar_imagenes"
+                                           value="{{ img.id }}" class="visually-hidden"
+                                           onchange="marcarEliminar(this)">
+                                    ✕
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Preview de nuevas imágenes -->
+                        <div class="blog-galeria-actual" id="nuevasPreview"></div>
+
+                        <label class="btn btn-outline btn-sm btn-full" for="imagenes" style="margin-top:.75rem">
+                            + Agregar imágenes
+                        </label>
+                        <input type="file" id="imagenes" name="imagenes"
+                               accept="image/*" multiple class="visually-hidden">
+                        <small style="display:block;margin-top:.4rem;color:var(--text-dim)">
+                            Podés seleccionar varias a la vez.
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Preview portada ───────────────────────────────────────
+document.getElementById('portada')?.addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const wrap = document.getElementById('portadaPreview');
+        wrap.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        wrap.classList.remove('blog-portada-empty');
+    };
+    reader.readAsDataURL(file);
+});
+
+// ── Preview galería múltiple ──────────────────────────────
+document.getElementById('imagenes')?.addEventListener('change', function () {
+    const preview = document.getElementById('nuevasPreview');
+    preview.innerHTML = '';
+    Array.from(this.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const div = document.createElement('div');
+            div.className = 'blog-galeria-thumb blog-galeria-new';
+            div.innerHTML = `<img src="${e.target.result}" alt="">`;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+});
+
+// ── Marcar imagen para eliminar ───────────────────────────
+function marcarEliminar(checkbox) {
+    const thumb = document.getElementById('thumb-' + checkbox.value.split('-')[0]);
+    const container = checkbox.closest('.blog-galeria-thumb');
+    if (checkbox.checked) {
+        container.classList.add('blog-galeria-marcada');
+        container.querySelector('.blog-galeria-del').textContent = '↺';
+    } else {
+        container.classList.remove('blog-galeria-marcada');
+        container.querySelector('.blog-galeria-del').textContent = '✕';
+    }
+}
+
+// ── Contador extracto ─────────────────────────────────────
+const extracto = document.getElementById('extracto');
+const extCount  = document.getElementById('extractoCount');
+function updateExt() { extCount.textContent = extracto.value.length; }
+extracto?.addEventListener('input', updateExt);
+updateExt();
+
+// ── Contador palabras contenido ───────────────────────────
+const contenido = document.getElementById('contenido');
+const cntCount  = document.getElementById('contenidoCount');
+function countWords() {
+    const words = contenido.value.trim().split(/\s+/).filter(Boolean).length;
+    cntCount.textContent = words + ' palabra' + (words !== 1 ? 's' : '');
+}
+contenido?.addEventListener('input', countWords);
+countWords();
+
+// ── Preview slug ──────────────────────────────────────────
+function slugify(t) {
+    return t.toLowerCase()
+        .replace(/[áàäâã]/g,'a').replace(/[éèëê]/g,'e')
+        .replace(/[íìïî]/g,'i').replace(/[óòöôõ]/g,'o')
+        .replace(/[úùüû]/g,'u').replace(/ñ/g,'n')
+        .replace(/[^a-z0-9\s-]/g,'').replace(/[\s-]+/g,'-').replace(/^-|-$/g,'');
+}
+const tituloIn = document.getElementById('titulo');
+const slugPrev = document.getElementById('slugPreview');
+tituloIn?.addEventListener('input', function () {
+    const s = slugify(this.value);
+    slugPrev.textContent = s ? 'URL: /blog/' + s : '';
+});
+// Dispara al cargar si hay valor
+if (tituloIn?.value) tituloIn.dispatchEvent(new Event('input'));
+
+// ── Searchable select de categoría ───────────────────────
+(function(){
+    const wrap    = document.getElementById('catSelect');
+    const display = document.getElementById('catDisplay');
+    const label   = document.getElementById('catLabel');
+    const hidden  = document.getElementById('categoria_id');
+    const list    = document.getElementById('catList');
+    if (!wrap) return;
+
+    function open()  { wrap.classList.add('open'); wrap.querySelector('.ss-search').focus(); }
+    function close() { wrap.classList.remove('open'); }
+
+    display.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
+    display.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') { e.preventDefault(); open(); }});
+
+    wrap.querySelector('.ss-search').addEventListener('input', function(){
+        const q = this.value.toLowerCase();
+        list.querySelectorAll('.ss-option').forEach(li => {
+            li.style.display = li.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+
+    list.addEventListener('click', e => {
+        const li = e.target.closest('.ss-option');
+        if (!li) return;
+        list.querySelectorAll('.ss-option').forEach(i => i.classList.remove('ss-selected'));
+        li.classList.add('ss-selected');
+        hidden.value = li.dataset.value;
+        label.textContent = li.textContent.trim();
+        close();
+    });
+
+    document.addEventListener('click', e => {
+        if (!wrap.contains(e.target)) close();
+    });
+})();
+
+// ── Toggle nueva categoría ────────────────────────────────
+function toggleNuevaCat() {
+    const form   = document.getElementById('nuevaCatForm');
+    const toggle = document.getElementById('nuevaCatToggle');
+    const open   = form.classList.toggle('open');
+    toggle.textContent = open ? '− Cancelar' : '+ Nueva categoría';
+    if (open) document.getElementById('nuevaCatNombre').focus();
+}
+
+// ── Crear categoría vía fetch (evita formulario anidado) ──
+async function crearCategoria() {
+    const input = document.getElementById('nuevaCatNombre');
+    const msg   = document.getElementById('nuevaCatMsg');
+    const nombre = input.value.trim();
+    if (!nombre) { msg.style.color='#F0A0A0'; msg.textContent='Escribí un nombre.'; return; }
+
+    const fd = new FormData();
+    fd.append('nombre', nombre);
+
+    try {
+        const res  = await fetch('/blog/admin/categoria', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (res.ok && data.id) {
+            const list   = document.getElementById('catList');
+            const hidden = document.getElementById('categoria_id');
+            const label  = document.getElementById('catLabel');
+            // Agregar al buscador si no existe
+            if (!list.querySelector(`[data-value="${data.id}"]`)) {
+                const li = document.createElement('li');
+                li.className = 'ss-option';
+                li.dataset.value = data.id;
+                li.textContent = data.nombre;
+                list.appendChild(li);
+            }
+            // Seleccionar automáticamente
+            list.querySelectorAll('.ss-option').forEach(i => i.classList.remove('ss-selected'));
+            const newLi = list.querySelector(`[data-value="${data.id}"]`);
+            newLi?.classList.add('ss-selected');
+            hidden.value = data.id;
+            label.textContent = data.nombre;
+            msg.style.color = '#7DD4A8';
+            msg.textContent = '✓ "' + data.nombre + '" creada y seleccionada.';
+            input.value = '';
+        } else {
+            msg.style.color = '#F0A0A0';
+            msg.textContent = 'Error al crear la categoría.';
+        }
+    } catch(e) {
+        msg.style.color = '#F0A0A0';
+        msg.textContent = 'Error de conexión.';
+    }
+}
+
+// ── Barra de herramientas ─────────────────────────────────
+document.querySelectorAll('.editor-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const ta    = document.getElementById('contenido');
+        const start = ta.selectionStart;
+        const end   = ta.selectionEnd;
+        const sel   = ta.value.substring(start, end);
+        const cmd   = btn.dataset.cmd;
+        const wrap  = btn.dataset.wrap;
+        const mode  = btn.dataset.mode;
+
+        let insert = '';
+        if (cmd === 'bold')    insert = `**${sel || 'texto'}**`;
+        else if (cmd === 'italic') insert = `_${sel || 'texto'}_`;
+        else if (cmd === 'newline') insert = '\n\n';
+        else if (wrap && mode === 'line') insert = '\n' + wrap + (sel || 'texto');
+        else if (wrap) insert = wrap + (sel || 'texto') + wrap;
+
+        ta.focus();
+        document.execCommand('insertText', false, insert);
+        countWords();
+    });
+});
+</script>
+{% endblock %}

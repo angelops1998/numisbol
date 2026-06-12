@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ autor.full_name or autor.username }} — Blog NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/blog.css">{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:2.5rem; padding-bottom:3rem">
+
+    <div style="margin-bottom:1.25rem">
+        <a href="/blog" class="btn btn-outline">← Volver al blog</a>
+    </div>
+
+    <!-- Cabecera del autor -->
+    <div class="blog-autor-header">
+        <div class="blog-autor-avatar">
+            {% if autor.avatar_url %}
+            <img src="{{ autor.avatar_url }}" alt="">
+            {% else %}
+            <span>{{ (autor.full_name or autor.username)[0]|upper }}</span>
+            {% endif %}
+        </div>
+        <div class="blog-autor-info">
+            <h1 class="blog-autor-name">{{ autor.full_name or autor.username }}</h1>
+            <div class="blog-autor-user">@{{ autor.username }}</div>
+            {% if autor.bio %}
+            <p class="blog-autor-bio">{{ autor.bio }}</p>
+            {% endif %}
+            <div class="blog-autor-count">{{ total }} artículo{{ 's' if total != 1 }}</div>
+        </div>
+    </div>
+
+    <!-- Grid de artículos -->
+    {% if posts %}
+    <div class="blog-grid" style="margin-top:2rem">
+        {% for p in posts %}
+        <a href="/blog/{{ p.slug }}" class="blog-card">
+            <div class="blog-card-img">
+                {% if p.portada_url %}
+                <img src="{{ p.portada_url }}" alt="{{ p.titulo }}">
+                {% else %}
+                <span class="blog-card-placeholder">📰</span>
+                {% endif %}
+            </div>
+            <div class="blog-card-body">
+                {% if p.categoria %}
+                <span class="blog-badge blog-badge-sm" style="background:{{ p.categoria.color }}20; color:{{ p.categoria.color }}; border-color:{{ p.categoria.color }}40">
+                    {{ p.categoria.nombre }}
+                </span>
+                {% endif %}
+                <h2 class="blog-card-title">{{ p.titulo }}</h2>
+                {% if p.extracto %}<p class="blog-card-extract">{{ p.extracto }}</p>{% endif %}
+                <div class="blog-card-meta">
+                    <span>{{ p.created_at.strftime("%d/%m/%Y") }}</span>
+                    <span>{{ p.vistas or 0 }} vistas</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted); margin-top:2rem">Este autor no tiene artículos publicados.</p>
+    {% endif %}
+
+    {% if total_paginas > 1 %}
+    <nav class="blog-pagination" style="margin-top:2rem">
+        {% if pagina > 1 %}
+        <a href="/blog/autor/{{ username }}?pagina={{ pagina - 1 }}" class="blog-page-btn">← Anterior</a>
+        {% else %}
+        <span class="blog-page-btn blog-page-disabled">← Anterior</span>
+        {% endif %}
+
+        <div class="blog-page-nums">
+            {% for p in range(1, total_paginas + 1) %}
+                {% if p == pagina %}
+                <span class="blog-page-num blog-page-current">{{ p }}</span>
+                {% elif p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+                <a href="/blog/autor/{{ username }}?pagina={{ p }}" class="blog-page-num">{{ p }}</a>
+                {% elif p == pagina - 3 or p == pagina + 3 %}
+                <span class="blog-page-ellipsis">…</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if pagina < total_paginas %}
+        <a href="/blog/autor/{{ username }}?pagina={{ pagina + 1 }}" class="blog-page-btn">Siguiente →</a>
+        {% else %}
+        <span class="blog-page-btn blog-page-disabled">Siguiente →</span>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    <div style="margin-top:2rem">
+        <a href="/blog" class="btn btn-outline">← Volver al blog</a>
+    </div>
+</div>
+{% endblock %}

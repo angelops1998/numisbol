@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}NumisBol — La comunidad numismática de Bolivia{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ─────────────────────────────────────────────── -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <span class="hero-eyebrow">Plataforma numismática</span>
+            <h1 class="hero-title">
+                Organizá y compartí
+                <span>tu colección de monedas</span>
+            </h1>
+            <p class="hero-subtitle">
+                NumisBol es la plataforma para coleccionistas bolivianos.
+                Registrá tus monedas, comprá y vendé con otros coleccionistas,
+                y mantente informado sobre el mundo numismático.
+            </p>
+            <div class="hero-cta">
+                {% if user %}
+                    <a href="/coleccion" class="btn btn-primary btn-lg">Ver mi colección</a>
+                    <a href="/mercado"   class="btn btn-outline btn-lg">Explorar mercado</a>
+                {% else %}
+                    <a href="/auth/registro" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+                    <a href="/auth/login"    class="btn btn-outline btn-lg">Iniciar sesión</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Lado derecho: anuncios si hay, collage si no -->
+        {% if anuncios %}
+        <div class="hero-anuncios">
+            <div class="hero-anuncios-label">
+                <span>📢</span> Eventos y anuncios
+            </div>
+            <div class="hero-anuncios-track" id="heroTrack">
+                {% for a in anuncios %}
+                <div class="hero-anuncio-slide anuncio-card" data-index="{{ loop.index0 }}">
+                    <div class="anuncio-img-wrap">
+                        <img src="{{ a.imagen_url }}" alt="{{ a.titulo }}" loading="lazy">
+                        <div class="anuncio-overlay"><span class="anuncio-zoom-icon">🔍</span></div>
+                    </div>
+                    {% if a.titulo and a.titulo != 'Sin título' %}
+                    <div class="anuncio-caption">
+                        <span class="anuncio-title">{{ a.titulo }}</span>
+                        {% if a.descripcion %}<span class="anuncio-desc">{{ a.descripcion }}</span>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% if anuncios | length > 1 %}
+                <button class="hero-arrow hero-arrow-prev" id="heroArrowPrev" aria-label="Anterior">&#8249;</button>
+                <button class="hero-arrow hero-arrow-next" id="heroArrowNext" aria-label="Siguiente">&#8250;</button>
+                {% endif %}
+            </div>
+            {% if anuncios | length > 1 %}
+            <div class="hero-anuncios-dots" id="heroDots">
+                {% for a in anuncios %}
+                <button class="hero-dot {% if loop.first %}hero-dot-active{% endif %}"
+                        data-idx="{{ loop.index0 }}" aria-label="Anuncio {{ loop.index }}"></button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        {% else %}
+        <div class="hero-collage">
+            <div class="collage-grid">
+                <div class="collage-item collage-large">
+                    <img src="/static/img/coins/coin1.jpg" alt="Moneda 1" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="collage-placeholder">🪙</div>
+                </div>
+                <div class="collage-item collage-small">
+                    <img src="/static/img/coins/coin2.jpg" alt="Moneda 2" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="collage-placeholder">🪙</div>
+                </div>
+                <div class="collage-item collage-small">
+                    <img src="/static/img/coins/coin3.jpg" alt="Moneda 3" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="collage-placeholder">🪙</div>
+                </div>
+                <div class="collage-item collage-wide">
+                    <img src="/static/img/coins/coin4.jpg" alt="Moneda 4" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="collage-placeholder">🪙</div>
+                </div>
+                <div class="collage-item collage-small">
+                    <img src="/static/img/coins/coin5.jpg" alt="Moneda 5" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="collage-placeholder">🪙</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Lightbox (siempre presente si hay anuncios) -->
+{% if anuncios %}
+<div class="anuncio-lightbox" id="lightbox" role="dialog" aria-modal="true">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Cerrar">✕</button>
+    <button class="lightbox-prev" id="lightboxPrev" aria-label="Anterior">&#8249;</button>
+    <div class="lightbox-img-wrap">
+        <img src="" alt="" id="lightboxImg">
+    </div>
+    <button class="lightbox-next" id="lightboxNext" aria-label="Siguiente">&#8250;</button>
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+</div>
+{% endif %}
+
+<!-- ── Estadísticas ──────────────────────────────────────── -->
+<div class="stats-bar">
+    <div class="stats-grid">
+        <div class="stat-item">
+            <span class="stat-number">{{ stats.monedas }}</span>
+            <span class="stat-label">Monedas registradas</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ stats.coleccionistas }}</span>
+            <span class="stat-label">Coleccionistas</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ stats.en_venta }}</span>
+            <span class="stat-label">En venta ahora</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ stats.articulos }}</span>
+            <span class="stat-label">Artículos publicados</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Features ─────────────────────────────────────────── -->
+<section class="features">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Todo lo que necesitás en un solo lugar</h2>
+            <p class="section-subtitle">
+                Herramientas diseñadas especialmente para el coleccionista boliviano.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-wrap">📦</div>
+                <h3>Inventario de colección</h3>
+                <p>Registrá cada moneda con fotos, descripción, año, ceca, estado de conservación y valor estimado. Tu colección siempre ordenada.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap">🛒</div>
+                <h3>Mercado entre coleccionistas</h3>
+                <p>Ofrecé tus duplicados y encontrá las piezas que te faltan. Comprá y vendé directamente con otros coleccionistas de Bolivia.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap">📰</div>
+                <h3>Blog y noticias</h3>
+                <p>Compartí tus conocimientos, escribí sobre tus hallazgos y seguí las novedades del mundo numismático nacional e internacional.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap">👥</div>
+                <h3>Comunidad boliviana</h3>
+                <p>Conectá con otros coleccionistas de todo el país. Intercambiá experiencias, consejos y hacé crecer tu red de contactos.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+{% if anuncios %}
+<script>
+(function () {
+    // ── Lightbox ──────────────────────────────────────────
+    const cards  = Array.from(document.querySelectorAll('.anuncio-card'));
+    const lb     = document.getElementById('lightbox');
+    const lbImg  = document.getElementById('lightboxImg');
+    const lbCap  = document.getElementById('lightboxCaption');
+    let current  = 0;
+
+    function lbOpen(idx) {
+        current = idx;
+        const card  = cards[idx];
+        const img   = card.querySelector('img');
+        const title = card.querySelector('.anuncio-title');
+        lbImg.src   = img.src;
+        lbImg.alt   = img.alt;
+        lbCap.textContent = title ? title.textContent.trim() : '';
+        lb.classList.add('lb-open');
+        document.body.style.overflow = 'hidden';
+    }
+    function lbClose() { lb.classList.remove('lb-open'); document.body.style.overflow = ''; }
+    function lbPrev()  { lbOpen((current - 1 + cards.length) % cards.length); }
+    function lbNext()  { lbOpen((current + 1) % cards.length); }
+
+    cards.forEach((c, i) => c.addEventListener('click', () => lbOpen(i)));
+    document.getElementById('lightboxClose').addEventListener('click', lbClose);
+    document.getElementById('lightboxPrev').addEventListener('click', e => { e.stopPropagation(); lbPrev(); });
+    document.getElementById('lightboxNext').addEventListener('click', e => { e.stopPropagation(); lbNext(); });
+    lb.addEventListener('click', e => { if (e.target === lb) lbClose(); });
+    document.addEventListener('keydown', e => {
+        if (!lb.classList.contains('lb-open')) return;
+        if (e.key === 'Escape')     lbClose();
+        if (e.key === 'ArrowLeft')  lbPrev();
+        if (e.key === 'ArrowRight') lbNext();
+    });
+
+    // ── Carrusel hero ─────────────────────────────────────
+    const slides = Array.from(document.querySelectorAll('.hero-anuncio-slide'));
+    const dots   = Array.from(document.querySelectorAll('.hero-dot'));
+    if (slides.length <= 1) return;
+
+    let active = 0, timer = null;
+
+    function goTo(idx) {
+        slides[active].classList.remove('slide-active');
+        dots[active]?.classList.remove('hero-dot-active');
+        active = (idx + slides.length) % slides.length;
+        slides[active].classList.add('slide-active');
+        dots[active]?.classList.add('hero-dot-active');
+    }
+
+    function startAuto() { timer = setInterval(() => goTo(active + 1), 4500); }
+    function stopAuto()  { clearInterval(timer); }
+
+    // Inicializar primer slide
+    slides[0].classList.add('slide-active');
+    startAuto();
+
+    dots.forEach(d => d.addEventListener('click', () => {
+        stopAuto(); goTo(+d.dataset.idx); startAuto();
+    }));
+
+    document.getElementById('heroArrowPrev')?.addEventListener('click', e => {
+        e.stopPropagation(); stopAuto(); goTo(active - 1); startAuto();
+    });
+    document.getElementById('heroArrowNext')?.addEventListener('click', e => {
+        e.stopPropagation(); stopAuto(); goTo(active + 1); startAuto();
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

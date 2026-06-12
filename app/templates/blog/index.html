@@ -1,0 +1,511 @@
+{% extends "base.html" %}
+{% block title %}Blog — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/blog.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <!-- ── Cabecera ───────────────────────────────────────── -->
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Blog numismático</h1>
+                    <p class="page-subtitle">Artículos, noticias y curiosidades de la comunidad</p>
+                </div>
+                {% if user %}
+                <a href="/blog/nuevo/articulo" class="btn btn-primary">
+                    ✏ Escribir artículo
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- ── Buscador y filtros ─────────────────────────── -->
+        <div class="blog-filters">
+            <div class="blog-filters-row">
+                <!-- Buscador -->
+                <form method="get" action="/blog" class="blog-search-form" id="blogSearchForm">
+                    <div class="blog-search-wrap">
+                        <svg class="blog-search-icon" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" name="q" value="{{ q }}"
+                               placeholder="Buscar artículos..."
+                               class="blog-search-input"
+                               id="blogSearchInput"
+                               autocomplete="off">
+                        {% if cat_activa %}<input type="hidden" name="categoria" value="{{ cat_activa }}">{% endif %}
+                        {% if anio %}<input type="hidden" name="anio" value="{{ anio }}">{% endif %}
+                        {% if mes %}<input type="hidden" name="mes" value="{{ mes }}">{% endif %}
+                    </div>
+                    <button type="submit" class="blog-search-btn">Buscar</button>
+                    {% if q %}
+                    <a href="/blog{% if cat_activa %}?categoria={{ cat_activa }}{% endif %}"
+                       class="blog-search-clear" title="Limpiar búsqueda">✕</a>
+                    {% endif %}
+                </form>
+
+                <!-- Filtros de fecha -->
+                {% if anios %}
+                <div class="blog-date-filters">
+
+                    <!-- Dropdown Año -->
+                    <div class="blog-dd" id="ddAnio">
+                        <button type="button" class="blog-dd-btn" onclick="toggleDd('ddAnio')">
+                            <span>{% if anio %}{{ anio }}{% else %}Año{% endif %}</span>
+                            <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                        <ul class="blog-dd-list">
+                            <li class="blog-dd-opt {% if not anio %}blog-dd-sel{% endif %}" data-val="">Todos los años</li>
+                            {% for a in anios %}
+                            <li class="blog-dd-opt {% if anio == a %}blog-dd-sel{% endif %}" data-val="{{ a }}">{{ a }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Dropdown Mes -->
+                    <div class="blog-dd" id="ddMes">
+                        <button type="button" class="blog-dd-btn" onclick="toggleDd('ddMes')" >
+                            <span>{% if mes %}{{ meses[mes] }}{% else %}Mes{% endif %}</span>
+                            <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                        <ul class="blog-dd-list">
+                            <li class="blog-dd-opt {% if not mes %}blog-dd-sel{% endif %}" data-val="">Todos los meses</li>
+                            {% for i in range(1, 13) %}
+                            <li class="blog-dd-opt {% if mes == i %}blog-dd-sel{% endif %}" data-val="{{ i }}">{{ meses[i] }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    {% if anio %}
+                    {% set pc2 = [] %}
+                    {% if q %}{% set pc2 = pc2 + ['q=' + q] %}{% endif %}
+                    {% if cat_activa %}{% set pc2 = pc2 + ['categoria=' + cat_activa] %}{% endif %}
+                    <a href="/blog{% if pc2 %}?{{ pc2|join('&') }}{% endif %}"
+                       class="blog-date-clear">✕ Fecha</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Categorías -->
+            {% if categorias %}
+            <div class="blog-cat-select-wrap">
+                <label class="blog-cat-label">Categoría</label>
+                <div class="searchable-select" id="blogCatSelect">
+                    <div class="ss-display" tabindex="0" id="blogCatDisplay">
+                        <span class="ss-value" id="blogCatLabel">
+                            {% if cat_activa %}
+                                {{ categorias | selectattr('slug', 'equalto', cat_activa) | map(attribute='nombre') | first | default('Todas las categorías') }}
+                            {% else %}
+                                Todas las categorías
+                            {% endif %}
+                        </span>
+                        <span class="ss-arrow">▾</span>
+                    </div>
+                    <div class="ss-dropdown">
+                        <div class="ss-search-wrap">
+                            <input type="text" class="ss-search" placeholder="Buscar categoría..." autocomplete="off">
+                        </div>
+                        <ul class="ss-list" id="blogCatList">
+                            {% set p = [] %}
+                            {% if q %}{% set p = p + ['q=' + q] %}{% endif %}
+                            {% if anio %}{% set p = p + ['anio=' + anio|string] %}{% endif %}
+                            {% if mes %}{% set p = p + ['mes=' + mes|string] %}{% endif %}
+                            <li class="ss-option {% if not cat_activa %}ss-selected{% endif %}"
+                                data-href="/blog{% if p %}?{{ p|join('&') }}{% endif %}">
+                                Todas las categorías
+                            </li>
+                            {% for c in categorias %}
+                            {% set pc = ['categoria=' + c.slug] %}
+                            {% if q %}{% set pc = pc + ['q=' + q] %}{% endif %}
+                            {% if anio %}{% set pc = pc + ['anio=' + anio|string] %}{% endif %}
+                            {% if mes %}{% set pc = pc + ['mes=' + mes|string] %}{% endif %}
+                            <li class="ss-option {% if cat_activa == c.slug %}ss-selected{% endif %}"
+                                data-href="/blog?{{ pc|join('&') }}">
+                                {{ c.nombre }}
+                            </li>
+                            {% endfor %}
+                            {% set psc = ['categoria=__sin_categoria__'] %}
+                            {% if q %}{% set psc = psc + ['q=' + q] %}{% endif %}
+                            {% if anio %}{% set psc = psc + ['anio=' + anio|string] %}{% endif %}
+                            {% if mes %}{% set psc = psc + ['mes=' + mes|string] %}{% endif %}
+                            <li class="ss-option {% if cat_activa == '__sin_categoria__' %}ss-selected{% endif %}"
+                                data-href="/blog?{{ psc|join('&') }}">
+                                Sin categoría
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if total == 0 %}
+        <!-- ── Sin resultados ─────────────────────────────── -->
+        <div class="blog-empty">
+            <div class="blog-empty-icon">📰</div>
+            {% if q %}
+            <h2>Sin resultados para "{{ q }}"</h2>
+            <p>Probá con otras palabras o <a href="/blog">mirá todos los artículos</a>.</p>
+            {% else %}
+            <h2>Todavía no hay artículos</h2>
+            <p>Sé el primero en compartir algo con la comunidad.</p>
+            {% if user %}
+            <a href="/blog/nuevo/articulo" class="btn btn-primary btn-lg" style="margin-top:1rem">
+                ✏ Escribir el primer artículo
+            </a>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        {% else %}
+
+        <!-- ── Post destacado (solo pág 1 sin filtros) ───────── -->
+        {% if destacado %}
+        <a href="/blog/{{ destacado.slug }}" class="blog-destacado">
+            <span class="blog-dest-badge">⭐ Destacado</span>
+            <div class="blog-dest-img">
+                {% if destacado.portada_url %}
+                <img src="{{ destacado.portada_url }}" alt="{{ destacado.titulo }}" loading="lazy">
+                {% else %}
+                <div class="blog-dest-no-img">📰</div>
+                {% endif %}
+                {% if destacado.categoria %}
+                <span class="blog-badge"
+                      style="background:{{ destacado.categoria.color }}20;color:{{ destacado.categoria.color }};border-color:{{ destacado.categoria.color }}40">
+                    {{ destacado.categoria.nombre }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="blog-dest-body">
+                <div class="blog-dest-meta">
+                    <span>{{ destacado.autor.full_name or destacado.autor.username }}</span>
+                    <span>·</span>
+                    <span>{{ destacado.created_at.strftime("%d/%m/%Y") }}</span>
+                    <span>·</span>
+                    <span>{{ destacado.vistas }} vistas</span>
+                </div>
+                <h2 class="blog-dest-title">{{ destacado.titulo }}</h2>
+                {% if destacado.extracto %}
+                <p class="blog-dest-extracto">{{ destacado.extracto }}</p>
+                {% endif %}
+                <span class="btn btn-outline btn-sm" style="margin-top:1.25rem;width:fit-content">
+                    Leer artículo →
+                </span>
+            </div>
+        </a>
+        {% endif %}
+
+        <!-- ── Grilla ──────────────────────────────────────── -->
+        {% if grilla %}
+        <div class="blog-grid">
+            {% for post in grilla %}
+            <a href="/blog/{{ post.slug }}" class="blog-card">
+                <div class="blog-card-img">
+                    {% if post.portada_url %}
+                    <img src="{{ post.portada_url }}" alt="{{ post.titulo }}" loading="lazy">
+                    {% else %}
+                    <div class="blog-card-no-img">📰</div>
+                    {% endif %}
+                    {% if post.categoria %}
+                    <span class="blog-badge blog-badge-sm"
+                          style="background:{{ post.categoria.color }}20;color:{{ post.categoria.color }};border-color:{{ post.categoria.color }}40">
+                        {{ post.categoria.nombre }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="blog-card-body">
+                    <h3 class="blog-card-title">{{ post.titulo }}</h3>
+                    {% if post.extracto %}
+                    <p class="blog-card-extracto">{{ post.extracto }}</p>
+                    {% endif %}
+                    <div class="blog-card-meta">
+                        <span class="blog-card-autor">
+                            {% if post.autor.avatar_url %}
+                            <img src="{{ post.autor.avatar_url }}" alt="" class="blog-meta-avatar">
+                            {% else %}
+                            <span class="blog-meta-initial">{{ (post.autor.full_name or post.autor.username)[0]|upper }}</span>
+                            {% endif %}
+                            {{ post.autor.full_name or post.autor.username }}
+                        </span>
+                        <span class="blog-card-date">{{ post.created_at.strftime("%d/%m/%Y") }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- ── Más leídos ─────────────────────────────────── -->
+        {% if mas_leidos %}
+        <div class="blog-mas-leidos">
+            <div class="blog-mas-leidos-header">
+                <h3 class="blog-mas-leidos-title">🔥 Más leídos</h3>
+                <div class="blog-leidos-filters">
+                {% if categorias %}
+                <div class="blog-leidos-filter-wrap">
+                <label class="blog-cat-label" style="margin-bottom:.3rem">Categoría</label>
+                <div class="searchable-select blog-leidos-ss" id="blogLeidosSS">
+                    <div class="ss-display" tabindex="0" id="blogLeidosDisplay">
+                        <span class="ss-value" id="blogLeidosLabel">Todas</span>
+                        <span class="ss-arrow">▾</span>
+                    </div>
+                    <div class="ss-dropdown">
+                        <div class="ss-search-wrap">
+                            <input type="text" class="ss-search" placeholder="Buscar categoría..." autocomplete="off">
+                        </div>
+                        <ul class="ss-list" id="blogLeidosList2">
+                            <li class="ss-option ss-selected" data-value="">Todas</li>
+                            {% for c in categorias %}
+                            <li class="ss-option" data-value="{{ c.slug }}">{{ c.nombre }}</li>
+                            {% endfor %}
+                            <li class="ss-option" data-value="__sin_categoria__">Sin categoría</li>
+                        </ul>
+                    </div>
+                </div>
+                </div>
+                {% endif %}
+                {% if autores_leidos %}
+                <div class="blog-leidos-filter-wrap">
+                <label class="blog-cat-label" style="margin-bottom:.3rem">Autor</label>
+                <div class="searchable-select blog-leidos-ss" id="blogAutorSS">
+                    <div class="ss-display" tabindex="0" id="blogAutorDisplay">
+                        <span class="ss-value" id="blogAutorLabel">Todos</span>
+                        <span class="ss-arrow">▾</span>
+                    </div>
+                    <div class="ss-dropdown">
+                        <div class="ss-search-wrap">
+                            <input type="text" class="ss-search" placeholder="Buscar autor..." autocomplete="off">
+                        </div>
+                        <ul class="ss-list" id="blogAutorList">
+                            <li class="ss-option ss-selected" data-value="">Todos</li>
+                            {% for a in autores_leidos %}
+                            <li class="ss-option" data-value="{{ a.username }}">{{ a.full_name or a.username }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                </div>
+                {% endif %}
+                </div>{# /blog-leidos-filters #}
+            </div>
+            <div class="blog-mas-leidos-list" id="blogLeidosList">
+                {% for post in mas_leidos %}
+                <a href="/blog/{{ post.slug }}" class="blog-leido-item">
+                    <span class="blog-leido-num">{{ loop.index }}</span>
+                    <div class="blog-leido-img">
+                        {% if post.portada_url %}
+                        <img src="{{ post.portada_url }}" alt="">
+                        {% else %}
+                        <span>📰</span>
+                        {% endif %}
+                    </div>
+                    <div class="blog-leido-info">
+                        <span class="blog-leido-titulo">{{ post.titulo | truncate(60) }}</span>
+                        <span class="blog-leido-vistas">👁 {{ post.vistas }} vistas</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ── Paginación ──────────────────────────────────── -->
+        {% if total_paginas > 1 %}
+        <nav class="blog-pagination">
+            {% if pagina > 1 %}
+            <a href="{{ page_url(pagina - 1) }}" class="blog-page-btn">← Anterior</a>
+            {% else %}
+            <span class="blog-page-btn blog-page-disabled">← Anterior</span>
+            {% endif %}
+
+            <div class="blog-page-nums">
+                {% for p in range(1, total_paginas + 1) %}
+                    {% if p == pagina %}
+                    <span class="blog-page-num blog-page-current">{{ p }}</span>
+                    {% elif p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+                    <a href="{{ page_url(p) }}" class="blog-page-num">{{ p }}</a>
+                    {% elif p == pagina - 3 or p == pagina + 3 %}
+                    <span class="blog-page-ellipsis">…</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if pagina < total_paginas %}
+            <a href="{{ page_url(pagina + 1) }}" class="blog-page-btn">Siguiente →</a>
+            {% else %}
+            <span class="blog-page-btn blog-page-disabled">Siguiente →</span>
+            {% endif %}
+        </nav>
+        {% endif %}
+
+        <!-- Contador de resultados -->
+        <p class="blog-total-label">
+            {% if hay_filtro %}
+                {{ total }} artículo{{ 's' if total != 1 else '' }} encontrado{{ 's' if total != 1 else '' }}
+            {% endif %}
+        </p>
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Dropdowns de fecha ────────────────────────────────────
+(function () {
+    let anioVal = '{{ anio or "" }}';
+    let mesVal  = '{{ mes or "" }}';
+
+    function toggleDd(id) {
+        const dd = document.getElementById(id);
+        if (dd.classList.contains('blog-dd-disabled')) return;
+        const isOpen = dd.classList.contains('open');
+        // Cerrar todos
+        document.querySelectorAll('.blog-dd.open').forEach(d => d.classList.remove('open'));
+        if (!isOpen) dd.classList.add('open');
+    }
+    window.toggleDd = toggleDd;
+
+    // Cerrar al click fuera
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.blog-dd')) {
+            document.querySelectorAll('.blog-dd.open').forEach(d => d.classList.remove('open'));
+        }
+    });
+
+    // Selección año
+    document.querySelectorAll('#ddAnio .blog-dd-opt').forEach(li => {
+        li.addEventListener('click', () => {
+            anioVal = li.dataset.val;
+            mesVal  = '';   // reset mes al cambiar año
+            navegar();
+        });
+    });
+
+    // Selección mes
+    document.querySelectorAll('#ddMes .blog-dd-opt').forEach(li => {
+        li.addEventListener('click', () => {
+            mesVal = li.dataset.val;
+            navegar();
+        });
+    });
+
+    function navegar() {
+        const params = new URLSearchParams(window.location.search);
+        params.delete('pagina');
+        if (anioVal) params.set('anio', anioVal); else { params.delete('anio'); params.delete('mes'); }
+        if (mesVal && anioVal) params.set('mes', mesVal); else params.delete('mes');
+        window.location.href = '/blog?' + params.toString();
+    }
+})();
+
+// Select de categorías
+(function () {
+    const wrap    = document.getElementById('blogCatSelect');
+    const display = document.getElementById('blogCatDisplay');
+    const label   = document.getElementById('blogCatLabel');
+    const list    = document.getElementById('blogCatList');
+    if (!wrap) return;
+
+    function open()  { wrap.classList.add('open'); wrap.querySelector('.ss-search').focus(); }
+    function close() { wrap.classList.remove('open'); }
+
+    display.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
+    display.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+
+    wrap.querySelector('.ss-search').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        list.querySelectorAll('.ss-option').forEach(li => {
+            li.style.display = li.textContent.trim().toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+
+    list.addEventListener('click', e => {
+        const li = e.target.closest('.ss-option');
+        if (!li) return;
+        window.location.href = li.dataset.href;
+    });
+
+    document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
+})();
+
+// Filtros de Más leídos (categoría + autor)
+(function () {
+    let catVal = '', autorVal = '';
+    const results = document.getElementById('blogLeidosList');
+
+    function fetchLeidos() {
+        const params = new URLSearchParams();
+        if (catVal)   params.set('categoria', catVal);
+        if (autorVal) params.set('autor', autorVal);
+        const url = '/blog/mas-leidos' + (params.toString() ? '?' + params.toString() : '');
+        fetch(url).then(r => r.text()).then(html => { results.innerHTML = html; });
+    }
+
+    function initSS(wrapperId, displayId, labelId, listId, onChange) {
+        const wrap    = document.getElementById(wrapperId);
+        const display = document.getElementById(displayId);
+        const label   = document.getElementById(labelId);
+        const list    = document.getElementById(listId);
+        if (!wrap) return;
+
+        function open()  { wrap.classList.add('open'); wrap.querySelector('.ss-search').focus(); }
+        function close() { wrap.classList.remove('open'); }
+
+        display.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
+        display.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+
+        wrap.querySelector('.ss-search').addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            list.querySelectorAll('.ss-option').forEach(li => {
+                li.style.display = li.textContent.trim().toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+
+        list.addEventListener('click', e => {
+            const li = e.target.closest('.ss-option');
+            if (!li) return;
+            list.querySelectorAll('.ss-option').forEach(i => i.classList.remove('ss-selected'));
+            li.classList.add('ss-selected');
+            label.textContent = li.textContent.trim();
+            close();
+            onChange(li.dataset.value);
+            fetchLeidos();
+        });
+
+        document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
+    }
+
+    initSS('blogLeidosSS',  'blogLeidosDisplay', 'blogLeidosLabel', 'blogLeidosList2', v => catVal   = v);
+    initSS('blogAutorSS',   'blogAutorDisplay',  'blogAutorLabel',  'blogAutorList',   v => autorVal = v);
+})();
+
+(function () {
+    const input = document.getElementById('blogSearchInput');
+    if (!input) return;
+    const form  = input.closest('form');
+    const clear = document.querySelector('.blog-search-clear');
+
+    // Botón ✕ limpia y envía
+    if (clear) {
+        clear.addEventListener('click', e => {
+            e.preventDefault();
+            input.value = '';
+            form.submit();
+        });
+    }
+})();
+</script>
+{% endblock %}

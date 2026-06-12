@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Recuperar contraseña — NumisBol{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+
+        <div class="auth-header">
+            <h1>Recuperar contraseña</h1>
+            <p>Ingresá tu correo y te enviaremos las instrucciones</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            <span class="alert-icon">⚠</span>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="alert alert-success">
+            <span class="alert-icon">✓</span>
+            <span>{{ success }}</span>
+        </div>
+
+        {% if reset_url %}
+        <!-- Solo visible en desarrollo — en producción esto llega por email -->
+        <div class="dev-notice">
+            <p class="dev-notice-title">⚙ Modo desarrollo</p>
+            <p>En producción este enlace llega por correo. Por ahora, copiá el enlace:</p>
+            <a href="{{ reset_url }}" class="dev-reset-link">{{ reset_url }}</a>
+        </div>
+        {% endif %}
+
+        <div class="auth-footer">
+            <a href="/auth/login">← Volver al inicio de sesión</a>
+        </div>
+
+        {% else %}
+
+        <form method="post" action="/auth/recuperar" class="auth-form" novalidate>
+            <div class="form-group">
+                <label for="email">Correo electrónico</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="tu@correo.com"
+                    required
+                    autofocus
+                    autocomplete="email"
+                >
+            </div>
+
+            <div class="auth-submit">
+                <button type="submit" class="btn btn-primary btn-full btn-lg">
+                    Enviar instrucciones
+                </button>
+            </div>
+        </form>
+
+        <div class="auth-footer">
+            ¿Recordaste tu contraseña? &nbsp;
+            <a href="/auth/login">Iniciar sesión</a>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

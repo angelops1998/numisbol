@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Mercado — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/mercado.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Mercado numismático</h1>
+                    <p class="page-subtitle">Comprá y vendé monedas con la comunidad</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="mercado-acceso-wrap">
+            <div class="mercado-acceso-icon">🔒</div>
+            <h2 class="mercado-acceso-title">Acceso restringido</h2>
+            <p class="mercado-acceso-desc">
+                Para explorar el mercado y ver las monedas en venta necesitás
+                tener una cuenta en NumisBol.
+            </p>
+            <div class="mercado-acceso-btns">
+                <a href="/auth/registro" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+                <a href="/auth/login"    class="btn btn-outline btn-lg">Iniciar sesión</a>
+            </div>
+            <p class="mercado-acceso-sub">
+                ¿Ya tenés cuenta? <a href="/auth/login">Iniciá sesión</a> para acceder al mercado.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

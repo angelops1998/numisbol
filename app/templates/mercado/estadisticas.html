@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% block title %}Estadísticas de ventas — NumisBol{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/mercado.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── Tarjetas resumen ── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+}
+.stat-card-val { font-size: 1.75rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.stat-card-lbl { font-size: .72rem; color: var(--text-dim); margin-top: .25rem; text-transform: uppercase; letter-spacing: .06em; }
+.stat-card--green .stat-card-val { color: #22c55e; }
+.stat-card--blue  .stat-card-val { color: #60a5fa; }
+.stat-card--amber .stat-card-val { color: #fbbf24; }
+
+/* ── Ingresos ── */
+.ingreso-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+.ingreso-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+}
+.ingreso-val { font-size: 1.4rem; font-weight: 800; color: #22c55e; }
+.ingreso-lbl { font-size: .72rem; color: var(--text-dim); margin-top: .2rem; }
+
+/* ── Cards de gráficos ── */
+.chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+.chart-title {
+    font-size: .72rem;
+    font-weight: 700;
+    color: #22c55e;
+    margin-bottom: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+}
+.charts-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+    margin-bottom: 1rem;
+}
+
+/* ── Tabla de ventas → cards en mobile ── */
+.sold-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+.sold-table th {
+    text-align: left;
+    padding: .5rem .75rem;
+    color: var(--text-dim);
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border-bottom: 1px solid var(--border);
+}
+.sold-table td { padding: .55rem .75rem; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--text-body); vertical-align: top; }
+.sold-table tr:last-child td { border-bottom: none; }
+
+/* cards mobile para ventas */
+.sold-cards { display: none; }
+.sold-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .85rem 1rem;
+    margin-bottom: .6rem;
+}
+.sold-card-title { font-weight: 700; color: var(--text-primary); font-size: .88rem; margin-bottom: .3rem; }
+.sold-card-meta  { font-size: .75rem; color: var(--text-dim); margin-bottom: .5rem; }
+.sold-card-row   { display: flex; justify-content: space-between; font-size: .8rem; margin-top: .3rem; }
+.sold-card-row span:first-child { color: var(--text-dim); }
+.sold-card-note  { font-size: .75rem; color: var(--text-muted); font-style: italic; margin-top: .4rem; padding-top: .4rem; border-top: 1px solid var(--border); }
+
+.empty-hint { color: var(--text-dim); font-size: .83rem; padding: .4rem 0; }
+
+/* ── Grilla meses ── */
+.meses-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: .4rem;
+}
+.mes-cell {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .5rem .4rem;
+    text-align: center;
+}
+.mes-activo {
+    border-color: #22c55e;
+    background: rgba(34,197,94,.08);
+}
+.mes-nombre { font-size: .68rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .25rem; }
+.mes-activo .mes-nombre { color: #4ade80; }
+.mes-n { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.mes-bob { font-size: .65rem; color: #4ade80; margin-top: .15rem; }
+.mes-vacio { font-size: .9rem; color: var(--text-dim); font-weight: 400; }
+
+@media (max-width: 600px) {
+    .meses-grid { grid-template-columns: repeat(4, 1fr); gap: .3rem; }
+    .mes-cell { padding: .4rem .3rem; }
+    .mes-n { font-size: .95rem; }
+    .mes-bob { font-size: .6rem; }
+}
+
+/* Evitar desbordamiento horizontal en todos los tamaños */
+.chart-card canvas,
+.charts-row2 canvas {
+    max-width: 100% !important;
+}
+.chart-card { overflow: hidden; }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+    /* Contener todo el desbordamiento */
+    .page-wrapper { overflow-x: hidden; }
+    .container { padding-left: .75rem !important; padding-right: .75rem !important; overflow-x: hidden; }
+
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .stat-card { padding: .75rem .85rem; min-width: 0; }
+    .stat-card-val { font-size: 1.3rem; }
+
+    .ingreso-row { grid-template-columns: 1fr; gap: .5rem; }
+    .ingreso-val { font-size: 1.15rem; }
+
+    .charts-row2 {
+        grid-template-columns: 1fr;
+        gap: .5rem;
+    }
+
+    .chart-card {
+        padding: .75rem .85rem;
+        min-width: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Forzar el canvas a no crecer más del contenedor */
+    .chart-card canvas {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 220px;
+    }
+
+    /* Donut: centrar y limitar tamaño */
+    .chart-card > div[style*="max-width:200px"] {
+        max-width: 160px !important;
+    }
+
+    /* Tabla → ocultar, mostrar cards */
+    .sold-table-wrap { display: none; }
+    .sold-cards { display: block; }
+
+    .sold-card { min-width: 0; }
+    .sold-card-row { flex-wrap: wrap; gap: .2rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Estadísticas</h1>
+                    <p class="page-subtitle">Tu actividad en el mercado</p>
+                </div>
+                <a href="/mercado/mis-publicaciones" class="btn btn-outline">← Mis publicaciones</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Tarjetas resumen -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-val">{{ total }}</div>
+                <div class="stat-card-lbl">Total</div>
+            </div>
+            <div class="stat-card stat-card--blue">
+                <div class="stat-card-val">{{ activos }}</div>
+                <div class="stat-card-lbl">Activas</div>
+            </div>
+            <div class="stat-card stat-card--amber">
+                <div class="stat-card-val">{{ reservados }}</div>
+                <div class="stat-card-lbl">Reservadas</div>
+            </div>
+            <div class="stat-card stat-card--green">
+                <div class="stat-card-val">{{ vendidos }}</div>
+                <div class="stat-card-lbl">Vendidas</div>
+            </div>
+        </div>
+
+        <!-- Ingresos -->
+        <div class="ingreso-row">
+            <div class="ingreso-card">
+                <div class="ingreso-val">Bs {{ "%.2f"|format(ingreso_bob) }}</div>
+                <div class="ingreso-lbl">Ingresos en bolivianos</div>
+            </div>
+            <div class="ingreso-card">
+                <div class="ingreso-val">$ {{ "%.2f"|format(ingreso_usd) }}</div>
+                <div class="ingreso-lbl">Ingresos en dólares</div>
+            </div>
+        </div>
+
+        <!-- Ventas por mes -->
+        <div class="chart-card">
+            <div class="chart-title">Ventas {{ anio_actual }}</div>
+            <div class="meses-grid">
+                {% for m in ventas_mes %}
+                <div class="mes-cell {% if m.activo %}mes-activo{% endif %}">
+                    <div class="mes-nombre">{{ m.mes }}</div>
+                    {% if m.n > 0 %}
+                    <div class="mes-n">{{ m.n }}</div>
+                    <div class="mes-bob">Bs {{ "%.0f"|format(m.bob) if m.bob else "—" }}</div>
+                    {% else %}
+                    <div class="mes-n mes-vacio">—</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Moneda vs Billete + Material -->
+        <div class="charts-row2">
+            <div class="chart-card" style="margin-bottom:0">
+                <div class="chart-title">Moneda vs Billete</div>
+                {% if por_item.has_data %}
+                <div style="max-width:200px;margin:0 auto">
+                    <canvas id="chartItem"></canvas>
+                </div>
+                {% else %}
+                <p class="empty-hint">Sin datos.</p>
+                {% endif %}
+            </div>
+            <div class="chart-card" style="margin-bottom:0">
+                <div class="chart-title">Por material</div>
+                {% if por_material.has_data %}
+                <div id="chartMatWrap"><canvas id="chartMat"></canvas></div>
+                {% else %}
+                <p class="empty-hint">Sin datos de material.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Últimas ventas -->
+        <div class="chart-card" style="margin-top:1rem">
+            <div class="chart-title">Últimas ventas</div>
+            {% if ultimos_vendidos %}
+
+            <!-- Tabla: desktop -->
+            <div class="sold-table-wrap">
+                <table class="sold-table">
+                    <thead>
+                        <tr>
+                            <th>Artículo</th>
+                            <th>Pub.</th>
+                            <th>Venta</th>
+                            <th>Fecha</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in ultimos_vendidos %}
+                        <tr>
+                            <td>
+                                <a href="/mercado/{{ l.id }}" style="color:var(--text-primary);text-decoration:none;font-weight:600">{{ l.title }}</a>
+                                <br><span style="font-size:.7rem;color:var(--text-dim)">{{ (l.item_type or 'moneda')|capitalize }}{% if l.coin_country %} · {{ l.coin_country }}{% endif %}</span>
+                            </td>
+                            <td style="white-space:nowrap">{% if l.price %}{{ l.currency }} {{ "%.2f"|format(l.price|float) }}{% else %}<span style="color:var(--text-dim)">—</span>{% endif %}</td>
+                            <td style="white-space:nowrap">{% if l.sale_price_actual %}<strong>{{ l.currency }} {{ "%.2f"|format(l.sale_price_actual|float) }}</strong>{% else %}<span style="color:var(--text-dim)">—</span>{% endif %}</td>
+                            <td style="white-space:nowrap;color:var(--text-dim)">{% if l.sold_at %}{{ l.sold_at.strftime('%d/%m/%y') }}{% else %}—{% endif %}</td>
+                            <td style="color:var(--text-muted);font-style:italic;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ l.sale_notes or '' }}">{{ l.sale_notes or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Cards: mobile -->
+            <div class="sold-cards">
+                {% for l in ultimos_vendidos %}
+                <div class="sold-card">
+                    <a href="/mercado/{{ l.id }}" style="text-decoration:none">
+                        <div class="sold-card-title">{{ l.title }}</div>
+                    </a>
+                    <div class="sold-card-meta">{{ (l.item_type or 'moneda')|capitalize }}{% if l.coin_country %} · {{ l.coin_country }}{% endif %}{% if l.sold_at %} · {{ l.sold_at.strftime('%d/%m/%y') }}{% endif %}</div>
+                    <div class="sold-card-row">
+                        <span>Precio publicado</span>
+                        <span>{% if l.price %}{{ l.currency }} {{ "%.2f"|format(l.price|float) }}{% else %}—{% endif %}</span>
+                    </div>
+                    <div class="sold-card-row">
+                        <span>Precio de venta</span>
+                        <strong style="color:#22c55e">{% if l.sale_price_actual %}{{ l.currency }} {{ "%.2f"|format(l.sale_price_actual|float) }}{% else %}—{% endif %}</strong>
+                    </div>
+                    {% if l.sale_notes %}
+                    <div class="sold-card-note">📝 {{ l.sale_notes }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <p class="empty-hint">Todavía no tenés ventas registradas.</p>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const C = { accent:'#00e5ff', green:'#39ff14', amber:'#ffea00', blue:'#ff6ef7',
+            red:'#ff4d6d', purple:'#bf5af2', teal:'#00ffc8', orange:'#ff9500' };
+const PALETTE = [C.accent, C.green, C.amber, C.blue, C.red, C.purple, C.teal, C.orange];
+const GRID = 'rgba(255,255,255,.07)';
+const TEXT = '#a0a0c0';
+const isMobile = window.innerWidth < 600;
+
+Chart.defaults.color = TEXT;
+Chart.defaults.borderColor = GRID;
+Chart.defaults.font.family = 'inherit';
+Chart.defaults.font.size = isMobile ? 10 : 12;
+
+
+/* Moneda vs Billete */
+{% if por_item.has_data %}
+(function() {
+    const labels = {{ por_item.labels_json | safe }}.map(l => ({moneda:'Moneda',billete:'Billete'})[l] || l);
+    new Chart(document.getElementById('chartItem'), {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{ data: {{ por_item.values_json | safe }},
+                backgroundColor: PALETTE.map(c => c + 'bb'),
+                borderColor: '#1a1a22', borderWidth: 3, hoverOffset: 4 }]
+        },
+        options: {
+            responsive: true, cutout: '60%',
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } }
+        }
+    });
+})();
+{% endif %}
+
+/* Por material */
+{% if por_material.has_data %}
+(function() {
+    const raw = {{ por_material.labels_json | safe }};
+    const labels = raw.map(l => l.length > 18 ? l.slice(0,16) + '…' : l);
+    const rowH = isMobile ? 32 : 38;
+    const wrap = document.getElementById('chartMatWrap');
+    wrap.style.height = (labels.length * rowH + 40) + 'px';
+    wrap.style.position = 'relative';
+    new Chart(document.getElementById('chartMat'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{ data: {{ por_material.values_json | safe }},
+                backgroundColor: PALETTE.map(c => c + 'bb'),
+                borderColor: PALETTE,
+                borderWidth: 1, borderRadius: 4 }]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: GRID }, ticks: { stepSize: 1, maxTicksLimit: 5 } },
+                y: { grid: { display: false }, ticks: { font: { size: isMobile ? 10 : 11 } } }
+            }
+        }
+    });
+})();
+{% endif %}
+</script>
+{% endblock %}

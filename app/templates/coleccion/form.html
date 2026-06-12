@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — NumisBol{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/coleccion.css">
+<style>
+.curr-toggle {
+    display: inline-flex;
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 3px;
+    gap: 2px;
+}
+.curr-btn {
+    padding: .35rem 1rem;
+    border-radius: calc(var(--radius) - 2px);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: .01em;
+    transition: background .12s, color .12s;
+}
+.curr-btn:hover:not(.active) { color: var(--text-primary); }
+.curr-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">{{ title }}</h1>
+                    <p class="page-subtitle">
+                        {% if coin and coin.id %}Editando: {{ coin.name }}
+                        {% else %}Complete los datos de la moneda{% endif %}
+                    </p>
+                </div>
+                <a href="/coleccion" class="btn btn-outline">← Volver a la colección</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-page-layout">
+
+            <form method="post" action="{{ action }}" enctype="multipart/form-data" class="coin-form">
+
+                {% if errors %}
+                <div class="alert alert-error">
+                    <span class="alert-icon">⚠</span>
+                    <div>{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+                </div>
+                {% endif %}
+
+                <!-- Tipo de ítem -->
+                <div class="form-section">
+                    <div class="tipo-toggle-wrap">
+                        <button type="button" class="tipo-btn {% if not coin or coin.tipo != 'billete' %}active{% endif %}" data-tipo="moneda">
+                            🪙 Moneda
+                        </button>
+                        <button type="button" class="tipo-btn {% if coin and coin.tipo == 'billete' %}active{% endif %}" data-tipo="billete">
+                            💵 Billete
+                        </button>
+                    </div>
+                    <input type="hidden" name="tipo" id="tipoHidden"
+                           value="{{ coin.tipo if coin and coin.tipo else 'moneda' }}">
+                </div>
+
+                <!-- Sección 1: Datos principales -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Datos principales</h2>
+                    <div class="form-grid">
+
+                        <div class="form-group form-col-2">
+                            <label for="name" id="labelNombre">Nombre de la moneda *</label>
+                            <input type="text" id="name" name="name"
+                                value="{{ coin.name if coin and coin.name else '' }}"
+                                placeholder="Ej: 1 Boliviano, Melgarejo, Peso boliviano"
+                                required autofocus>
+                        </div>
+
+                        <div class="form-group" data-coin-only>
+                            <label>Denominación</label>
+                            <div class="searchable-select" data-name="denomination">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value">
+                                        {{ coin.denomination if coin and coin.denomination else '— Sin especificar —' }}
+                                    </span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar denominación...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option {% if not coin or not coin.denomination %}ss-selected{% endif %}"
+                                            data-value="">— Sin especificar —</li>
+                                        {% for d in denominations %}
+                                        <li class="ss-option {% if coin and coin.denomination == d %}ss-selected{% endif %}"
+                                            data-value="{{ d }}">{{ d }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="denomination"
+                                    value="{{ coin.denomination if coin and coin.denomination else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group" data-coin-only>
+                            <label>Unidad monetaria</label>
+                            <div class="searchable-select" data-name="currency_unit">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value">
+                                        {{ coin.currency_unit if coin and coin.currency_unit else '— Sin especificar —' }}
+                                    </span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar unidad monetaria...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option {% if not coin or not coin.currency_unit %}ss-selected{% endif %}"
+                                            data-value="">— Sin especificar —</li>
+                                        {% for u in currency_units %}
+                                        <li class="ss-option {% if coin and coin.currency_unit == u %}ss-selected{% endif %}"
+                                            data-value="{{ u }}">{{ u }}</li>
+                                        {% endfor %}
+                                        {% if custom_currency_units %}
+                                        <li class="ss-group">Personalizadas</li>
+                                        {% for u in custom_currency_units %}
+                                        <li class="ss-option {% if coin and coin.currency_unit == u %}ss-selected{% endif %}"
+                                            data-value="{{ u }}">{{ u }}</li>
+                                        {% endfor %}
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="currency_unit"
+                                    value="{{ coin.currency_unit if coin and coin.currency_unit else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="year" id="labelAnio">Año de acuñación</label>
+                            <input type="number" id="year" name="year"
+                                value="{{ coin.year if coin and coin.year else '' }}"
+                                placeholder="Ej: 1987" min="1" max="2100">
+                        </div>
+
+                        <div class="form-group">
+                            <label>País</label>
+                            <div class="searchable-select" data-name="country">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value">{{ coin.country if coin and coin.country else 'Bolivia' }}</span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar país...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        {% for c in countries %}
+                                        <li class="ss-option
+                                            {% if coin and coin.country == c %}ss-selected
+                                            {% elif not coin and c == 'Bolivia' %}ss-selected
+                                            {% endif %}"
+                                            data-value="{{ c }}">{{ c }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="country"
+                                    value="{{ coin.country if coin and coin.country else 'Bolivia' }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group" data-coin-only>
+                            <label>Ceca (Casa de moneda)</label>
+                            <div class="searchable-select ss-dropup" data-name="mint">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value">{{ coin.mint if coin and coin.mint else 'Seleccionar ceca...' }}</span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar ceca...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option {% if not coin or not coin.mint %}ss-selected{% endif %}"
+                                            data-value="">— Sin especificar —</li>
+                                        <li class="ss-group">Bolivia</li>
+                                        {% for m in mints_bolivia %}
+                                        <li class="ss-option {% if coin and coin.mint == m %}ss-selected{% endif %}"
+                                            data-value="{{ m }}">{{ m }}</li>
+                                        {% endfor %}
+                                        <li class="ss-group">Cecas del mundo</li>
+                                        {% for m in mints_world %}
+                                        <li class="ss-option {% if coin and coin.mint == m %}ss-selected{% endif %}"
+                                            data-value="{{ m }}">{{ m }}</li>
+                                        {% endfor %}
+                                        {% if custom_mints %}
+                                        <li class="ss-group">Personalizadas</li>
+                                        {% for m in custom_mints %}
+                                        <li class="ss-option {% if coin and coin.mint == m %}ss-selected{% endif %}"
+                                            data-value="{{ m }}">{{ m }}</li>
+                                        {% endfor %}
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="mint"
+                                    value="{{ coin.mint if coin and coin.mint else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group" data-coin-only>
+                            <label>Material</label>
+                            <div class="searchable-select ss-dropup" data-name="material">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value">
+                                        {{ coin.material if coin and coin.material else '— Sin especificar —' }}
+                                    </span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar material...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option {% if not coin or not coin.material %}ss-selected{% endif %}"
+                                            data-value="">— Sin especificar —</li>
+                                        {% for group_name, group_items in material_groups %}
+                                        <li class="ss-group">{{ group_name }}</li>
+                                        {% for m in group_items %}
+                                        <li class="ss-option {% if coin and coin.material == m %}ss-selected{% endif %}"
+                                            data-value="{{ m }}">{{ m }}</li>
+                                        {% endfor %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="material"
+                                    value="{{ coin.material if coin and coin.material else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group form-col-2" data-coin-only>
+                            <label>Ensayador <small style="color:var(--text-dim);font-weight:400;">(solo Bolivia)</small></label>
+                            <div class="searchable-select ss-dropup" data-name="assayer">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value">
+                                        {{ coin.assayer if coin and coin.assayer else '— Sin especificar —' }}
+                                    </span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar por inicial o nombre...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option {% if not coin or not coin.assayer %}ss-selected{% endif %}"
+                                            data-value="">— Sin especificar —</li>
+                                        {% for group_name, group_items in assayer_groups %}
+                                        <li class="ss-group">{{ group_name }}</li>
+                                        {% for a in group_items %}
+                                        <li class="ss-option {% if coin and coin.assayer == a %}ss-selected{% endif %}"
+                                            data-value="{{ a }}">{{ a }}</li>
+                                        {% endfor %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="assayer"
+                                    value="{{ coin.assayer if coin and coin.assayer else '' }}">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Sección 2: Clasificación -->
+                <div class="form-section" data-coin-only>
+                    <h2 class="form-section-title">Clasificación</h2>
+                    <div class="form-grid">
+
+                        <div class="form-group form-col-2">
+                            <label>Estado de conservación</label>
+                            <div class="searchable-select ss-dropup" data-name="condition">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value">
+                                        {{ coin.condition if coin and coin.condition else '— Sin especificar —' }}
+                                    </span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar estado...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option {% if not coin or not coin.condition %}ss-selected{% endif %}"
+                                            data-value="">— Sin especificar —</li>
+                                        {% for group_name, group_items in conditions %}
+                                        <li class="ss-group">{{ group_name }}</li>
+                                        {% for c in group_items %}
+                                        <li class="ss-option {% if coin and coin.condition == c %}ss-selected{% endif %}"
+                                            data-value="{{ c }}">{{ c }}</li>
+                                        {% endfor %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="condition"
+                                    value="{{ coin.condition if coin and coin.condition else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Categoría</label>
+                            <div class="searchable-select ss-dropup" data-name="category">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value">
+                                        {{ coin.category if coin and coin.category else '— Sin especificar —' }}
+                                    </span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar categoría...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option {% if not coin or not coin.category %}ss-selected{% endif %}"
+                                            data-value="">— Sin especificar —</li>
+                                        {% for group_name, group_items in category_groups %}
+                                        <li class="ss-group">{{ group_name }}</li>
+                                        {% for c in group_items %}
+                                        <li class="ss-option {% if coin and coin.category == c %}ss-selected{% endif %}"
+                                            data-value="{{ c }}">{{ c }}</li>
+                                        {% endfor %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="category"
+                                    value="{{ coin.category if coin and coin.category else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">Cantidad (duplicados)</label>
+                            <input type="number" id="quantity" name="quantity"
+                                value="{{ coin.quantity if coin and coin.quantity else '1' }}"
+                                min="1" max="9999">
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Sección 3: Valor -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Valor económico</h2>
+                    {% set vc = coin.value_currency if coin and coin.value_currency else 'BOB' %}
+                    <div style="margin-bottom:1rem">
+                        <label class="filter-label" style="margin-bottom:.5rem;display:block">Moneda</label>
+                        <input type="hidden" name="value_currency" id="valueCurrencyInput" value="{{ vc }}">
+                        <div class="curr-toggle" id="valueCurrencyToggle">
+                            <button type="button" class="curr-btn" id="vcBOB" data-cur="BOB">Bs (BOB)</button>
+                            <button type="button" class="curr-btn" id="vcUSD" data-cur="USD">US$ (USD)</button>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="estimated_value" id="labelEstimado">Valor estimado (Bs)</label>
+                            <input type="number" id="estimated_value" name="estimated_value"
+                                value="{{ coin.estimated_value if coin and coin.estimated_value else '' }}"
+                                placeholder="0.00" min="0" step="0.01">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="purchase_price" id="labelCompra">Precio de compra (Bs)</label>
+                            <input type="number" id="purchase_price" name="purchase_price"
+                                value="{{ coin.purchase_price if coin and coin.purchase_price else '' }}"
+                                placeholder="0.00" min="0" step="0.01">
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Sección 4: Descripción -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Descripción</h2>
+                    <div class="form-group">
+                        <label for="description">Notas y descripción</label>
+                        <textarea id="description" name="description" rows="4"
+                            placeholder="Historia, características especiales, procedencia...">{{ coin.description if coin and coin.description else '' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Sección 5: Imágenes -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Fotografías</h2>
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="image">Anverso (cara principal)</label>
+                            {% if coin and coin.image_url %}
+                            <div class="img-preview-current">
+                                <img src="{{ coin.image_url }}" alt="Anverso actual">
+                                <span class="img-preview-label">Imagen actual</span>
+                            </div>
+                            {% endif %}
+                            <input type="file" id="image" name="image"
+                                accept=".jpg,.jpeg,.png,.webp"
+                                class="file-input">
+                            <small>JPG, PNG o WebP. Máximo recomendado: 5 MB.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="image_back">Reverso</label>
+                            {% if coin and coin.image_back_url %}
+                            <div class="img-preview-current">
+                                <img src="{{ coin.image_back_url }}" alt="Reverso actual">
+                                <span class="img-preview-label">Imagen actual</span>
+                            </div>
+                            {% endif %}
+                            <input type="file" id="image_back" name="image_back"
+                                accept=".jpg,.jpeg,.png,.webp"
+                                class="file-input">
+                            <small>JPG, PNG o WebP. Máximo recomendado: 5 MB.</small>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Visibilidad -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Visibilidad</h2>
+                    <label class="visibility-toggle">
+                        <input type="checkbox" name="is_public" value="1"
+                               {% if coin and coin.is_public %}checked{% endif %}>
+                        <span class="visibility-toggle-track">
+                            <span class="visibility-toggle-thumb"></span>
+                        </span>
+                        <span class="visibility-toggle-label" id="labelVisibilidad">
+                            Moneda pública — cualquiera con el enlace puede verla
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Acciones -->
+                <div class="form-actions">
+                    <a href="/coleccion" class="btn btn-outline btn-lg">Cancelar</a>
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                        {% if coin and coin.id %}Guardar cambios{% else %}Agregar moneda{% endif %}
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const FREE_TEXT_FIELDS = ['mint', 'currency_unit'];
+function norm(s) { return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+
+document.querySelectorAll('.searchable-select').forEach(function(ss) {
+    const display   = ss.querySelector('.ss-display');
+    const valueEl   = ss.querySelector('.ss-value');
+    const search    = ss.querySelector('.ss-search');
+    const options   = ss.querySelectorAll('.ss-option');
+    const hidden    = ss.querySelector('input[type=hidden]');
+    const list      = ss.querySelector('.ss-list');
+    const fieldName = ss.dataset.name;
+    const allowFree = FREE_TEXT_FIELDS.includes(fieldName);
+
+    // "Usar «...»" custom option, injected only for free-text fields
+    let customOpt = null;
+    if (allowFree) {
+        customOpt = document.createElement('li');
+        customOpt.className = 'ss-option ss-custom-opt ss-hidden';
+        list.appendChild(customOpt);
+        customOpt.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const val = search.value.trim();
+            if (!val) return;
+            options.forEach(o => o.classList.remove('ss-selected'));
+            customOpt.classList.add('ss-selected');
+            hidden.value = val;
+            valueEl.textContent = val;
+            valueEl.classList.remove('placeholder');
+            ss.classList.remove('open');
+        });
+    }
+
+    display.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const wasOpen = ss.classList.contains('open');
+        document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('open'));
+        if (!wasOpen) {
+            ss.classList.add('open');
+            search.value = '';
+            options.forEach(o => o.classList.remove('ss-hidden'));
+            if (customOpt) customOpt.classList.add('ss-hidden');
+            setTimeout(() => search.focus(), 50);
+        }
+    });
+
+    search.addEventListener('input', function() {
+        const term = norm(this.value.trim());
+        const raw  = this.value.trim();
+        options.forEach(opt =>
+            opt.classList.toggle('ss-hidden', !norm(opt.textContent).includes(term))
+        );
+        // hide group headers when all their options are hidden
+        ss.querySelectorAll('.ss-group').forEach(function(group) {
+            let next = group.nextElementSibling;
+            let allHidden = true;
+            while (next && !next.classList.contains('ss-group')) {
+                if (!next.classList.contains('ss-hidden') && !next.classList.contains('ss-custom-opt')) {
+                    allHidden = false; break;
+                }
+                next = next.nextElementSibling;
+            }
+            group.classList.toggle('ss-hidden', allHidden);
+        });
+        // show/hide "Usar «...»" option
+        if (customOpt) {
+            const hasExact = Array.from(options).some(o =>
+                !o.classList.contains('ss-custom-opt') &&
+                o.dataset.value && o.dataset.value.toLowerCase() === term
+            );
+            if (raw && !hasExact) {
+                customOpt.textContent = `Usar «${raw}»`;
+                customOpt.classList.remove('ss-hidden');
+            } else {
+                customOpt.classList.add('ss-hidden');
+            }
+        }
+    });
+
+    search.addEventListener('click', e => e.stopPropagation());
+
+    options.forEach(function(opt) {
+        if (opt === customOpt) return;
+        opt.addEventListener('click', function(e) {
+            e.stopPropagation();
+            options.forEach(o => o.classList.remove('ss-selected'));
+            if (customOpt) customOpt.classList.remove('ss-selected');
+            opt.classList.add('ss-selected');
+            hidden.value = opt.dataset.value;
+            valueEl.textContent = opt.textContent.trim();
+            valueEl.classList.remove('placeholder');
+            ss.classList.remove('open');
+        });
+    });
+});
+
+document.addEventListener('click', function() {
+    document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('open'));
+});
+
+// ── Toggle moneda / billete ───────────────────────────────────
+(function() {
+    const hidden   = document.getElementById('tipoHidden');
+    const btnSubmit = document.getElementById('submitBtn');
+    const isEdit   = btnSubmit && btnSubmit.textContent.trim().startsWith('Guardar');
+    const coinOnly = document.querySelectorAll('[data-coin-only]');
+
+    function applyTipo(tipo) {
+        hidden.value = tipo;
+        document.querySelectorAll('.tipo-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.tipo === tipo);
+        });
+        const esBillete = tipo === 'billete';
+        coinOnly.forEach(function(el) { el.style.display = esBillete ? 'none' : ''; });
+
+        var lNombre = document.getElementById('labelNombre');
+        if (lNombre) lNombre.textContent = esBillete ? 'Nombre del billete *' : 'Nombre de la moneda *';
+
+        var lAnio = document.getElementById('labelAnio');
+        if (lAnio) lAnio.textContent = esBillete ? 'Año de emisión' : 'Año de acuñación';
+
+        var lVis = document.getElementById('labelVisibilidad');
+        if (lVis) lVis.textContent = esBillete
+            ? 'Billete público — cualquiera con el enlace puede verlo'
+            : 'Moneda pública — cualquiera con el enlace puede verla';
+
+        if (!isEdit && btnSubmit) {
+            btnSubmit.textContent = esBillete ? 'Agregar billete' : 'Agregar moneda';
+        }
+    }
+
+    document.querySelectorAll('.tipo-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() { applyTipo(btn.dataset.tipo); });
+    });
+
+    // init on load
+    applyTipo(hidden.value || 'moneda');
+})();
+
+// ── Currency toggle (BOB / USD) ──────────────────────────────
+(function() {
+    const input  = document.getElementById('valueCurrencyInput');
+    const btnBOB = document.getElementById('vcBOB');
+    const btnUSD = document.getElementById('vcUSD');
+    const lEst   = document.getElementById('labelEstimado');
+    const lCom   = document.getElementById('labelCompra');
+    if (!input) return;
+
+    function applyVC(cur) {
+        input.value = cur;
+        btnBOB.classList.toggle('active', cur === 'BOB');
+        btnUSD.classList.toggle('active', cur === 'USD');
+        const sym = cur === 'USD' ? 'US$' : 'Bs';
+        if (lEst) lEst.textContent = `Valor estimado (${sym})`;
+        if (lCom) lCom.textContent = `Precio de compra (${sym})`;
+    }
+
+    btnBOB.addEventListener('click', () => applyVC('BOB'));
+    btnUSD.addEventListener('click', () => applyVC('USD'));
+    applyVC(input.value || 'BOB');
+})();
+</script>
+{% endblock %}

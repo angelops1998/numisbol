@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}Mercado — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/mercado.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Mercado</h1>
+                    <p class="page-subtitle">{{ total }} anuncio{{ 's' if total != 1 else '' }} disponible{{ 's' if total != 1 else '' }}</p>
+                </div>
+                {% if user %}
+                <div style="display:flex;gap:.75rem">
+                    <a href="/mercado/mis-publicaciones" class="btn btn-outline">Mis anuncios</a>
+                    <a href="/mercado/publicar" class="btn btn-primary">+ Publicar</a>
+                </div>
+                {% else %}
+                <a href="/auth/registro" class="btn btn-primary">Registrarse para vender</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Botón toggle filtros (mobile) -->
+        <button class="filters-toggle-btn" id="filtersToggle" aria-expanded="false">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/></svg>
+            Filtros
+            {% if filters.q or filters.tipo or filters.condicion or filters.pais or filters.precio_max %}
+            <span class="filters-active-dot"></span>
+            {% endif %}
+        </button>
+        <div class="filters-backdrop" id="filtersBackdrop"></div>
+
+        <div class="collection-layout">
+
+            <!-- Filtros -->
+            <aside class="filters-panel" id="filtersPanel">
+                <form method="get" action="/mercado" id="filterForm">
+                    <div class="filters-header">
+                        <span class="filters-title">Filtros</span>
+                        <div style="display:flex;align-items:center;gap:.75rem;">
+                            <a href="/mercado" class="filters-clear">Limpiar</a>
+                            <button type="button" class="filters-close-btn" id="filtersClose" aria-label="Cerrar">✕</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Buscar</label>
+                        <input type="search" name="q" value="{{ filters.q }}"
+                            placeholder="Nombre, país..." class="filter-input">
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Tipo de publicación</label>
+                        <div class="searchable-select" data-name="tipo">
+                            <input type="hidden" name="tipo" value="{{ filters.tipo }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value {% if not filters.tipo %}placeholder{% endif %}">
+                                    {% if filters.tipo == 'venta' %}Venta
+                                    {% elif filters.tipo == 'intercambio' %}Intercambio
+                                    {% elif filters.tipo == 'ambos' %}Venta / Intercambio
+                                    {% else %}Todos{% endif %}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.tipo %}ss-selected{% endif %}" data-value="">Todos</li>
+                                    <li class="ss-option {% if filters.tipo == 'venta' %}ss-selected{% endif %}" data-value="venta">Venta</li>
+                                    <li class="ss-option {% if filters.tipo == 'intercambio' %}ss-selected{% endif %}" data-value="intercambio">Intercambio</li>
+                                    <li class="ss-option {% if filters.tipo == 'ambos' %}ss-selected{% endif %}" data-value="ambos">Venta / Intercambio</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Estado de conservación</label>
+                        <div class="searchable-select" data-name="condicion">
+                            <input type="hidden" name="condicion" value="{{ filters.condicion }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value {% if not filters.condicion %}placeholder{% endif %}">
+                                    {{ filters.condicion.split(' → ')[0] if filters.condicion else 'Todos' }}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <div class="ss-search-wrap">
+                                    <input type="text" class="ss-search" placeholder="Buscar estado...">
+                                </div>
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.condicion %}ss-selected{% endif %}" data-value="">Todos</li>
+                                    {% for c in conditions %}
+                                    <li class="ss-option {% if filters.condicion == c %}ss-selected{% endif %}"
+                                        data-value="{{ c }}" data-label="{{ c.split(' → ')[0] }}">
+                                        {{ c.split(' → ')[0] }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">País</label>
+                        <div class="searchable-select" data-name="pais">
+                            <input type="hidden" name="pais" value="{{ filters.pais }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value {% if not filters.pais %}placeholder{% endif %}">
+                                    {{ filters.pais if filters.pais else 'Todos los países' }}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <div class="ss-search-wrap">
+                                    <input type="text" class="ss-search" placeholder="Buscar país...">
+                                </div>
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.pais %}ss-selected{% endif %}" data-value="">Todos los países</li>
+                                    {% for c in countries %}
+                                    <li class="ss-option {% if filters.pais == c %}ss-selected{% endif %}" data-value="{{ c }}">{{ c }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Precio máximo (Bs)</label>
+                        <input type="number" name="precio_max" value="{{ filters.precio_max }}"
+                            placeholder="Sin límite" min="0" class="filter-input">
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Ordenar por</label>
+                        <div class="searchable-select ss-dropup" data-name="orden">
+                            <input type="hidden" name="orden" value="{{ filters.orden or 'reciente' }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value">
+                                    {% if filters.orden == 'precio_asc' %}Menor precio
+                                    {% elif filters.orden == 'precio_desc' %}Mayor precio
+                                    {% else %}Más reciente{% endif %}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.orden or filters.orden == 'reciente' %}ss-selected{% endif %}" data-value="reciente">Más reciente</li>
+                                    <li class="ss-option {% if filters.orden == 'precio_asc' %}ss-selected{% endif %}" data-value="precio_asc">Menor precio</li>
+                                    <li class="ss-option {% if filters.orden == 'precio_desc' %}ss-selected{% endif %}" data-value="precio_desc">Mayor precio</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">Aplicar filtros</button>
+                </form>
+            </aside>
+
+            <!-- Grilla de anuncios -->
+            <main class="coins-area">
+                {% if listings %}
+                <div class="market-grid">
+                    {% for l in listings %}
+                    <a href="/mercado/{{ l.id }}" class="market-card">
+                        <div class="market-card-img">
+                            {% if l.image_url %}
+                                <img src="{{ l.image_url }}" alt="{{ l.title }}" loading="lazy">
+                            {% else %}
+                                <div class="coin-item-no-img">🪙</div>
+                            {% endif %}
+                            <span class="market-type-badge market-type-{{ l.listing_type.value }}">
+                                {% if l.listing_type.value == 'venta' %}Venta
+                                {% elif l.listing_type.value == 'intercambio' %}Intercambio
+                                {% else %}Venta / Intercambio{% endif %}
+                            </span>
+                        </div>
+                        <div class="market-card-body">
+                            <div class="market-card-title">{{ l.title }}</div>
+                            <div class="market-card-meta">
+                                {% if l.coin_year %}{{ l.coin_year }}{% endif %}
+                                {% if l.coin_year and l.coin_country %} · {% endif %}
+                                {% if l.coin_country %}{{ l.coin_country }}{% endif %}
+                                {% if l.coin_condition %} · {{ l.coin_condition.split(' → ')[0] }}{% endif %}
+                            </div>
+                            <div class="market-card-footer">
+                                {% if l.price %}
+                                <span class="market-price">{% if l.currency == "USD" %}US${% else %}Bs{% endif %} {{ "%.2f"|format(l.price) }}</span>
+                                {% else %}
+                                <span class="market-price-trade">Solo intercambio</span>
+                                {% endif %}
+                                <span class="market-seller-user">@{{ l.seller.username }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+
+                {% if total_paginas > 1 %}
+                {% set base = '/mercado?' ~ ('q=' ~ filters.q ~ '&' if filters.q) ~ ('tipo=' ~ filters.tipo ~ '&' if filters.tipo) ~ ('condicion=' ~ filters.condicion ~ '&' if filters.condicion) ~ ('pais=' ~ filters.pais ~ '&' if filters.pais) ~ ('precio_max=' ~ filters.precio_max ~ '&' if filters.precio_max) ~ ('orden=' ~ filters.orden ~ '&' if filters.orden) %}
+                <div class="pagination">
+                    {% if pagina > 1 %}
+                    <a href="{{ base }}pagina={{ pagina - 1 }}" class="pag-btn">← Anterior</a>
+                    {% else %}
+                    <span class="pag-btn pag-disabled">← Anterior</span>
+                    {% endif %}
+
+                    {% for p in range(1, total_paginas + 1) %}
+                        {% if p == pagina %}
+                        <span class="pag-btn pag-active">{{ p }}</span>
+                        {% elif p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+                        <a href="{{ base }}pagina={{ p }}" class="pag-btn">{{ p }}</a>
+                        {% elif p == pagina - 3 or p == pagina + 3 %}
+                        <span class="pag-btn pag-ellipsis">…</span>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagina < total_paginas %}
+                    <a href="{{ base }}pagina={{ pagina + 1 }}" class="pag-btn">Siguiente →</a>
+                    {% else %}
+                    <span class="pag-btn pag-disabled">Siguiente →</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🛒</div>
+                    {% if filters.q or filters.tipo or filters.condicion or filters.pais %}
+                        <h3>Sin resultados</h3>
+                        <p>No hay anuncios con esos criterios.</p>
+                        <a href="/mercado" class="btn btn-outline">Limpiar filtros</a>
+                    {% else %}
+                        <h3>El mercado está vacío</h3>
+                        <p>Sé el primero en publicar una moneda.</p>
+                        {% if user %}
+                        <a href="/mercado/publicar" class="btn btn-primary btn-lg">+ Publicar ahora</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Searchable-select en filtros ──────────────────────────
+function norm(s) { return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+document.querySelectorAll('#filtersPanel .searchable-select').forEach(function(ss) {
+    var display = ss.querySelector('.ss-display');
+    var valueEl = ss.querySelector('.ss-value');
+    var search  = ss.querySelector('.ss-search');
+    var options = ss.querySelectorAll('.ss-option');
+    var hidden  = ss.querySelector('input[type=hidden]');
+
+    if (!display) return;
+
+    display.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var wasOpen = ss.classList.contains('open');
+        document.querySelectorAll('.searchable-select').forEach(function(s){ s.classList.remove('open'); });
+        if (!wasOpen) {
+            ss.classList.add('open');
+            if (search) { search.value = ''; setTimeout(function(){ search.focus(); }, 50); }
+            options.forEach(function(o){ o.classList.remove('ss-hidden'); });
+        }
+    });
+
+    if (search) {
+        search.addEventListener('input', function() {
+            var term = norm(this.value);
+            options.forEach(function(opt){
+                opt.classList.toggle('ss-hidden', !norm(opt.textContent).includes(term));
+            });
+        });
+        search.addEventListener('click', function(e){ e.stopPropagation(); });
+    }
+
+    options.forEach(function(opt) {
+        opt.addEventListener('click', function(e) {
+            e.stopPropagation();
+            options.forEach(function(o){ o.classList.remove('ss-selected'); });
+            opt.classList.add('ss-selected');
+            hidden.value = opt.dataset.value;
+            var label = opt.dataset.label || opt.textContent.trim();
+            valueEl.textContent = label;
+            valueEl.classList.toggle('placeholder', !opt.dataset.value);
+            ss.classList.remove('open');
+        });
+    });
+});
+
+document.addEventListener('click', function() {
+    document.querySelectorAll('.searchable-select').forEach(function(s){ s.classList.remove('open'); });
+});
+
+// ── Toggle panel filtros (mobile) ─────────────────────────
+(function(){
+    var btn      = document.getElementById('filtersToggle');
+    var panel    = document.getElementById('filtersPanel');
+    var backdrop = document.getElementById('filtersBackdrop');
+    if (!btn || !panel) return;
+
+    function openPanel() {
+        panel.classList.add('filters-panel--open');
+        if (backdrop) backdrop.classList.add('filters-backdrop--open');
+        btn.setAttribute('aria-expanded', 'true');
+    }
+    function closePanel() {
+        panel.classList.remove('filters-panel--open');
+        if (backdrop) backdrop.classList.remove('filters-backdrop--open');
+        btn.setAttribute('aria-expanded', 'false');
+        document.querySelectorAll('.searchable-select').forEach(function(s){ s.classList.remove('open'); });
+    }
+
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        panel.classList.contains('filters-panel--open') ? closePanel() : openPanel();
+    });
+    var closeBtn = document.getElementById('filtersClose');
+    if (closeBtn) closeBtn.addEventListener('click', closePanel);
+    if (backdrop) backdrop.addEventListener('click', closePanel);
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePanel(); });
+})();
+</script>
+{% endblock %}

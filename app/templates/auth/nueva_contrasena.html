@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Nueva contraseña — NumisBol{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+
+        {% if done %}
+
+        <div class="auth-header">
+            <h1>¡Contraseña actualizada!</h1>
+            <p>Tu contraseña fue cambiada correctamente</p>
+        </div>
+        <div class="alert alert-success">
+            <span class="alert-icon">✓</span>
+            <span>Ya podés iniciar sesión con tu nueva contraseña.</span>
+        </div>
+        <div class="auth-submit" style="margin-top:1rem">
+            <a href="/auth/login" class="btn btn-primary btn-full btn-lg">Ir al inicio de sesión</a>
+        </div>
+
+        {% else %}
+
+        <div class="auth-header">
+            <h1>Nueva contraseña</h1>
+            <p>Elegí una contraseña segura para tu cuenta</p>
+        </div>
+
+        {% if errors %}
+        <div class="alert alert-error">
+            <span class="alert-icon">⚠</span>
+            <div>{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+        </div>
+        {% endif %}
+
+        <form method="post" action="/auth/nueva-contrasena/{{ token }}" class="auth-form" novalidate>
+
+            <div class="form-group">
+                <label for="password">Nueva contraseña</label>
+                <div class="input-password">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Mínimo 8 caracteres"
+                        required
+                        minlength="8"
+                        autofocus
+                        autocomplete="new-password"
+                    >
+                    <button type="button" class="toggle-password" data-target="password">👁</button>
+                </div>
+                <div class="password-strength" id="passwordStrength" aria-live="polite"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="password2">Repetir contraseña</label>
+                <div class="input-password">
+                    <input
+                        type="password"
+                        id="password2"
+                        name="password2"
+                        placeholder="Repetí la contraseña"
+                        required
+                        autocomplete="new-password"
+                    >
+                    <button type="button" class="toggle-password" data-target="password2">👁</button>
+                </div>
+                <div class="password-match" id="passwordMatch" aria-live="polite"></div>
+            </div>
+
+            <div class="auth-submit">
+                <button type="submit" class="btn btn-primary btn-full btn-lg">
+                    Guardar nueva contraseña
+                </button>
+            </div>
+        </form>
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const pwd  = document.getElementById('password');
+const pwd2 = document.getElementById('password2');
+const bar  = document.getElementById('passwordStrength');
+const match = document.getElementById('passwordMatch');
+
+if (pwd) {
+    pwd.addEventListener('input', function () {
+        const val = this.value;
+        if (!val) { bar.textContent = ''; bar.className = 'password-strength'; return; }
+        let s = 0;
+        if (val.length >= 8)          s++;
+        if (/[A-Z]/.test(val))        s++;
+        if (/[0-9]/.test(val))        s++;
+        if (/[^A-Za-z0-9]/.test(val)) s++;
+        const labels  = ['', 'Contraseña débil', 'Contraseña regular', 'Contraseña buena', 'Contraseña fuerte'];
+        const classes = ['', 'strength-weak', 'strength-fair', 'strength-good', 'strength-strong'];
+        bar.textContent = labels[s];
+        bar.className   = 'password-strength ' + classes[s];
+        checkMatch();
+    });
+}
+if (pwd2) {
+    pwd2.addEventListener('input', checkMatch);
+}
+function checkMatch() {
+    if (!pwd2 || !pwd2.value) { match.textContent = ''; return; }
+    if (pwd.value === pwd2.value) {
+        match.textContent = 'Las contraseñas coinciden';
+        match.className = 'password-match strength-strong';
+    } else {
+        match.textContent = 'Las contraseñas no coinciden';
+        match.className = 'password-match strength-weak';
+    }
+}
+</script>
+{% endblock %}

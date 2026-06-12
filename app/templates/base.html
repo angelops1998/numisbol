@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NumisBol{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">🪙</span>
+                <span class="logo-text">Numis<em>Bol</em></span>
+            </a>
+
+            <div class="nav-links" id="navLinks">
+                <!-- Links visibles para todos -->
+                <a href="/"        class="nav-link">Inicio</a>
+                {% if user %}
+                <a href="/mercado" class="nav-link">Mercado</a>
+                {% else %}
+                <div class="nav-link-wrap">
+                    <span class="nav-link nav-link-locked">
+                        Mercado <span class="nav-lock">🔒</span>
+                    </span>
+                    <div class="nav-tooltip">
+                        <strong>Acceso restringido</strong>
+                        <span>Iniciá sesión o creá una cuenta para acceder al mercado.</span>
+                    </div>
+                </div>
+                {% endif %}
+                <a href="/blog"    class="nav-link">Blog</a>
+
+                <div class="nav-divider"></div>
+
+                {% if user %}
+                    <a href="/coleccion" class="nav-link">Mi Colección</a>
+                    <div class="nav-user">
+                        <span class="nav-username">
+                            <span class="nav-avatar-icon">👤</span>
+                            {{ user.username }}
+                        </span>
+                        <div class="nav-dropdown">
+                            <a href="/perfil">Mi perfil</a>
+                            <a href="/auth/logout">Cerrar sesión</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="display:flex;gap:.6rem">
+                        <a href="/auth/login"    class="btn btn-outline btn-sm">Iniciar sesión</a>
+                        <a href="/auth/registro" class="btn btn-primary btn-sm">Crear cuenta</a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <button class="nav-toggle" id="navToggle" aria-label="Menú">☰</button>
+        </div>
+    </nav>
+    <div class="nav-overlay" id="navOverlay"></div>
+
+    {% if messages %}
+    <div class="flash-container" role="alert">
+        {% for msg in messages %}
+        <div class="flash flash-{{ msg.type }}">{{ msg.text }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if not hide_footer %}
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span>🪙</span>
+                <span>NumisBol</span>
+            </div>
+            <p class="footer-copy">© 2026 NumisBol — La comunidad numismática de Bolivia</p>
+        </div>
+    </footer>
+    {% endif %}
+
+    <script src="/static/js/main.js"></script>
+    {% block extra_scripts %}{% endblock %}
+<script>
+(function () {
+    const wrap = document.querySelector('.nav-link-wrap');
+    if (!wrap) return;
+    wrap.querySelector('.nav-link-locked').addEventListener('click', function (e) {
+        e.stopPropagation();
+        wrap.classList.toggle('nav-tooltip-open');
+    });
+    document.addEventListener('click', function () {
+        wrap.classList.remove('nav-tooltip-open');
+    });
+})();
+</script>
+</body>
+</html>

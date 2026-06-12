@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.title }} — Mercado NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/mercado.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb"><a href="/mercado">Mercado</a> / {{ listing.title }}</p>
+                    <h1 class="page-title">{{ listing.title }}</h1>
+                </div>
+                <a href="/mercado" class="btn btn-outline">← Volver al mercado</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Acciones rápidas del dueño -->
+        {% if es_dueno %}
+        <div class="owner-actions owner-actions--top" style="margin-top:-.5rem">
+            <p class="owner-actions-title">Estado del anuncio</p>
+            <div class="owner-quick-btns">
+                {% for st in ['activo', 'reservado'] %}
+                {% if st != listing.status.value %}
+                <form method="post" action="/mercado/{{ listing.id }}/estado" style="display:contents">
+                    <input type="hidden" name="nuevo_estado" value="{{ st }}">
+                    <button type="submit" class="btn owner-btn"
+                        style="background:#b45309;color:#fff;border-color:#b45309">Marcar como {{ st }}</button>
+                </form>
+                {% endif %}
+                {% endfor %}
+                {% if listing.status.value != 'vendido' %}
+                <button type="button" class="btn owner-btn"
+                    style="background:#16a34a;color:#fff;border-color:#16a34a"
+                    onclick="document.getElementById('modalVenta').classList.add('modal-open')">
+                    Marcar como vendido ✓
+                </button>
+                {% endif %}
+                <div class="owner-btn-sep"></div>
+                <a href="/mercado/{{ listing.id }}/editar" class="btn btn-outline owner-btn">✏ Editar</a>
+                <form method="post" action="/mercado/{{ listing.id }}/eliminar"
+                      onsubmit="return confirm('¿Eliminar este anuncio?')" style="display:contents">
+                    <button type="submit" class="btn btn-danger owner-btn">🗑 Eliminar</button>
+                </form>
+            </div>
+            {% if listing.status.value == 'vendido' %}
+            <div style="margin-top:.75rem;padding:.75rem 1rem;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius)">
+                <p style="font-size:.78rem;font-weight:700;color:#22c55e;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.05em">Venta registrada</p>
+                {% if listing.sold_at %}<p style="font-size:.82rem;color:var(--text-dim)">Fecha: {{ listing.sold_at.strftime('%d/%m/%Y') }}</p>{% endif %}
+                {% if listing.sale_price_actual %}<p style="font-size:.82rem;color:var(--text-dim)">Precio de venta: <strong style="color:var(--text-primary)">{{ listing.currency }} {{ "%.2f"|format(listing.sale_price_actual|float) }}</strong></p>{% endif %}
+                {% if listing.sale_notes %}<p style="font-size:.82rem;color:var(--text-dim);margin-top:.3rem;font-style:italic">📝 {{ listing.sale_notes }}</p>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="detail-layout">
+
+            <!-- Carrusel de imágenes -->
+            {% set imgs = [] %}
+            {% if listing.image_url %}{% set imgs = imgs + [{'src': listing.image_url, 'label': 'Anverso'}] %}{% endif %}
+            {% if listing.image_back_url %}{% set imgs = imgs + [{'src': listing.image_back_url, 'label': 'Reverso'}] %}{% endif %}
+
+            <div class="coin-carousel" id="coinCarousel">
+                {% if imgs %}
+                <div class="coin-carousel-track" id="coinCarouselTrack">
+                    {% for im in imgs %}
+                    <div class="coin-carousel-slide coin-lb-trigger" data-src="{{ im.src }}" data-index="{{ loop.index0 }}" style="cursor:zoom-in">
+                        <img src="{{ im.src }}" alt="{{ im.label }} de {{ listing.title }}">
+                        <span class="detail-img-label">{{ im.label }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if imgs | length > 1 %}
+                <button class="coin-car-arrow coin-car-prev" id="coinCarPrev" aria-label="Anterior">&#8249;</button>
+                <button class="coin-car-arrow coin-car-next" id="coinCarNext" aria-label="Siguiente">&#8250;</button>
+                <div class="coin-car-dots" id="coinCarDots">
+                    {% for im in imgs %}
+                    <button class="coin-car-dot {% if loop.first %}coin-car-dot-active{% endif %}" data-idx="{{ loop.index0 }}"></button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="detail-img-placeholder">
+                    <span>🪙</span>
+                    <p>Sin fotografía</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Info -->
+            <div class="detail-info">
+
+                <!-- Tipo y estado -->
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+                    <span class="market-type-badge market-type-{{ listing.listing_type.value }}" style="position:static;font-size:var(--font-xs)">
+                        {% if listing.listing_type.value == 'venta' %}En venta
+                        {% elif listing.listing_type.value == 'intercambio' %}Solo intercambio
+                        {% else %}Venta o intercambio{% endif %}
+                    </span>
+                    <span class="market-status-badge market-status-{{ listing.status.value }}">
+                        {{ listing.status.value|capitalize }}
+                    </span>
+                </div>
+
+                <!-- Precio -->
+                {% if listing.price %}
+                <div class="market-detail-price">
+                    {% if listing.currency == "USD" %}US${% else %}Bs{% endif %}
+                    {{ "%.2f"|format(listing.price) }}
+                </div>
+                {% else %}
+                <div class="market-detail-price-trade">Solo acepta intercambio</div>
+                {% endif %}
+
+                <!-- Ficha técnica -->
+                <div class="detail-fields" style="margin-top:1.25rem">
+                    {% if listing.coin_name %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">Moneda</span>
+                        <span class="detail-field-value">{{ listing.coin_name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if listing.coin_year %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">Año</span>
+                        <span class="detail-field-value">{{ listing.coin_year }}</span>
+                    </div>
+                    {% endif %}
+                    {% if listing.coin_country %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">País</span>
+                        <span class="detail-field-value">{{ listing.coin_country }}</span>
+                    </div>
+                    {% endif %}
+                    {% if listing.coin_condition %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">Conservación</span>
+                        <span class="detail-field-value">{{ listing.coin_condition.split(' → ')[0] }}</span>
+                    </div>
+                    {% endif %}
+                    {% if listing.coin_material %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">Material</span>
+                        <span class="detail-field-value">{{ listing.coin_material }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">Publicado el</span>
+                        <span class="detail-field-value">{{ listing.created_at.strftime("%d/%m/%Y") }}</span>
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                {% if listing.description %}
+                <div class="detail-description" style="margin-top:1rem">
+                    <h3>Descripción del vendedor</h3>
+                    <p>{{ listing.description }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Vendedor -->
+                <div class="seller-card">
+                    <div class="seller-info">
+                        <div class="seller-name">{{ listing.seller.full_name or listing.seller.username }}</div>
+                        <div class="seller-username">@{{ listing.seller.username }}</div>
+                        <div class="seller-since">Miembro desde {{ listing.seller.created_at.strftime("%B %Y") }}</div>
+                    </div>
+                    <div class="seller-avatar-right">
+                        {% if listing.seller.avatar_url %}
+                            <img src="{{ listing.seller.avatar_url }}" alt="{{ listing.seller.username }}">
+                        {% else %}
+                            <span class="seller-avatar-initial">
+                                {{ (listing.seller.full_name or listing.seller.username)[0] | upper }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Contacto -->
+                {% if not es_dueno and listing.status.value == 'activo' %}
+                <div class="contact-box">
+                    <h3 class="contact-title">¿Te interesa esta moneda?</h3>
+                    <p class="contact-text">
+                        Contactá directamente al vendedor para coordinar la operación.
+                    </p>
+                    <div class="contact-btns">
+                        {% if listing.seller.whatsapp %}
+                        {% set wa_num = listing.seller.whatsapp | replace(' ', '') %}
+                        {% set wa_msg = "Hola " ~ listing.seller.username ~ ", estoy interesado en tu anuncio *" ~ listing.title ~ "* publicado en NumisBol." %}
+                        <a href="https://wa.me/{{ wa_num }}?text={{ wa_msg | urlencode }}"
+                           target="_blank" rel="noopener"
+                           class="btn btn-whatsapp btn-lg">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.25a.75.75 0 0 0 .916.916l5.388-1.478A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.718 9.718 0 0 1-4.952-1.355l-.355-.211-3.685 1.01 1.01-3.587-.23-.371A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+                            WhatsApp
+                        </a>
+                        {% else %}
+                        <button class="btn btn-whatsapp btn-lg" disabled title="El vendedor no tiene WhatsApp registrado">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.862L.054 23.25a.75.75 0 0 0 .916.916l5.388-1.478A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.718 9.718 0 0 1-4.952-1.355l-.355-.211-3.685 1.01 1.01-3.587-.23-.371A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+                            Sin WhatsApp
+                        </button>
+                        {% endif %}
+
+                        <a href="mailto:{{ listing.seller.email }}?subject=Consulta por: {{ listing.title }}&body=Hola {{ listing.seller.username }},%0A%0AEstoy interesado en tu anuncio '{{ listing.title }}' publicado en NumisBol.%0A%0ASaludos."
+                           class="btn btn-email btn-lg">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+                            Correo electrónico
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if es_dueno %}
+                <!-- Modal venta -->
+                <div class="modal-overlay" id="modalVenta"
+                     onclick="if(event.target===this)this.classList.remove('modal-open')">
+                    <div class="modal-box">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Registrar venta</h3>
+                            <button class="modal-close" onclick="document.getElementById('modalVenta').classList.remove('modal-open')">✕</button>
+                        </div>
+                        <form method="post" action="/mercado/{{ listing.id }}/estado">
+                            <input type="hidden" name="nuevo_estado" value="vendido">
+                            <div class="modal-body">
+                                <div class="form-group" style="margin-bottom:1rem">
+                                    <label for="sale_price_actual">Precio de venta real <span style="color:var(--text-dim)">({{ listing.currency }})</span></label>
+                                    <input type="number" id="sale_price_actual" name="sale_price_actual"
+                                        step="0.01" min="0"
+                                        value="{{ listing.price if listing.price else '' }}"
+                                        placeholder="Ej: 250.00">
+                                    <small>Si difiere del precio publicado, ingresá el valor real acordado.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sale_notes">Notas de la venta <span style="color:var(--text-dim)">(opcional)</span></label>
+                                    <textarea id="sale_notes" name="sale_notes" rows="4"
+                                        placeholder="Ej: Plata cotizaba a USD 31/oz al momento de la venta. Comprador de Santa Cruz. Pago en efectivo."></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline"
+                                    onclick="document.getElementById('modalVenta').classList.remove('modal-open')">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Confirmar venta ✓</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <!-- Otros anuncios del vendedor -->
+        {% if otros %}
+        <div class="otros-anuncios">
+            <h2 class="section-title" style="margin-bottom:1.25rem">
+                Más anuncios de @{{ listing.seller.username }}
+            </h2>
+            <div class="market-grid market-grid-sm">
+                {% for o in otros %}
+                <a href="/mercado/{{ o.id }}" class="market-card">
+                    <div class="market-card-img">
+                        {% if o.image_url %}
+                            <img src="{{ o.image_url }}" alt="{{ o.title }}" loading="lazy">
+                        {% else %}
+                            <div class="coin-item-no-img">🪙</div>
+                        {% endif %}
+                    </div>
+                    <div class="market-card-body">
+                        <div class="market-card-title">{{ o.title }}</div>
+                        <div class="market-card-footer">
+                            {% if o.price %}
+                            <span class="market-price">{% if o.currency == "USD" %}US${% else %}Bs{% endif %} {{ "%.2f"|format(o.price) }}</span>
+                            {% else %}
+                            <span class="market-price-trade">Intercambio</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% if listing.image_url or listing.image_back_url %}
+<div class="anuncio-lightbox" id="coinLb" role="dialog" aria-modal="true">
+    <button class="lightbox-close" id="coinLbClose" title="Cerrar">✕</button>
+    <button class="lightbox-prev" id="coinLbPrev">&#8249;</button>
+    <button class="lightbox-next" id="coinLbNext">&#8250;</button>
+    <div class="lb-content">
+        <div class="lightbox-img-wrap" id="coinLbWrap">
+            <img src="" alt="" id="coinLbImg" draggable="false">
+        </div>
+        <div class="lb-zoom-bar">
+            <button class="lb-zoom-btn" id="coinLbZoomOut">−</button>
+            <span class="lb-zoom-label" id="coinLbZoomLabel">100%</span>
+            <button class="lb-zoom-btn" id="coinLbZoomIn">+</button>
+            <button class="lb-zoom-btn lb-zoom-btn-sm" id="coinLbZoomReset">1:1</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if listing.image_url or listing.image_back_url %}
+<script>
+(function(){
+    const slides  = Array.from(document.querySelectorAll('.coin-carousel-slide'));
+    const track   = document.getElementById('coinCarouselTrack');
+    const dotsEl  = Array.from(document.querySelectorAll('.coin-car-dot'));
+    let carCur    = 0;
+
+    function carGoTo(i) {
+        carCur = (i + slides.length) % slides.length;
+        if (track) track.style.transform = `translateX(-${carCur * 100}%)`;
+        dotsEl.forEach((d, idx) => d.classList.toggle('coin-car-dot-active', idx === carCur));
+    }
+
+    let autoTimer = null;
+    function startAuto() { if (slides.length < 2) return; autoTimer = setInterval(() => carGoTo(carCur + 1), 3500); }
+    function stopAuto()  { clearInterval(autoTimer); }
+
+    document.getElementById('coinCarPrev')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); carGoTo(carCur - 1); startAuto(); });
+    document.getElementById('coinCarNext')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); carGoTo(carCur + 1); startAuto(); });
+    dotsEl.forEach(d => d.addEventListener('click', () => { stopAuto(); carGoTo(+d.dataset.idx); startAuto(); }));
+    startAuto();
+
+    const lb    = document.getElementById('coinLb');
+    const wrap  = document.getElementById('coinLbWrap');
+    const img   = document.getElementById('coinLbImg');
+    const label = document.getElementById('coinLbZoomLabel');
+    if (!lb) return;
+
+    let cur = 0, scale = 1, ox = 0, oy = 0;
+    let dragging = false, dragStartX = 0, dragStartY = 0, dragOx = 0, dragOy = 0, didDrag = false;
+    const MIN = 1, MAX = 5;
+
+    function clampOffset(s, x, y) {
+        const iw = img.naturalWidth || img.offsetWidth, ih = img.naturalHeight || img.offsetHeight;
+        const maxX = Math.max(0, (iw * s - wrap.offsetWidth) / 2);
+        const maxY = Math.max(0, (ih * s - wrap.offsetHeight) / 2);
+        return { x: Math.max(-maxX, Math.min(maxX, x)), y: Math.max(-maxY, Math.min(maxY, y)) };
+    }
+    function apply(s, x, y) {
+        scale = Math.max(MIN, Math.min(MAX, s));
+        const c = clampOffset(scale, x, y); ox = c.x; oy = c.y;
+        img.style.transform = `translate(${ox}px,${oy}px) scale(${scale})`;
+        label.textContent = Math.round(scale * 100) + '%';
+        wrap.style.cursor = scale > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in';
+    }
+    function reset() { apply(1, 0, 0); }
+    function zoomAt(ns, cx, cy) {
+        const r = img.getBoundingClientRect();
+        apply(ns, ox - (cx - (r.left + r.width/2)) * (ns/scale - 1), oy - (cy - (r.top + r.height/2)) * (ns/scale - 1));
+    }
+    function open(i) {
+        cur = i; stopAuto(); carGoTo(i); reset();
+        img.src = slides[i].dataset.src;
+        lb.classList.add('lb-open'); document.body.style.overflow = 'hidden';
+        const multi = slides.length > 1;
+        document.getElementById('coinLbPrev').style.display = multi ? '' : 'none';
+        document.getElementById('coinLbNext').style.display = multi ? '' : 'none';
+    }
+    function close() { lb.classList.remove('lb-open'); document.body.style.overflow = ''; reset(); }
+    function prev()  { open((cur - 1 + slides.length) % slides.length); }
+    function next()  { open((cur + 1) % slides.length); }
+
+    slides.forEach((el, i) => el.addEventListener('click', () => open(i)));
+    document.getElementById('coinLbClose').addEventListener('click', close);
+    document.getElementById('coinLbPrev').addEventListener('click', e => { e.stopPropagation(); prev(); });
+    document.getElementById('coinLbNext').addEventListener('click', e => { e.stopPropagation(); next(); });
+    lb.addEventListener('click', e => { if (e.target === lb) close(); });
+
+    img.addEventListener('click', e => { e.stopPropagation(); if (didDrag) { didDrag = false; return; } scale > 1 ? reset() : zoomAt(2.5, e.clientX, e.clientY); });
+    wrap.addEventListener('wheel', e => { e.preventDefault(); zoomAt(scale * (e.deltaY < 0 ? 1.12 : 0.89), e.clientX, e.clientY); }, { passive: false });
+
+    function centerZoom(f) { const r = wrap.getBoundingClientRect(); zoomAt(scale * f, r.left + r.width/2, r.top + r.height/2); }
+    document.getElementById('coinLbZoomIn').addEventListener('click',    e => { e.stopPropagation(); centerZoom(1.5); });
+    document.getElementById('coinLbZoomOut').addEventListener('click',   e => { e.stopPropagation(); centerZoom(1/1.5); });
+    document.getElementById('coinLbZoomReset').addEventListener('click', e => { e.stopPropagation(); reset(); });
+
+    wrap.addEventListener('mousedown', e => { if (scale <= 1) return; e.preventDefault(); dragging = true; didDrag = false; dragStartX = e.clientX; dragStartY = e.clientY; dragOx = ox; dragOy = oy; });
+    window.addEventListener('mousemove', e => { if (!dragging) return; if (Math.abs(e.clientX-dragStartX)+Math.abs(e.clientY-dragStartY) > 4) didDrag = true; apply(scale, dragOx+e.clientX-dragStartX, dragOy+e.clientY-dragStartY); });
+    window.addEventListener('mouseup', () => { dragging = false; });
+
+    let t0dist = 0;
+    wrap.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) t0dist = Math.hypot(e.touches[1].clientX-e.touches[0].clientX, e.touches[1].clientY-e.touches[0].clientY);
+        else if (e.touches.length === 1 && scale > 1) { dragging=true; dragStartX=e.touches[0].clientX; dragStartY=e.touches[0].clientY; dragOx=ox; dragOy=oy; }
+    }, { passive: true });
+    wrap.addEventListener('touchmove', e => {
+        if (e.touches.length === 2) { e.preventDefault(); const d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY); zoomAt(scale*d/t0dist,(e.touches[0].clientX+e.touches[1].clientX)/2,(e.touches[0].clientY+e.touches[1].clientY)/2); t0dist=d; }
+        else if (e.touches.length===1 && dragging) apply(scale, dragOx+e.touches[0].clientX-dragStartX, dragOy+e.touches[0].clientY-dragStartY);
+    }, { passive: false });
+    wrap.addEventListener('touchend', () => { dragging = false; });
+
+    document.addEventListener('keydown', e => {
+        if (!lb.classList.contains('lb-open')) return;
+        if (e.key==='Escape') close(); if (e.key==='ArrowLeft') prev(); if (e.key==='ArrowRight') next();
+        if (e.key==='+' || e.key==='=') centerZoom(1.3); if (e.key==='-') centerZoom(1/1.3); if (e.key==='0') reset();
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

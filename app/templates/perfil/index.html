@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}Mi perfil — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/perfil.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <!-- Cabecera del perfil -->
+    <div class="perfil-hero">
+        <div class="container">
+            <div class="perfil-hero-inner">
+                <div class="perfil-avatar-wrap">
+                    {% if user.avatar_url %}
+                        <img src="{{ user.avatar_url }}" alt="Avatar" class="perfil-avatar-img">
+                    {% else %}
+                        <div class="perfil-avatar-placeholder">
+                            {{ (user.full_name or user.username)[0] | upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="perfil-hero-info">
+                    <h1 class="perfil-hero-name">{{ user.full_name or user.username }}</h1>
+                    <p class="perfil-hero-user">@{{ user.username }}</p>
+                    {% if user.bio %}
+                    <p class="perfil-hero-bio">{{ user.bio }}</p>
+                    {% endif %}
+                    <div class="perfil-hero-meta">
+                        <span>📅 Miembro desde {{ user.created_at.strftime("%B %Y") }}</span>
+                        {% if user.whatsapp %}
+                        <span>📱 +{{ user.whatsapp }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="perfil-hero-stats">
+                    <div class="perfil-stat">
+                        <span class="perfil-stat-num">{{ total_monedas }}</span>
+                        <span class="perfil-stat-label">Monedas</span>
+                    </div>
+                    <div class="perfil-stat">
+                        <span class="perfil-stat-num">{{ total_anuncios }}</span>
+                        <span class="perfil-stat-label">Anuncios</span>
+                    </div>
+                    <div class="perfil-stat">
+                        <span class="perfil-stat-num">{{ anuncios_activos }}</span>
+                        <span class="perfil-stat-label">Activos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Alertas flash -->
+        {% if request.query_params.get('ok') %}
+        <div class="alert alert-success" id="flashOk">
+            <span class="alert-icon">✓</span> Perfil actualizado correctamente.
+        </div>
+        {% endif %}
+        {% if request.query_params.get('pw') %}
+        <div class="alert alert-success" id="flashPw">
+            <span class="alert-icon">✓</span> Contraseña cambiada correctamente.
+        </div>
+        {% endif %}
+
+        <!-- Tabs de navegación -->
+        <div class="perfil-tabs" id="perfilTabs">
+            <button class="perfil-tab {% if active_tab != 'seguridad' %}perfil-tab-active{% endif %}"
+                    data-tab="info">Información personal</button>
+            <button class="perfil-tab {% if active_tab == 'seguridad' %}perfil-tab-active{% endif %}"
+                    data-tab="seguridad">Seguridad</button>
+            <button class="perfil-tab" data-tab="accesos">Accesos rápidos</button>
+        </div>
+
+        <!-- ── TAB: Información personal ──────────────────────────────── -->
+        <div class="perfil-panel {% if active_tab != 'seguridad' %}perfil-panel-active{% endif %}"
+             id="tab-info">
+            <form method="post" action="/perfil/editar"
+                  enctype="multipart/form-data" class="perfil-form" novalidate>
+
+                <div class="perfil-form-grid">
+
+                    <!-- Columna izquierda: avatar -->
+                    <div class="perfil-avatar-col">
+                        <div class="perfil-avatar-preview" id="avatarPreview">
+                            {% if user.avatar_url %}
+                                <img src="{{ user.avatar_url }}" alt="Avatar" id="avatarImg">
+                            {% else %}
+                                <div class="perfil-avatar-placeholder perfil-avatar-placeholder-lg"
+                                     id="avatarPlaceholder">
+                                    {{ (user.full_name or user.username)[0] | upper }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <label class="btn btn-outline btn-sm perfil-avatar-btn" for="avatar">
+                            📷 Cambiar foto
+                        </label>
+                        <input type="file" id="avatar" name="avatar"
+                               accept="image/*" class="visually-hidden">
+                        <p class="perfil-avatar-hint">JPG, PNG o WebP. Máx. 2 MB.</p>
+                    </div>
+
+                    <!-- Columna derecha: campos -->
+                    <div class="perfil-fields-col">
+
+                        <div class="form-group">
+                            <label for="full_name">Nombre completo</label>
+                            <input type="text" id="full_name" name="full_name"
+                                   value="{{ user.full_name or '' }}"
+                                   placeholder="Juan Mamani"
+                                   autocomplete="name">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Nombre de usuario</label>
+                            <input type="text" value="{{ user.username }}" disabled
+                                   class="input-disabled" title="El nombre de usuario no se puede cambiar">
+                            <small>El nombre de usuario no se puede modificar.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Correo electrónico</label>
+                            <input type="email" value="{{ user.email }}" disabled
+                                   class="input-disabled" title="Contactá soporte para cambiar el email">
+                            <small>Para cambiar el correo contactá a soporte.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="whatsapp">
+                                WhatsApp
+                                <span class="optional">(opcional)</span>
+                            </label>
+                            <div class="input-whatsapp">
+                                <span class="whatsapp-prefix">+</span>
+                                <input type="tel" id="whatsapp" name="whatsapp"
+                                       value="{{ user.whatsapp or '' }}"
+                                       placeholder="591 77712345"
+                                       autocomplete="tel">
+                            </div>
+                            <small>Con código de país. Ej: 591 77712345 (Bolivia)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bio">Sobre mí <span class="optional">(opcional)</span></label>
+                            <textarea id="bio" name="bio" rows="4"
+                                      placeholder="Coleccionista de monedas bolivianas desde 1990. Especializado en período republicano..."
+                                      maxlength="400">{{ user.bio or '' }}</textarea>
+                            <small><span id="bioCount">{{ (user.bio or '') | length }}</span>/400 caracteres</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Guardar cambios
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- ── TAB: Seguridad ─────────────────────────────────────────── -->
+        <div class="perfil-panel {% if active_tab == 'seguridad' %}perfil-panel-active{% endif %}"
+             id="tab-seguridad">
+
+            {% if pw_errors %}
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠</span>
+                <div>{% for e in pw_errors %}<div>{{ e }}</div>{% endfor %}</div>
+            </div>
+            {% endif %}
+
+            <div class="perfil-section-header">
+                <h2>Cambiar contraseña</h2>
+                <p>Usá una contraseña larga y única que no uses en otros sitios.</p>
+            </div>
+
+            <form method="post" action="/perfil/contrasena"
+                  class="perfil-form perfil-form-narrow" novalidate>
+
+                <div class="form-group">
+                    <label for="password_actual">Contraseña actual</label>
+                    <div class="input-password">
+                        <input type="password" id="password_actual" name="password_actual"
+                               placeholder="Tu contraseña actual" required autocomplete="current-password">
+                        <button type="button" class="toggle-password"
+                                data-target="password_actual" title="Mostrar/ocultar">👁</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password_nuevo">Nueva contraseña</label>
+                    <div class="input-password">
+                        <input type="password" id="password_nuevo" name="password_nuevo"
+                               placeholder="Mínimo 8 caracteres" required
+                               minlength="8" autocomplete="new-password">
+                        <button type="button" class="toggle-password"
+                                data-target="password_nuevo" title="Mostrar/ocultar">👁</button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength" aria-live="polite"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password_confirmar">Confirmar nueva contraseña</label>
+                    <div class="input-password">
+                        <input type="password" id="password_confirmar" name="password_confirmar"
+                               placeholder="Repetí la nueva contraseña" required
+                               autocomplete="new-password">
+                        <button type="button" class="toggle-password"
+                                data-target="password_confirmar" title="Mostrar/ocultar">👁</button>
+                    </div>
+                    <div class="password-match" id="passwordMatch" aria-live="polite"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        Cambiar contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ── TAB: Accesos rápidos ───────────────────────────────────── -->
+        <div class="perfil-panel" id="tab-accesos">
+            <div class="perfil-section-header">
+                <h2>Accesos rápidos</h2>
+                <p>Navegá directamente a las secciones más importantes.</p>
+            </div>
+            <div class="perfil-accesos-grid">
+                <a href="/coleccion" class="perfil-acceso-card">
+                    <span class="perfil-acceso-icon">🪙</span>
+                    <div>
+                        <div class="perfil-acceso-title">Mi colección</div>
+                        <div class="perfil-acceso-desc">{{ total_monedas }} monedas registradas</div>
+                    </div>
+                </a>
+                <a href="/coleccion/agregar" class="perfil-acceso-card">
+                    <span class="perfil-acceso-icon">➕</span>
+                    <div>
+                        <div class="perfil-acceso-title">Agregar moneda</div>
+                        <div class="perfil-acceso-desc">Registrá una nueva pieza</div>
+                    </div>
+                </a>
+                <a href="/mercado/mis-publicaciones" class="perfil-acceso-card">
+                    <span class="perfil-acceso-icon">🏷</span>
+                    <div>
+                        <div class="perfil-acceso-title">Mis anuncios</div>
+                        <div class="perfil-acceso-desc">{{ total_anuncios }} publicaciones ({{ anuncios_activos }} activos)</div>
+                    </div>
+                </a>
+                <a href="/mercado/publicar" class="perfil-acceso-card">
+                    <span class="perfil-acceso-icon">📢</span>
+                    <div>
+                        <div class="perfil-acceso-title">Publicar en el mercado</div>
+                        <div class="perfil-acceso-desc">Vendé o intercambiá monedas</div>
+                    </div>
+                </a>
+                <a href="/mercado" class="perfil-acceso-card">
+                    <span class="perfil-acceso-icon">🔍</span>
+                    <div>
+                        <div class="perfil-acceso-title">Explorar mercado</div>
+                        <div class="perfil-acceso-desc">Buscá monedas de otros coleccionistas</div>
+                    </div>
+                </a>
+                <a href="/auth/logout" class="perfil-acceso-card perfil-acceso-danger">
+                    <span class="perfil-acceso-icon">🚪</span>
+                    <div>
+                        <div class="perfil-acceso-title">Cerrar sesión</div>
+                        <div class="perfil-acceso-desc">Salir de tu cuenta</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Tabs ──────────────────────────────────────────────────────
+(function () {
+    const tabs   = document.querySelectorAll('.perfil-tab');
+    const panels = document.querySelectorAll('.perfil-panel');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const id = tab.dataset.tab;
+            tabs.forEach(t => t.classList.remove('perfil-tab-active'));
+            panels.forEach(p => p.classList.remove('perfil-panel-active'));
+            tab.classList.add('perfil-tab-active');
+            document.getElementById('tab-' + id)?.classList.add('perfil-panel-active');
+        });
+    });
+})();
+
+// ── Preview avatar ────────────────────────────────────────────
+document.getElementById('avatar')?.addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const wrap = document.getElementById('avatarPreview');
+        wrap.innerHTML = `<img src="${e.target.result}" alt="Avatar" id="avatarImg">`;
+    };
+    reader.readAsDataURL(file);
+});
+
+// ── Contador bio ──────────────────────────────────────────────
+document.getElementById('bio')?.addEventListener('input', function () {
+    document.getElementById('bioCount').textContent = this.value.length;
+});
+
+// ── Password strength ─────────────────────────────────────────
+document.getElementById('password_nuevo')?.addEventListener('input', function () {
+    const val = this.value;
+    const bar = document.getElementById('passwordStrength');
+    if (!val) { bar.textContent = ''; bar.className = 'password-strength'; return; }
+    let s = 0;
+    if (val.length >= 8)          s++;
+    if (/[A-Z]/.test(val))        s++;
+    if (/[0-9]/.test(val))        s++;
+    if (/[^A-Za-z0-9]/.test(val)) s++;
+    const labels  = ['', 'Contraseña débil', 'Contraseña regular', 'Contraseña buena', 'Contraseña fuerte'];
+    const classes = ['', 'strength-weak',    'strength-fair',      'strength-good',    'strength-strong'];
+    bar.textContent = labels[s];
+    bar.className   = 'password-strength ' + classes[s];
+    checkMatch();
+});
+
+// ── Password match ────────────────────────────────────────────
+function checkMatch() {
+    const nvo = document.getElementById('password_nuevo')?.value;
+    const cnf = document.getElementById('password_confirmar')?.value;
+    const el  = document.getElementById('passwordMatch');
+    if (!el || !cnf) return;
+    if (nvo === cnf) {
+        el.textContent = 'Las contraseñas coinciden';
+        el.className   = 'password-match match-ok';
+    } else {
+        el.textContent = 'Las contraseñas no coinciden';
+        el.className   = 'password-match match-error';
+    }
+}
+document.getElementById('password_confirmar')?.addEventListener('input', checkMatch);
+
+// ── Auto-cerrar alertas ───────────────────────────────────────
+['flashOk','flashPw'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) setTimeout(() => el.style.opacity = '0', 4000);
+});
+</script>
+{% endblock %}

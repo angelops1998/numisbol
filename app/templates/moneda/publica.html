@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}{{ coin.name }} — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/coleccion.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb">
+                        <a href="/">NumisBol</a> / Moneda pública
+                    </p>
+                    <h1 class="page-title" style="font-size:clamp(1.6rem,4vw,2.8rem);letter-spacing:-.5px">{{ coin.name }}</h1>
+                    {% if coin.denomination %}<p class="page-subtitle" style="font-size:1.1rem">{{ coin.denomination }}{% if coin.currency_unit %} · {{ coin.currency_unit }}{% endif %}</p>{% endif %}
+                </div>
+                {% if user %}
+                <a href="/coleccion" class="btn btn-outline">← Mi colección</a>
+                {% else %}
+                <a href="/auth/login" class="btn btn-primary">Iniciar sesión</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="detail-layout">
+
+            <!-- Imágenes -->
+            {% set imgs = [] %}
+            {% if coin.image_url %}{% set imgs = imgs + [{'src': coin.image_url, 'label': 'Anverso'}] %}{% endif %}
+            {% if coin.image_back_url %}{% set imgs = imgs + [{'src': coin.image_back_url, 'label': 'Reverso'}] %}{% endif %}
+
+            <div class="coin-carousel" id="coinCarousel">
+                {% if imgs %}
+                <div class="coin-carousel-track" id="coinCarouselTrack">
+                    {% for im in imgs %}
+                    <div class="coin-carousel-slide coin-lb-trigger" data-src="{{ im.src }}" data-index="{{ loop.index0 }}" style="cursor:zoom-in">
+                        <img src="{{ im.src }}" alt="{{ im.label }} de {{ coin.name }}">
+                        <span class="detail-img-label">{{ im.label }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if imgs | length > 1 %}
+                <button class="coin-car-arrow coin-car-prev" id="coinCarPrev" aria-label="Anterior">&#8249;</button>
+                <button class="coin-car-arrow coin-car-next" id="coinCarNext" aria-label="Siguiente">&#8250;</button>
+                <div class="coin-car-dots" id="coinCarDots">
+                    {% for im in imgs %}
+                    <button class="coin-car-dot {% if loop.first %}coin-car-dot-active{% endif %}" data-idx="{{ loop.index0 }}"></button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="detail-img-placeholder">
+                    <span>🪙</span>
+                    <p>Sin fotografía</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Datos -->
+            <div class="detail-info">
+
+                {% if coin.condition %}
+                <div class="detail-condition" style="margin-bottom:1.25rem;padding:.6rem 1rem;background:var(--surface);border-radius:var(--radius);font-weight:600;font-size:var(--font-sm)">
+                    {{ coin.condition.split(' → ')[0] }}
+                    {% if ' → ' in coin.condition %}
+                    <span style="color:var(--text-muted);font-weight:400"> · {{ coin.condition.split(' → ')[1] }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="detail-fields">
+                    {% macro field(label, value) %}
+                    {% if value %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">{{ label }}</span>
+                        <span class="detail-field-value">{{ value }}</span>
+                    </div>
+                    {% endif %}
+                    {% endmacro %}
+
+                    {{ field("Año", coin.year) }}
+                    {{ field("País", coin.country) }}
+                    {{ field("Ceca", coin.mint) }}
+                    {{ field("Ensayador", coin.assayer) }}
+                    {{ field("Material", coin.material) }}
+                    {{ field("Categoría", coin.category) }}
+                    {{ field("Cantidad", coin.quantity if coin.quantity and coin.quantity > 1 else None) }}
+                </div>
+
+                {% if coin.description %}
+                <div class="detail-description" style="margin-top:1.5rem">
+                    <h3>Descripción</h3>
+                    <p>{{ coin.description }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Compartir -->
+                <div class="share-box" style="margin-top:2rem">
+                    <p class="share-box-label">Compartir esta moneda</p>
+                    <div class="share-btns">
+                        <button class="btn btn-outline share-copy-btn" id="shareCopyBtn" data-url="{{ request.url }}">
+                            📋 Copiar enlace
+                        </button>
+                        <a class="btn btn-whatsapp" target="_blank" rel="noopener"
+                           href="https://wa.me/?text={{ (coin.name ~ ' — NumisBol: ' ~ request.url) | urlencode }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            WhatsApp
+                        </a>
+                    </div>
+                    <p class="share-copy-feedback" id="shareCopyFeedback" style="display:none;color:var(--success,#22c55e);font-size:var(--font-sm);margin-top:.5rem">¡Enlace copiado!</p>
+                </div>
+
+                <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:var(--font-xs);color:var(--text-muted)">
+                    Publicado en <a href="/" style="color:var(--accent)">NumisBol</a> — La comunidad numismática de Bolivia
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if coin.image_url or coin.image_back_url %}
+<div class="anuncio-lightbox" id="coinLb" role="dialog" aria-modal="true">
+    <button class="lightbox-close" id="coinLbClose" title="Cerrar">✕</button>
+    <button class="lightbox-prev" id="coinLbPrev">&#8249;</button>
+    <button class="lightbox-next" id="coinLbNext">&#8250;</button>
+    <div class="lb-content">
+        <div class="lightbox-img-wrap" id="coinLbWrap">
+            <img src="" alt="" id="coinLbImg" draggable="false">
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('shareCopyBtn')?.addEventListener('click', function(){
+    navigator.clipboard.writeText(this.dataset.url).then(function(){
+        var fb = document.getElementById('shareCopyFeedback');
+        fb.style.display = 'block';
+        setTimeout(function(){ fb.style.display = 'none'; }, 2500);
+    });
+});
+</script>
+{% if coin.image_url or coin.image_back_url %}
+<script>
+(function(){
+    const slides = Array.from(document.querySelectorAll('.coin-carousel-slide'));
+    const track  = document.getElementById('coinCarouselTrack');
+    const dotsEl = Array.from(document.querySelectorAll('.coin-car-dot'));
+    let cur = 0;
+    function goTo(i){ cur=(i+slides.length)%slides.length; track.style.transform=`translateX(-${cur*100}%)`; dotsEl.forEach((d,j)=>d.classList.toggle('coin-car-dot-active',j===cur)); }
+    document.getElementById('coinCarPrev')?.addEventListener('click',e=>{e.stopPropagation();goTo(cur-1);});
+    document.getElementById('coinCarNext')?.addEventListener('click',e=>{e.stopPropagation();goTo(cur+1);});
+    dotsEl.forEach(d=>d.addEventListener('click',()=>goTo(+d.dataset.idx)));
+
+    const lb=document.getElementById('coinLb'), wrap=document.getElementById('coinLbWrap'), img=document.getElementById('coinLbImg');
+    function open(i){ cur=i; img.src=slides[i].dataset.src; lb.classList.add('lb-open'); document.body.style.overflow='hidden'; }
+    function close(){ lb.classList.remove('lb-open'); document.body.style.overflow=''; }
+    slides.forEach((el,i)=>el.addEventListener('click',()=>open(i)));
+    document.getElementById('coinLbClose').addEventListener('click',close);
+    lb.addEventListener('click',e=>{if(e.target===lb)close();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+})();
+</script>
+{% endif %}
+{% endblock %}

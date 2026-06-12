@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip --version)",
+      "Bash(pip install *)",
+      "Bash(python -c \"from app.main import app; print\\('OK — app cargó correctamente'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import jinja2; print\\('Jinja2 version:', jinja2.__version__\\)\")",
+      "Skill(code-review)",
+      "Skill(code-review:*)",
+      "Bash(find /mnt/c/ctf -type f | sort)",
+      "PowerShell(Get-ChildItem -Recurse C:\\\\ctf | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty FullName)",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\angel\\\\Downloads\\\\imagenes shining\\\\the shining 3.jpg.png\" \"C:\\\\ctf\\\\targets\\\\target1\\\\www\\\\overlook.png\")",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\angel\\\\Downloads\\\\imagenes shining\\\\the shining 2.jpg.png\" \"C:\\\\ctf\\\\scoreboard\\\\static\\\\carpet.png\")",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\angel\\\\Downloads\\\\imagenes shining\\\\the shining.jpg\"       \"C:\\\\ctf\\\\targets\\\\target7\\\\webapps\\\\ROOT\\\\danny.jpg\")",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\angel\\\\Downloads\\\\imagenes shining\\\\the shining 1.jpg\"     \"C:\\\\ctf\\\\targets\\\\target3\\\\shares\\\\goldroom\\\\jack.jpg\")",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\angel\\\\Downloads\\\\imagenes shining\\\\the shining 4.jpg.png\" \"C:\\\\ctf\\\\targets\\\\target4\\\\www\\\\wendy.png\")",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\angel\\\\Downloads\\\\imagenes shining\\\\the shining 5.jpg.png\" \"C:\\\\ctf\\\\targets\\\\target10\\\\www\\\\heresjohnny.png\")",
+      "Bash(pip show *)",
+      "Bash(python3 -c \"from reportlab.lib.pagesizes import A4; print\\('reportlab ok'\\)\")",
+      "Bash(pip3 install *)",
+      "Bash(python3 build_walkthrough.py)",
+      "PowerShell(\\(Get-Item C:\\\\ctf\\\\shining-ctf-walkthrough.pdf\\).Length / 1KB)",
+      "Bash(grep -c \"^wendy$\" /usr/share/wordlists/rockyou.txt 2>/dev/null || echo \"file not found\")",
+      "Bash(find / -name \"rockyou.txt\" 2>/dev/null | head -3)",
+      "Bash(python -c \"from app.database import engine; engine.execute\\('CREATE EXTENSION IF NOT EXISTS pg_trgm;'\\)\")",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(python -c \"from app.database import engine; from sqlalchemy import text; result = engine.execute\\(text\\('SELECT column_name FROM information_schema.columns WHERE table_name=\\\\'coins\\\\' ORDER BY ordinal_position'\\)\\); [print\\(r[0]\\) for r in result]\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(python -c \"from app.database import engine; from sqlalchemy import text; engine.execute\\(text\\(\\\\\"ALTER TABLE coins ADD COLUMN IF NOT EXISTS tipo VARCHAR\\(20\\) NOT NULL DEFAULT 'moneda'\\\\\"\\)\\)\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\monedas\" -Recurse -Include \"*.py\", \"*.html\")",
+      "Bash(Select-Object FullName)",
+      "mcp__visualize__read_me",
+      "mcp__Claude_in_Chrome__navigate",
+      "Bash(python -c \"from app.routers.mercado import router\")",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)"
+    ]
+  }
+}

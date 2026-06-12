@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block title %}Mi Colección — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/coleccion.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <!-- Encabezado de página -->
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Mi Colección</h1>
+                    <p class="page-subtitle">
+                        {{ total }} moneda{{ 's' if total != 1 else '' }} en tu colección
+                        {% if total_filtrado != total %} &nbsp;·&nbsp; {{ total_filtrado }} resultado{{ 's' if total_filtrado != 1 else '' }}{% endif %}
+                    </p>
+                </div>
+                <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                    <a href="/coleccion/estadisticas" class="btn btn-outline">📊 Estadísticas</a>
+                    <a href="/coleccion/paises" class="btn btn-outline">🌍 Países</a>
+                    <a href="/coleccion/agregar" class="btn btn-primary btn-lg">+ Agregar moneda/billete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Botón toggle filtros (solo mobile) -->
+        <button class="filters-toggle-btn" id="filtersToggle" aria-expanded="false">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/></svg>
+            Filtros
+            {% if filters.q or filters.categoria or filters.condicion or filters.material or filters.anio_desde or filters.anio_hasta %}
+            <span class="filters-active-dot"></span>
+            {% endif %}
+        </button>
+        <div class="filters-backdrop" id="filtersBackdrop"></div>
+
+        <div class="collection-layout">
+
+            <!-- Panel de filtros -->
+            <aside class="filters-panel" id="filtersPanel">
+                <form method="get" action="/coleccion" id="filterForm">
+                    <div class="filters-header">
+                        <span class="filters-title">Filtros</span>
+                        <div style="display:flex;align-items:center;gap:.75rem;">
+                            <a href="/coleccion" class="filters-clear">Limpiar</a>
+                            <button type="button" class="filters-close-btn" id="filtersClose" aria-label="Cerrar filtros">✕</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Buscar</label>
+                        <input type="search" name="q" value="{{ filters.q }}"
+                            placeholder="Nombre, ceca, país, material..."
+                            class="filter-input">
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Categoría</label>
+                        <div class="searchable-select" data-name="categoria">
+                            <input type="hidden" name="categoria" value="{{ filters.categoria }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value {% if not filters.categoria %}placeholder{% endif %}">
+                                    {{ filters.categoria if filters.categoria else 'Todas' }}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <div class="ss-search-wrap">
+                                    <input type="text" class="ss-search" placeholder="Buscar categoría...">
+                                </div>
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.categoria %}ss-selected{% endif %}" data-value="">Todas</li>
+                                    {% for cat in categories %}
+                                    <li class="ss-option {% if filters.categoria == cat %}ss-selected{% endif %}" data-value="{{ cat }}">{{ cat }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Estado de conservación</label>
+                        <div class="searchable-select" data-name="condicion">
+                            <input type="hidden" name="condicion" value="{{ filters.condicion }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value {% if not filters.condicion %}placeholder{% endif %}">
+                                    {{ filters.condicion.split(' → ')[0] if filters.condicion else 'Todos' }}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <div class="ss-search-wrap">
+                                    <input type="text" class="ss-search" placeholder="Buscar estado...">
+                                </div>
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.condicion %}ss-selected{% endif %}" data-value="">Todos</li>
+                                    {% for cond in conditions %}
+                                    <li class="ss-option {% if filters.condicion == cond %}ss-selected{% endif %}" data-value="{{ cond }}" data-label="{{ cond.split(' → ')[0] }}">
+                                        {{ cond.split(' → ')[0] }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Material</label>
+                        <div class="searchable-select" data-name="material">
+                            <input type="hidden" name="material" value="{{ filters.material }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value {% if not filters.material %}placeholder{% endif %}">
+                                    {{ filters.material if filters.material else 'Todos' }}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <div class="ss-search-wrap">
+                                    <input type="text" class="ss-search" placeholder="Buscar material...">
+                                </div>
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.material %}ss-selected{% endif %}" data-value="">Todos</li>
+                                    {% for mat in materials %}
+                                    <li class="ss-option {% if filters.material == mat %}ss-selected{% endif %}" data-value="{{ mat }}">{{ mat }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Año (desde — hasta)</label>
+                        <div class="filter-row">
+                            <input type="number" name="anio_desde" value="{{ filters.anio_desde }}"
+                                placeholder="1800" min="1" max="2100" class="filter-input filter-half">
+                            <input type="number" name="anio_hasta" value="{{ filters.anio_hasta }}"
+                                placeholder="2025" min="1" max="2100" class="filter-input filter-half">
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Ordenar por</label>
+                        <div class="searchable-select ss-dropup" data-name="orden">
+                            <input type="hidden" name="orden" value="{{ filters.orden or 'reciente' }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value">
+                                    {% if filters.orden == 'nombre' %}Nombre A–Z
+                                    {% elif filters.orden == 'anio_desc' %}Año más nuevo
+                                    {% elif filters.orden == 'anio_asc' %}Año más antiguo
+                                    {% elif filters.orden == 'valor' %}Mayor valor
+                                    {% else %}Más reciente{% endif %}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.orden or filters.orden == 'reciente' %}ss-selected{% endif %}" data-value="reciente">Más reciente</li>
+                                    <li class="ss-option {% if filters.orden == 'nombre' %}ss-selected{% endif %}" data-value="nombre">Nombre A–Z</li>
+                                    <li class="ss-option {% if filters.orden == 'anio_desc' %}ss-selected{% endif %}" data-value="anio_desc">Año más nuevo</li>
+                                    <li class="ss-option {% if filters.orden == 'anio_asc' %}ss-selected{% endif %}" data-value="anio_asc">Año más antiguo</li>
+                                    <li class="ss-option {% if filters.orden == 'valor' %}ss-selected{% endif %}" data-value="valor">Mayor valor</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">Aplicar filtros</button>
+                </form>
+            </aside>
+
+            <!-- Grilla de monedas -->
+            <main class="coins-area">
+                {% if coins %}
+                <div class="coins-grid">
+                    {% for coin in coins %}
+                    <a href="/coleccion/{{ coin.id }}" class="coin-item">
+                        <div class="coin-item-img">
+                            {% if coin.image_url %}
+                                <img src="{{ coin.image_url }}" alt="{{ coin.name }}" loading="lazy">
+                            {% else %}
+                                <div class="coin-item-no-img">🪙</div>
+                            {% endif %}
+                        </div>
+                        <div class="coin-item-body">
+                            <div class="coin-item-name">{{ coin.name }}</div>
+                            <div class="coin-item-meta">
+                                {% if coin.year %}{{ coin.year }}{% endif %}
+                                {% if coin.year and coin.country %} · {% endif %}
+                                {% if coin.country %}{{ coin.country }}{% endif %}
+                            </div>
+                            {% if coin.material %}
+                            <div class="coin-item-material">{{ coin.material }}</div>
+                            {% endif %}
+                            {% if coin.condition %}
+                            {% set cond_parts = coin.condition.split(' – ') %}
+                            {% set cond_num = cond_parts[0] | int(default=0) %}
+                            <span class="coin-condition-badge {% if cond_num >= 60 %}cond-mint{% elif cond_num >= 40 %}cond-au{% elif cond_num >= 20 %}cond-vf{% else %}cond-circ{% endif %}">
+                                {{ cond_parts[0] }} – {{ cond_parts[1].split(' → ')[0] if cond_parts|length > 1 else '' }}
+                            </span>
+                            {% endif %}
+                            {% if coin.estimated_value %}
+                            <div class="coin-item-value">{{ coin.value_currency or 'BOB' }} {{ "%.2f"|format(coin.estimated_value) }}</div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+
+                {% if total_paginas > 1 %}
+                {% set base = '/coleccion?' ~ ('q=' ~ filters.q ~ '&' if filters.q) ~ ('categoria=' ~ filters.categoria ~ '&' if filters.categoria) ~ ('condicion=' ~ filters.condicion ~ '&' if filters.condicion) ~ ('material=' ~ filters.material ~ '&' if filters.material) ~ ('anio_desde=' ~ filters.anio_desde ~ '&' if filters.anio_desde) ~ ('anio_hasta=' ~ filters.anio_hasta ~ '&' if filters.anio_hasta) ~ ('orden=' ~ filters.orden ~ '&' if filters.orden) %}
+                <div class="pagination">
+                    {% if pagina > 1 %}
+                    <a href="{{ base }}pagina={{ pagina - 1 }}" class="pag-btn">← Anterior</a>
+                    {% else %}
+                    <span class="pag-btn pag-disabled">← Anterior</span>
+                    {% endif %}
+
+                    {% for p in range(1, total_paginas + 1) %}
+                        {% if p == pagina %}
+                        <span class="pag-btn pag-active">{{ p }}</span>
+                        {% elif p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+                        <a href="{{ base }}pagina={{ p }}" class="pag-btn">{{ p }}</a>
+                        {% elif p == pagina - 3 or p == pagina + 3 %}
+                        <span class="pag-btn pag-ellipsis">…</span>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagina < total_paginas %}
+                    <a href="{{ base }}pagina={{ pagina + 1 }}" class="pag-btn">Siguiente →</a>
+                    {% else %}
+                    <span class="pag-btn pag-disabled">Siguiente →</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    {% if filters.q or filters.categoria or filters.condicion or filters.material %}
+                        <h3>Sin resultados</h3>
+                        <p>No se encontraron monedas con esos filtros.<br>Intentá con otros criterios.</p>
+                        <a href="/coleccion" class="btn btn-outline">Limpiar filtros</a>
+                    {% else %}
+                        <h3>Tu colección está vacía</h3>
+                        <p>Comenzá agregando tu primera moneda.</p>
+                        <a href="/coleccion/agregar" class="btn btn-primary btn-lg">+ Agregar primera moneda</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </main>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Searchable-select en filtros ──────────────────────────
+function norm(s) { return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+document.querySelectorAll('#filtersPanel .searchable-select').forEach(function(ss) {
+    var display  = ss.querySelector('.ss-display');
+    var valueEl  = ss.querySelector('.ss-value');
+    var search   = ss.querySelector('.ss-search');
+    var options  = ss.querySelectorAll('.ss-option');
+    var hidden   = ss.querySelector('input[type=hidden]');
+
+    if (!display) return;
+
+    display.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var wasOpen = ss.classList.contains('open');
+        document.querySelectorAll('.searchable-select').forEach(function(s){ s.classList.remove('open'); });
+        if (!wasOpen) {
+            ss.classList.add('open');
+            if (search) { search.value = ''; setTimeout(function(){ search.focus(); }, 50); }
+            options.forEach(function(o){ o.classList.remove('ss-hidden'); });
+        }
+    });
+
+    if (search) {
+        search.addEventListener('input', function() {
+            var term = norm(this.value);
+            options.forEach(function(opt){
+                opt.classList.toggle('ss-hidden', !norm(opt.textContent).includes(term));
+            });
+        });
+        search.addEventListener('click', function(e){ e.stopPropagation(); });
+    }
+
+    options.forEach(function(opt) {
+        opt.addEventListener('click', function(e) {
+            e.stopPropagation();
+            options.forEach(function(o){ o.classList.remove('ss-selected'); });
+            opt.classList.add('ss-selected');
+            hidden.value = opt.dataset.value;
+            var label = opt.dataset.label || opt.textContent.trim();
+            valueEl.textContent = label;
+            valueEl.classList.toggle('placeholder', !opt.dataset.value);
+            ss.classList.remove('open');
+        });
+    });
+});
+
+document.addEventListener('click', function() {
+    document.querySelectorAll('.searchable-select').forEach(function(s){ s.classList.remove('open'); });
+});
+
+// ── Toggle panel filtros (mobile) ─────────────────────────
+(function(){
+    var btn      = document.getElementById('filtersToggle');
+    var panel    = document.getElementById('filtersPanel');
+    var backdrop = document.getElementById('filtersBackdrop');
+    if (!btn || !panel) return;
+
+    function openPanel() {
+        panel.classList.add('filters-panel--open');
+        if (backdrop) backdrop.classList.add('filters-backdrop--open');
+        btn.setAttribute('aria-expanded', 'true');
+    }
+    function closePanel() {
+        panel.classList.remove('filters-panel--open');
+        if (backdrop) backdrop.classList.remove('filters-backdrop--open');
+        btn.setAttribute('aria-expanded', 'false');
+        document.querySelectorAll('.searchable-select').forEach(function(s){ s.classList.remove('open'); });
+    }
+
+    btn.addEventListener('click', function(){
+        panel.classList.contains('filters-panel--open') ? closePanel() : openPanel();
+    });
+    var closeBtn = document.getElementById('filtersClose');
+    if (closeBtn) closeBtn.addEventListener('click', closePanel);
+    if (backdrop) backdrop.addEventListener('click', closePanel);
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePanel(); });
+})();
+</script>
+{% endblock %}

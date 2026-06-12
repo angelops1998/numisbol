@@ -1,0 +1,317 @@
+/* ============================================================
+   NumisBol — Mi Perfil
+   ============================================================ */
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.perfil-hero {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 0 2rem;
+    margin-bottom: 2rem;
+}
+.perfil-hero-inner {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 2rem;
+    align-items: center;
+}
+
+/* Avatar hero */
+.perfil-avatar-wrap {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--border-light);
+    background: var(--bg-2);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.perfil-avatar-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+.perfil-avatar-placeholder {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    line-height: 1;
+    user-select: none;
+}
+
+/* Info hero */
+.perfil-hero-name {
+    font-size: var(--font-2xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: .2rem;
+}
+.perfil-hero-user {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    margin-bottom: .5rem;
+}
+.perfil-hero-bio {
+    font-size: var(--font-sm);
+    color: var(--text-body);
+    margin-bottom: .65rem;
+    max-width: 520px;
+    line-height: 1.5;
+}
+.perfil-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: var(--font-xs);
+    color: var(--text-dim);
+}
+
+/* Stats hero */
+.perfil-hero-stats {
+    display: flex;
+    gap: 1.5rem;
+    flex-shrink: 0;
+}
+.perfil-stat {
+    text-align: center;
+    min-width: 64px;
+}
+.perfil-stat-num {
+    display: block;
+    font-size: var(--font-2xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+.perfil-stat-label {
+    font-size: var(--font-xs);
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-top: .2rem;
+    display: block;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────── */
+.perfil-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.perfil-tabs::-webkit-scrollbar { display: none; }
+.perfil-tab {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    padding: .75rem 1.4rem;
+    font-size: var(--font-base);
+    font-family: inherit;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color var(--transition), border-color var(--transition);
+    white-space: nowrap;
+    font-weight: 500;
+}
+.perfil-tab:hover { color: var(--text-primary); }
+.perfil-tab-active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-dim);
+    font-weight: 700;
+}
+
+/* ── Paneles ──────────────────────────────────────────────────── */
+.perfil-panel { display: none; padding-bottom: 3.5rem; }
+.perfil-panel-active { display: block; }
+
+/* ── Encabezado de sección ───────────────────────────────────── */
+.perfil-section-header {
+    margin-bottom: 1.75rem;
+}
+.perfil-section-header h2 {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: .25rem;
+}
+.perfil-section-header p {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+}
+
+/* ── Formulario perfil ───────────────────────────────────────── */
+.perfil-form-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 2.5rem;
+    align-items: start;
+}
+.perfil-form-narrow { max-width: 480px; padding-bottom: 3rem; }
+
+/* Columna avatar */
+.perfil-avatar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .75rem;
+    text-align: center;
+}
+.perfil-avatar-preview {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--border-light);
+    background: var(--bg-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.perfil-avatar-preview img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+.perfil-avatar-placeholder-lg {
+    font-size: 3rem;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.perfil-avatar-btn {
+    cursor: pointer;
+    font-size: var(--font-sm);
+}
+.perfil-avatar-hint {
+    font-size: var(--font-xs);
+    color: var(--text-dim);
+}
+
+/* input deshabilitado */
+.input-disabled {
+    background: var(--bg-2) !important;
+    color: var(--text-dim) !important;
+    cursor: not-allowed;
+    opacity: .75;
+}
+
+/* acciones del formulario */
+.form-actions {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 1rem;
+}
+
+/* ── Accesos rápidos ──────────────────────────────────────────── */
+.perfil-accesos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: .5rem;
+}
+.perfil-acceso-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.4rem;
+    text-decoration: none;
+    transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    color: inherit;
+}
+.perfil-acceso-card:hover {
+    border-color: var(--border-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    color: inherit;
+}
+.perfil-acceso-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.perfil-acceso-title {
+    font-size: var(--font-base);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: .15rem;
+}
+.perfil-acceso-desc {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+}
+.perfil-acceso-danger {
+    border-color: rgba(127,40,40,.4);
+}
+.perfil-acceso-danger:hover {
+    border-color: #7D2E2E;
+    box-shadow: 0 4px 20px rgba(127,40,40,.25);
+}
+.perfil-acceso-danger .perfil-acceso-title {
+    color: var(--error-text);
+}
+
+/* ── Utilidades ───────────────────────────────────────────────── */
+.visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 860px) {
+    .perfil-hero-inner {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+    }
+    .perfil-hero-stats {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+        padding-top: .75rem;
+        border-top: 1px solid var(--border);
+        gap: 1.25rem;
+    }
+    .perfil-form-grid { grid-template-columns: 1fr; }
+    .perfil-avatar-col {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+    }
+    .perfil-avatar-preview { width: 90px; height: 90px; flex-shrink: 0; }
+    .perfil-accesos-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 580px) {
+    /* Hero perfil apilado */
+    .perfil-hero { padding: 1.75rem 0 1.5rem; }
+    .perfil-hero-inner { grid-template-columns: 1fr; text-align: center; gap: .75rem; }
+    .perfil-avatar-wrap { margin: 0 auto; width: 80px; height: 80px; }
+    .perfil-hero-name { font-size: var(--font-xl); }
+    .perfil-hero-meta { justify-content: center; }
+    .perfil-hero-stats { justify-content: center; }
+
+    /* Tabs scrollables */
+    .perfil-tab { padding: .65rem 1rem; font-size: var(--font-sm); }
+
+    /* Accesos: 1 columna en móvil pequeño */
+    .perfil-accesos-grid { grid-template-columns: 1fr; }
+
+    /* Formulario estrecho ocupa todo */
+    .perfil-form-narrow { max-width: 100%; }
+
+    /* Avatar col en mobile: centrado vertical */
+    .perfil-avatar-col { flex-direction: column; align-items: center; text-align: center; }
+    .perfil-avatar-preview { width: 110px; height: 110px; }
+}

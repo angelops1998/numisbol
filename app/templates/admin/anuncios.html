@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Anuncios — Admin NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/perfil.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb"><a href="/">Inicio</a> / Admin / Anuncios</p>
+                    <h1 class="page-title">Gestión de anuncios</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width:900px">
+
+        {% if request.query_params.get('ok') %}
+        <div class="alert alert-success" style="margin-bottom:1.5rem">
+            <span class="alert-icon">✓</span> Anuncio publicado correctamente.
+        </div>
+        {% endif %}
+        {% if error %}
+        <div class="alert alert-error" style="margin-bottom:1.5rem">
+            <span class="alert-icon">⚠</span> {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Formulario nuevo anuncio -->
+        <div class="admin-card" style="margin-bottom:2rem">
+            <h2 class="admin-card-title">Subir nuevo flyer / anuncio</h2>
+            <form method="post" action="/admin/anuncios/crear"
+                  enctype="multipart/form-data" class="admin-form" novalidate>
+
+                <div class="form-group">
+                    <label for="titulo">Título del evento</label>
+                    <input type="text" id="titulo" name="titulo"
+                           placeholder="Día de Museos — Oruro 2026">
+                </div>
+
+                <div class="form-group">
+                    <label for="descripcion">
+                        Descripción breve
+                        <span class="optional">(opcional)</span>
+                    </label>
+                    <textarea id="descripcion" name="descripcion" rows="2"
+                              placeholder="Fecha, lugar y detalles del evento..."></textarea>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 120px;gap:1rem">
+                    <div class="form-group" style="margin:0">
+                        <label for="imagen">Imagen del flyer</label>
+                        <input type="file" id="imagen" name="imagen"
+                               accept="image/*" required
+                               style="background:var(--bg-input);border:1px solid var(--border-light);
+                                      border-radius:var(--radius);padding:.65rem 1rem;
+                                      color:var(--text-muted);width:100%;font-family:inherit;
+                                      font-size:var(--font-sm)">
+                        <small>JPG, PNG o WebP. Se recomienda formato vertical (flyer).</small>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label for="orden">Orden</label>
+                        <input type="number" id="orden" name="orden" value="0" min="0"
+                               title="Menor número = aparece primero">
+                        <small>0 = primero</small>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="border:none;padding-top:.75rem;margin-top:.5rem">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        Publicar anuncio
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de anuncios existentes -->
+        <h2 class="admin-card-title" style="margin-bottom:1rem">
+            Anuncios publicados ({{ anuncios | length }})
+        </h2>
+
+        {% if anuncios %}
+        <div class="admin-anuncios-list">
+            {% for a in anuncios %}
+            <div class="admin-anuncio-row {% if not a.activo %}admin-anuncio-inactivo{% endif %}">
+                <div class="admin-anuncio-thumb">
+                    <img src="{{ a.imagen_url }}" alt="{{ a.titulo }}">
+                </div>
+                <div class="admin-anuncio-info">
+                    <div class="admin-anuncio-titulo">{{ a.titulo }}</div>
+                    {% if a.descripcion %}
+                    <div class="admin-anuncio-desc">{{ a.descripcion }}</div>
+                    {% endif %}
+                    <div class="admin-anuncio-meta">
+                        Orden: {{ a.orden }} &nbsp;·&nbsp;
+                        {{ a.created_at.strftime("%d/%m/%Y") }}
+                        {% if not a.activo %}
+                        &nbsp;·&nbsp; <span style="color:var(--error-text)">Oculto</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="admin-anuncio-actions">
+                    <form method="post" action="/admin/anuncios/{{ a.id }}/toggle">
+                        <button type="submit" class="btn btn-outline btn-sm"
+                                title="{{ 'Mostrar' if not a.activo else 'Ocultar' }}">
+                            {{ '👁 Mostrar' if not a.activo else '🙈 Ocultar' }}
+                        </button>
+                    </form>
+                    <form method="post" action="/admin/anuncios/{{ a.id }}/eliminar"
+                          onsubmit="return confirm('¿Eliminar este anuncio?')">
+                        <button type="submit" class="btn btn-danger btn-sm">🗑 Eliminar</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No hay anuncios publicados aún. Subí el primer flyer.</p>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

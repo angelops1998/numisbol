@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% block title %}{{ coin.name }} — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/coleccion.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb">
+                        <a href="/coleccion">Mi Colección</a> /
+                        {{ coin.name }}
+                    </p>
+                    <h1 class="page-title" style="font-size:clamp(1.6rem,4vw,2.8rem);letter-spacing:-.5px">{{ coin.name }}</h1>
+                    {% if coin.denomination %}<p class="page-subtitle" style="font-size:1.1rem">{{ coin.denomination }}{% if coin.currency_unit %} · {{ coin.currency_unit }}{% endif %}</p>{% endif %}
+                </div>
+                <a href="/coleccion" class="btn btn-outline">← Volver a mi colección</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="detail-layout">
+
+            <!-- Carrusel de imágenes -->
+            {% set imgs = [] %}
+            {% if coin.image_url %}{% set imgs = imgs + [{'src': coin.image_url, 'label': 'Anverso'}] %}{% endif %}
+            {% if coin.image_back_url %}{% set imgs = imgs + [{'src': coin.image_back_url, 'label': 'Reverso'}] %}{% endif %}
+
+            <div class="coin-carousel" id="coinCarousel">
+                {% if imgs %}
+                <div class="coin-carousel-track" id="coinCarouselTrack">
+                    {% for im in imgs %}
+                    <div class="coin-carousel-slide coin-lb-trigger" data-src="{{ im.src }}" data-index="{{ loop.index0 }}" style="cursor:zoom-in">
+                        <img src="{{ im.src }}" alt="{{ im.label }} de {{ coin.name }}">
+                        <span class="detail-img-label">{{ im.label }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if imgs | length > 1 %}
+                <button class="coin-car-arrow coin-car-prev" id="coinCarPrev" aria-label="Anterior">&#8249;</button>
+                <button class="coin-car-arrow coin-car-next" id="coinCarNext" aria-label="Siguiente">&#8250;</button>
+                <div class="coin-car-dots" id="coinCarDots">
+                    {% for im in imgs %}
+                    <button class="coin-car-dot {% if loop.first %}coin-car-dot-active{% endif %}" data-idx="{{ loop.index0 }}"></button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="detail-img-placeholder">
+                    <span>🪙</span>
+                    <p>Sin fotografía</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Datos -->
+            <div class="detail-info">
+
+                {% if coin.condition %}
+                <div class="detail-condition" style="margin-bottom:1.25rem;padding:.6rem 1rem;background:var(--surface);border-radius:var(--radius);font-weight:600;font-size:var(--font-sm)">
+                    {{ coin.condition.split(' → ')[0] }}
+                    {% if ' → ' in coin.condition %}
+                    <span style="color:var(--text-muted);font-weight:400"> · {{ coin.condition.split(' → ')[1] }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="detail-fields">
+                    {% macro field(label, value) %}
+                    {% if value %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">{{ label }}</span>
+                        <span class="detail-field-value">{{ value }}</span>
+                    </div>
+                    {% endif %}
+                    {% endmacro %}
+
+                    {{ field("Año", coin.year) }}
+                    {{ field("País", coin.country) }}
+                    {{ field("Ceca", coin.mint) }}
+                    {{ field("Ensayador", coin.assayer) }}
+                    {{ field("Material", coin.material) }}
+                    {{ field("Categoría", coin.category) }}
+                    {{ field("Cantidad", coin.quantity if coin.quantity and coin.quantity > 1 else None) }}
+
+                    {% set cur_sym = 'US$' if coin.value_currency == 'USD' else 'Bs' %}
+                    {% if coin.estimated_value %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">Valor estimado</span>
+                        <span class="detail-field-value detail-value-highlight">
+                            {{ cur_sym }} {{ "%.2f"|format(coin.estimated_value) }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    {% if coin.purchase_price %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">Precio de compra</span>
+                        <span class="detail-field-value">{{ cur_sym }} {{ "%.2f"|format(coin.purchase_price) }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="detail-field">
+                        <span class="detail-field-label">Registrada el</span>
+                        <span class="detail-field-value">{{ coin.created_at.strftime("%d/%m/%Y") }}</span>
+                    </div>
+                </div>
+
+                {% if coin.description %}
+                <div class="detail-description" style="margin-top:1.5rem">
+                    <h3>Descripción</h3>
+                    <p>{{ coin.description }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Visibilidad y compartir -->
+                <div class="share-box">
+                    <div class="share-box-header">
+                        <div>
+                            <p class="share-box-label">Visibilidad</p>
+                            <p class="share-box-desc">
+                                {% if coin.is_public %}
+                                Esta moneda es <strong>pública</strong> — cualquiera con el enlace puede verla.
+                                {% else %}
+                                Esta moneda es <strong>privada</strong> — solo vos la ves.
+                                {% endif %}
+                            </p>
+                        </div>
+                        <form method="post" action="/coleccion/{{ coin.id }}/toggle-publico">
+                            <button type="submit" class="btn {% if coin.is_public %}btn-outline share-toggle-on{% else %}btn-outline{% endif %}">
+                                {% if coin.is_public %}🔓 Pública{% else %}🔒 Privada{% endif %}
+                            </button>
+                        </form>
+                    </div>
+
+                    {% if coin.is_public %}
+                    <div class="share-btns" style="margin-top:1rem">
+                        <button class="btn btn-outline share-copy-btn" id="shareCopyBtn"
+                                data-url="{{ request.url_for('moneda_publica', coin_id=coin.id) }}">
+                            📋 Copiar enlace
+                        </button>
+                        <a class="btn btn-whatsapp" target="_blank" rel="noopener"
+                           href="https://wa.me/?text={{ (coin.name ~ ' — NumisBol: ' ~ request.url_for('moneda_publica', coin_id=coin.id)) | urlencode }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            WhatsApp
+                        </a>
+                    </div>
+                    <p class="share-copy-feedback" id="shareCopyFeedback" style="display:none;color:var(--success,#22c55e);font-size:var(--font-sm);margin-top:.5rem">¡Enlace copiado!</p>
+                    {% endif %}
+                </div>
+
+                <!-- Acciones -->
+                <div class="detail-actions" style="margin-top:1.5rem;gap:1.25rem">
+                    <a href="/coleccion/{{ coin.id }}/editar" class="btn btn-outline" style="flex:1;text-align:center">✏ Editar</a>
+                    <form method="post" action="/coleccion/{{ coin.id }}/eliminar" style="flex:1"
+                          onsubmit="return confirm('¿Está seguro de eliminar esta moneda?')">
+                        <button type="submit" class="btn btn-danger" style="width:100%">🗑 Eliminar</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if coin.image_url or coin.image_back_url %}
+<div class="anuncio-lightbox" id="coinLb" role="dialog" aria-modal="true">
+    <button class="lightbox-close" id="coinLbClose" title="Cerrar">✕</button>
+    <button class="lightbox-prev" id="coinLbPrev">&#8249;</button>
+    <button class="lightbox-next" id="coinLbNext">&#8250;</button>
+    <div class="lb-content">
+        <div class="lightbox-img-wrap" id="coinLbWrap">
+            <img src="" alt="" id="coinLbImg" draggable="false">
+        </div>
+        <div class="lb-zoom-bar">
+            <button class="lb-zoom-btn" id="coinLbZoomOut">−</button>
+            <span class="lb-zoom-label" id="coinLbZoomLabel">100%</span>
+            <button class="lb-zoom-btn" id="coinLbZoomIn">+</button>
+            <button class="lb-zoom-btn lb-zoom-btn-sm" id="coinLbZoomReset">1:1</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('shareCopyBtn')?.addEventListener('click', function(){
+    navigator.clipboard.writeText(this.dataset.url).then(function(){
+        var fb = document.getElementById('shareCopyFeedback');
+        fb.style.display = 'block';
+        setTimeout(function(){ fb.style.display = 'none'; }, 2500);
+    });
+});
+</script>
+{% if coin.image_url or coin.image_back_url %}
+<script>
+(function(){
+    const slides  = Array.from(document.querySelectorAll('.coin-carousel-slide'));
+    const track   = document.getElementById('coinCarouselTrack');
+    const dotsEl  = Array.from(document.querySelectorAll('.coin-car-dot'));
+    let carCur    = 0;
+
+    function carGoTo(i) {
+        carCur = (i + slides.length) % slides.length;
+        track.style.transform = `translateX(-${carCur * 100}%)`;
+        dotsEl.forEach((d, idx) => d.classList.toggle('coin-car-dot-active', idx === carCur));
+    }
+
+    let autoTimer = null;
+    function startAuto() { if (slides.length < 2) return; autoTimer = setInterval(() => carGoTo(carCur + 1), 3500); }
+    function stopAuto()  { clearInterval(autoTimer); }
+
+    document.getElementById('coinCarPrev')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); carGoTo(carCur - 1); startAuto(); });
+    document.getElementById('coinCarNext')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); carGoTo(carCur + 1); startAuto(); });
+    dotsEl.forEach(d => d.addEventListener('click', () => { stopAuto(); carGoTo(+d.dataset.idx); startAuto(); }));
+    startAuto();
+
+    const lb    = document.getElementById('coinLb');
+    const wrap  = document.getElementById('coinLbWrap');
+    const img   = document.getElementById('coinLbImg');
+    const label = document.getElementById('coinLbZoomLabel');
+
+    let cur = 0, scale = 1, ox = 0, oy = 0;
+    let dragging = false, dragStartX = 0, dragStartY = 0, dragOx = 0, dragOy = 0, didDrag = false;
+    const MIN = 1, MAX = 5;
+
+    function clampOffset(s, x, y) {
+        const iw = img.naturalWidth || img.offsetWidth, ih = img.naturalHeight || img.offsetHeight;
+        const maxX = Math.max(0, (iw * s - wrap.offsetWidth) / 2);
+        const maxY = Math.max(0, (ih * s - wrap.offsetHeight) / 2);
+        return { x: Math.max(-maxX, Math.min(maxX, x)), y: Math.max(-maxY, Math.min(maxY, y)) };
+    }
+    function apply(s, x, y) {
+        scale = Math.max(MIN, Math.min(MAX, s));
+        const c = clampOffset(scale, x, y); ox = c.x; oy = c.y;
+        img.style.transform = `translate(${ox}px,${oy}px) scale(${scale})`;
+        label.textContent = Math.round(scale * 100) + '%';
+        wrap.style.cursor = scale > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in';
+    }
+    function reset() { apply(1, 0, 0); }
+    function zoomAt(ns, cx, cy) {
+        const r = img.getBoundingClientRect();
+        apply(ns, ox - (cx - (r.left + r.width/2)) * (ns/scale - 1), oy - (cy - (r.top + r.height/2)) * (ns/scale - 1));
+    }
+    function open(i) {
+        cur = i; stopAuto(); carGoTo(i); reset();
+        img.src = slides[i].dataset.src;
+        lb.classList.add('lb-open'); document.body.style.overflow = 'hidden';
+        const multi = slides.length > 1;
+        document.getElementById('coinLbPrev').style.display = multi ? '' : 'none';
+        document.getElementById('coinLbNext').style.display = multi ? '' : 'none';
+    }
+    function close() { lb.classList.remove('lb-open'); document.body.style.overflow = ''; reset(); }
+    function prev()  { open((cur - 1 + slides.length) % slides.length); }
+    function next()  { open((cur + 1) % slides.length); }
+
+    slides.forEach((el, i) => el.addEventListener('click', () => open(i)));
+    document.getElementById('coinLbClose').addEventListener('click', close);
+    document.getElementById('coinLbPrev').addEventListener('click', e => { e.stopPropagation(); prev(); });
+    document.getElementById('coinLbNext').addEventListener('click', e => { e.stopPropagation(); next(); });
+    lb.addEventListener('click', e => { if (e.target === lb) close(); });
+
+    img.addEventListener('click', e => { e.stopPropagation(); if (didDrag) { didDrag = false; return; } scale > 1 ? reset() : zoomAt(2.5, e.clientX, e.clientY); });
+    wrap.addEventListener('wheel', e => { e.preventDefault(); zoomAt(scale * (e.deltaY < 0 ? 1.12 : 0.89), e.clientX, e.clientY); }, { passive: false });
+
+    function centerZoom(f) { const r = wrap.getBoundingClientRect(); zoomAt(scale * f, r.left + r.width/2, r.top + r.height/2); }
+    document.getElementById('coinLbZoomIn').addEventListener('click',    e => { e.stopPropagation(); centerZoom(1.5); });
+    document.getElementById('coinLbZoomOut').addEventListener('click',   e => { e.stopPropagation(); centerZoom(1/1.5); });
+    document.getElementById('coinLbZoomReset').addEventListener('click', e => { e.stopPropagation(); reset(); });
+
+    wrap.addEventListener('mousedown', e => { if (scale <= 1) return; e.preventDefault(); dragging = true; didDrag = false; dragStartX = e.clientX; dragStartY = e.clientY; dragOx = ox; dragOy = oy; });
+    window.addEventListener('mousemove', e => { if (!dragging) return; if (Math.abs(e.clientX-dragStartX)+Math.abs(e.clientY-dragStartY) > 4) didDrag = true; apply(scale, dragOx+e.clientX-dragStartX, dragOy+e.clientY-dragStartY); });
+    window.addEventListener('mouseup', () => { dragging = false; });
+
+    let t0dist = 0;
+    wrap.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) t0dist = Math.hypot(e.touches[1].clientX-e.touches[0].clientX, e.touches[1].clientY-e.touches[0].clientY);
+        else if (e.touches.length === 1 && scale > 1) { dragging=true; dragStartX=e.touches[0].clientX; dragStartY=e.touches[0].clientY; dragOx=ox; dragOy=oy; }
+    }, { passive: true });
+    wrap.addEventListener('touchmove', e => {
+        if (e.touches.length === 2) { e.preventDefault(); const d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY); zoomAt(scale*d/t0dist,(e.touches[0].clientX+e.touches[1].clientX)/2,(e.touches[0].clientY+e.touches[1].clientY)/2); t0dist=d; }
+        else if (e.touches.length===1 && dragging) apply(scale, dragOx+e.touches[0].clientX-dragStartX, dragOy+e.touches[0].clientY-dragStartY);
+    }, { passive: false });
+    wrap.addEventListener('touchend', () => { dragging = false; });
+
+    document.addEventListener('keydown', e => {
+        if (!lb.classList.contains('lb-open')) return;
+        if (e.key==='Escape') close(); if (e.key==='ArrowLeft') prev(); if (e.key==='ArrowRight') next();
+        if (e.key==='+' || e.key==='=') centerZoom(1.3); if (e.key==='-') centerZoom(1/1.3); if (e.key==='0') reset();
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

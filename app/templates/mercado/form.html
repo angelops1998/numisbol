@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — NumisBol{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/mercado.css">
+<link rel="stylesheet" href="/static/css/coleccion.css">
+<style>
+#currencyToggle { display:flex !important; border:1px solid var(--border) !important; border-radius:8px !important; overflow:hidden !important; flex-shrink:0 !important; background:var(--bg-2) !important; }
+.curr-btn { padding:.55rem 1rem !important; font-size:.85rem !important; font-weight:700 !important; border:none !important; cursor:pointer !important; background:transparent !important; color:var(--text-dim) !important; font-family:inherit !important; line-height:1 !important; transition:background .15s,color .15s !important; }
+.curr-btn:hover { color:var(--text-primary) !important; }
+.curr-btn[data-active="1"] { background:#2563eb !important; color:#fff !important; box-shadow:inset 0 0 0 2px rgba(255,255,255,.15) !important; }
+.curr-btn[data-active="0"] { background:transparent !important; color:var(--text-dim) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">{{ title }}</h1>
+                    <p class="page-subtitle">Tu anuncio será visible para todos los coleccionistas</p>
+                </div>
+                <a href="/mercado" class="btn btn-outline">← Volver al mercado</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-page-layout">
+            <form method="post" action="{{ action }}" enctype="multipart/form-data" class="coin-form" novalidate>
+
+                {% if errors %}
+                <div class="alert alert-error">
+                    <span class="alert-icon">⚠</span>
+                    <div>{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+                </div>
+                {% endif %}
+
+                <!-- Importar desde colección -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Importar desde mi colección <span class="optional">(opcional)</span></h2>
+                    <p style="font-size:var(--font-sm);color:var(--text-muted);margin-bottom:.5rem;">
+                        Buscá una moneda de tu colección para precargar sus datos automáticamente.
+                    </p>
+                    <p style="font-size:var(--font-sm);color:#bfdbfe;margin-bottom:1rem;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.35);border-radius:var(--radius);padding:.55rem .85rem;">
+                        ℹ️ Importar una moneda <strong style="color:#93c5fd">no la modifica ni la elimina</strong> de tu colección. Seguirá apareciendo aunque la marques como vendida en el mercado.
+                    </p>
+
+                    <div class="coin-ac" id="coinAC">
+                        <div class="coin-ac-field">
+                            <input type="text" id="coinACInput"
+                                placeholder="Escribí nombre, año o país..."
+                                autocomplete="off" class="coin-ac-input">
+                            <button type="button" class="coin-ac-clear" id="coinACClear" style="display:none" aria-label="Limpiar">✕</button>
+                        </div>
+                        <ul class="cp-list coin-ac-dropdown" id="coinACDropdown" style="display:none"></ul>
+                        <input type="hidden" id="coin_id" name="coin_id" value="{{ coin_origen.id if coin_origen else '' }}">
+                    </div>
+
+                    <!-- Preview de la moneda seleccionada -->
+                    <div id="coinACPreview" style="display:none;margin-top:.75rem;background:rgba(34,197,94,.07);border:1.5px solid rgba(34,197,94,.4);border-radius:var(--radius);padding:.75rem 1rem;align-items:center;gap:.85rem">
+                        <div style="font-size:1.3rem;line-height:1">✅</div>
+                        <div id="acPrevImg" style="width:40px;height:40px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--bg-2);display:flex;align-items:center;justify-content:center;font-size:1.2rem"></div>
+                        <div style="flex:1;min-width:0">
+                            <div style="font-weight:700;color:var(--text-primary);font-size:.9rem" id="acPrevName"></div>
+                            <div style="font-size:.75rem;color:var(--text-dim);margin-top:.1rem" id="acPrevMeta"></div>
+                        </div>
+                        <div style="font-size:.72rem;color:#4ade80;font-weight:600;white-space:nowrap">Importado ✓</div>
+                    </div>
+                </div>
+
+                <!-- Datos del anuncio -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Datos del anuncio</h2>
+                    <div class="form-grid">
+
+                        <div class="form-group form-col-2">
+                            <label for="title">Título del anuncio *</label>
+                            <input type="text" id="title" name="title"
+                                value="{{ listing.title if listing else '' }}"
+                                placeholder="Ej: Vendo 1 Boliviano 1987 en excelente estado"
+                                required autofocus>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="listing_type">Tipo de publicación *</label>
+                            <select id="listing_type" name="listing_type">
+                                {% for t in tipos %}
+                                <option value="{{ t.value }}"
+                                    {% if listing and listing.listing_type.value == t.value %}selected
+                                    {% elif not listing and t.value == 'venta' %}selected{% endif %}>
+                                    {{ t.value|capitalize }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="price-group">
+                            <label for="price">Precio</label>
+                            <div style="display:flex;gap:.6rem;align-items:center">
+                                <!-- Toggle moneda -->
+                                <div id="currencyToggle" style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg-2)">
+                                    <button type="button" id="btnBOB" onclick="setCurrency('BOB')" class="curr-btn">Bs</button>
+                                    <button type="button" id="btnUSD" onclick="setCurrency('USD')" class="curr-btn">USD</button>
+                                </div>
+                                <input type="hidden" name="currency" id="currencyInput"
+                                    value="{{ listing.currency if listing and listing.currency else 'BOB' }}">
+                                <input type="number" id="price" name="price"
+                                    value="{{ listing.price if listing and listing.price else '' }}"
+                                    placeholder="0.00" min="0" step="0.01" style="flex:1">
+                            </div>
+                            <small>Dejá vacío si es solo intercambio</small>
+                        </div>
+
+                        <div class="form-group form-col-2">
+                            <label for="description">Descripción</label>
+                            <textarea id="description" name="description" rows="3"
+                                placeholder="Estado detallado, procedencia, condiciones de venta...">{{ listing.description if listing and listing.description else '' }}</textarea>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Datos de la moneda/billete -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Datos del artículo</h2>
+
+                    <!-- Toggle Moneda / Billete -->
+                    <div class="tipo-toggle-wrap" style="margin-bottom:1.25rem">
+                        <button type="button" class="tipo-btn {% if not listing or listing.item_type != 'billete' %}active{% endif %}" data-tipo="moneda">
+                            🪙 Moneda
+                        </button>
+                        <button type="button" class="tipo-btn {% if listing and listing.item_type == 'billete' %}active{% endif %}" data-tipo="billete">
+                            💵 Billete
+                        </button>
+                        <input type="hidden" id="itemTypeHidden" name="item_type"
+                            value="{{ listing.item_type if listing else 'moneda' }}">
+                    </div>
+
+                    <div class="form-grid">
+
+                        <div class="form-group form-col-2">
+                            <label for="coin_name" id="labelItemNombre">Nombre de la moneda</label>
+                            <input type="text" id="coin_name" name="coin_name"
+                                value="{{ listing.coin_name if listing and listing.coin_name else (coin_origen.name if coin_origen else '') }}"
+                                placeholder="Ej: 1 Boliviano, Melgarejo">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="coin_year">Año</label>
+                            <input type="number" id="coin_year" name="coin_year"
+                                value="{{ listing.coin_year if listing and listing.coin_year else (coin_origen.year if coin_origen else '') }}"
+                                placeholder="Ej: 1987" min="1" max="2100">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="coin_country">País</label>
+                            <input type="text" id="coin_country" name="coin_country"
+                                value="{{ listing.coin_country if listing and listing.coin_country else (coin_origen.country if coin_origen else '') }}"
+                                placeholder="Ej: Bolivia">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Estado de conservación</label>
+                            <div class="searchable-select ss-dropup" data-name="coin_condition">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value {% if not (listing and listing.coin_condition) and not (coin_origen and coin_origen.condition) %}placeholder{% endif %}">
+                                        {% if listing and listing.coin_condition %}{{ listing.coin_condition }}
+                                        {% elif coin_origen and coin_origen.condition %}{{ coin_origen.condition }}
+                                        {% else %}— Sin especificar —{% endif %}
+                                    </span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar estado...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option {% if not (listing and listing.coin_condition) and not (coin_origen and coin_origen.condition) %}ss-selected{% endif %}"
+                                            data-value="">— Sin especificar —</li>
+                                        {% for group_name, group_items in conditions %}
+                                        <li class="ss-group">{{ group_name }}</li>
+                                        {% for c in group_items %}
+                                        <li class="ss-option {% if (listing and listing.coin_condition == c) or (coin_origen and coin_origen.condition == c) %}ss-selected{% endif %}"
+                                            data-value="{{ c }}">{{ c }}</li>
+                                        {% endfor %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" id="coin_condition" name="coin_condition"
+                                    value="{{ listing.coin_condition if listing and listing.coin_condition else (coin_origen.condition if coin_origen and coin_origen.condition else '') }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="itemMaterialGroup">
+                            <label for="coin_material">Material</label>
+                            <input type="text" id="coin_material" name="coin_material"
+                                value="{{ listing.coin_material if listing and listing.coin_material else (coin_origen.material if coin_origen else '') }}"
+                                placeholder="Ej: Plata, Cobre">
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Estado (solo en edición) -->
+                {% if listing %}
+                <div class="form-section">
+                    <h2 class="form-section-title">Estado del anuncio</h2>
+                    <div class="form-group">
+                        <label for="status">Estado</label>
+                        <select id="status" name="status">
+                            <option value="activo"    {% if listing.status.value == 'activo'    %}selected{% endif %}>Activo</option>
+                            <option value="reservado" {% if listing.status.value == 'reservado' %}selected{% endif %}>Reservado</option>
+                            <option value="vendido"   {% if listing.status.value == 'vendido'   %}selected{% endif %}>Vendido</option>
+                        </select>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Fotos -->
+                <div class="form-section">
+                    <h2 class="form-section-title">Fotografías</h2>
+                    <div id="photoImportNotice" style="display:none;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.35);border-radius:var(--radius);padding:.7rem 1rem;margin-bottom:1rem;font-size:var(--font-sm);color:#fde68a">
+                        📷 Si subís imágenes aquí no se mostrarán las que subiste al guardar la moneda desde tu colección. Si no subís imágenes se mostrarán las de tu colección.
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="image">Foto principal (anverso)</label>
+                            {% if listing and listing.image_url %}
+                            <div class="img-preview-current">
+                                <img src="{{ listing.image_url }}" alt="Imagen actual">
+                                <span class="img-preview-label">Imagen actual</span>
+                            </div>
+                            {% endif %}
+                            <input type="file" id="image" name="image" accept=".jpg,.jpeg,.png,.webp" class="file-input">
+                            <small>JPG, PNG o WebP. Máximo recomendado: 5 MB.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="image_back">Foto reverso</label>
+                            {% if listing and listing.image_back_url %}
+                            <div class="img-preview-current">
+                                <img src="{{ listing.image_back_url }}" alt="Reverso actual">
+                                <span class="img-preview-label">Imagen actual</span>
+                            </div>
+                            {% endif %}
+                            <input type="file" id="image_back" name="image_back" accept=".jpg,.jpeg,.png,.webp" class="file-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="/mercado" class="btn btn-outline btn-lg">Cancelar</a>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        {% if listing and listing.id is defined and listing.id %}Guardar cambios{% else %}Publicar{% endif %}
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* ── Coin Autocomplete ───────────────────────────────── */
+(function () {
+    const input    = document.getElementById('coinACInput');
+    const dropdown = document.getElementById('coinACDropdown');
+    const hidden   = document.getElementById('coin_id');
+    const clearBtn = document.getElementById('coinACClear');
+    const preview  = document.getElementById('coinACPreview');
+    const prevImg  = document.getElementById('acPrevImg');
+    const prevName = document.getElementById('acPrevName');
+    const prevMeta = document.getElementById('acPrevMeta');
+    if (!input) return;
+
+    let debounce, currentQ = '';
+
+    function closeDropdown() {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+    }
+
+    function applySelection(coin) {
+        hidden.value = coin.id;
+        input.value  = coin.name;
+        // Sin botón de limpiar — para cambiar hay que recargar
+        closeDropdown();
+        // Deshabilitar el input para que no se pueda cambiar
+        input.disabled = true;
+        input.style.opacity = '.6';
+        input.style.cursor = 'default';
+
+        // Preview
+        const meta = [coin.year, coin.country, coin.condition].filter(Boolean).join(' · ');
+        prevImg.innerHTML  = coin.img
+            ? `<img src="${coin.img}" alt="${coin.name}" style="width:100%;height:100%;object-fit:cover">`
+            : '🪙';
+        prevName.textContent = coin.name;
+        prevMeta.textContent = meta;
+        preview.style.display = 'flex';
+
+        // Actualizar toggle moneda/billete
+        if (coin.tipo && typeof applyTipo === 'function') applyTipo(coin.tipo);
+
+        // Rellenar campos simples
+        const fill = { coin_name: coin.name, coin_year: coin.year || '',
+                       coin_country: coin.country, coin_material: coin.material };
+        for (const [id, val] of Object.entries(fill)) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            el.value = val || '';
+        }
+
+        // Actualizar searchable-select de estado de conservación
+        if (coin.condition) {
+            const ss = document.querySelector('.searchable-select[data-name="coin_condition"]');
+            if (ss) {
+                const opt = Array.from(ss.querySelectorAll('.ss-option'))
+                    .find(o => o.dataset.value === coin.condition);
+                if (opt) {
+                    ss.querySelectorAll('.ss-option').forEach(o => o.classList.remove('ss-selected'));
+                    opt.classList.add('ss-selected');
+                    const valueEl = ss.querySelector('.ss-value');
+                    if (valueEl) { valueEl.textContent = opt.textContent.trim(); valueEl.classList.remove('placeholder'); }
+                    const hiddenCond = ss.querySelector('input[type=hidden]');
+                    if (hiddenCond) hiddenCond.value = coin.condition;
+                }
+            }
+        }
+
+        // Autocompletar título si está vacío
+        const titleEl = document.getElementById('title');
+        if (titleEl && !titleEl.value.trim()) {
+            titleEl.value = coin.name || '';
+        }
+
+        // Mostrar aviso en sección fotos
+        const photoNotice = document.getElementById('photoImportNotice');
+        if (photoNotice) photoNotice.style.display = '';
+    }
+
+    function clearSelection() {
+        hidden.value = '';
+        input.value  = '';
+        clearBtn.style.display = 'none';
+        preview.style.display  = 'none';
+        const photoNotice = document.getElementById('photoImportNotice');
+        if (photoNotice) photoNotice.style.display = 'none';
+        closeDropdown();
+        input.focus();
+    }
+
+    function renderResults(coins) {
+        dropdown.innerHTML = '';
+        if (!coins.length) {
+            dropdown.innerHTML = '<li class="cp-empty">Sin resultados</li>';
+        } else {
+            coins.forEach(function(c) {
+                const li = document.createElement('li');
+                li.className = 'cp-item';
+                const meta = [c.year, c.country, c.condition].filter(Boolean).join(' · ');
+                li.innerHTML = `
+                    <div class="cp-item-img">${c.img ? `<img src="${c.img}" alt="${c.name}">` : '<span class="cp-no-img">🪙</span>'}</div>
+                    <div class="cp-item-info">
+                        <span class="cp-item-name">${c.name}</span>
+                        <span class="cp-item-meta">${meta}</span>
+                    </div>`;
+                li.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    applySelection(c);
+                });
+                dropdown.appendChild(li);
+            });
+        }
+        dropdown.style.display = '';
+    }
+
+    function fetchCoins(q) {
+        currentQ = q;
+        fetch(`/coleccion/api/search?q=${encodeURIComponent(q)}&limit=12`)
+            .then(r => r.json())
+            .then(function(data) { if (currentQ === q) renderResults(data); })
+            .catch(function() { closeDropdown(); });
+    }
+
+    input.addEventListener('input', function() {
+        const q = this.value.trim();
+        clearTimeout(debounce);
+        if (!q) { closeDropdown(); return; }
+        debounce = setTimeout(function() { fetchCoins(q); }, 220);
+    });
+
+    input.addEventListener('focus', function() {
+        if (this.value.trim() && !hidden.value) fetchCoins(this.value.trim());
+    });
+
+    input.addEventListener('blur', function() {
+        setTimeout(closeDropdown, 150);
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeDropdown();
+    });
+
+    if (clearBtn) clearBtn.addEventListener('click', clearSelection);
+
+    // Si viene preseleccionada desde ?desde_coin=
+    const preId = hidden.value;
+    if (preId) {
+        fetch(`/coleccion/api/search?id=${encodeURIComponent(preId)}&limit=1`)
+            .then(r => r.json())
+            .then(function(data) { if (data[0]) applySelection(data[0]); });
+    }
+})();
+
+/* ── Searchable select ───────────────────────────────── */
+function norm(s) { return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+document.querySelectorAll('.searchable-select').forEach(function(ss) {
+    const display  = ss.querySelector('.ss-display');
+    const valueEl  = ss.querySelector('.ss-value');
+    const search   = ss.querySelector('.ss-search');
+    const options  = ss.querySelectorAll('.ss-option');
+    const hidden   = ss.querySelector('input[type=hidden]');
+
+    display.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const wasOpen = ss.classList.contains('open');
+        document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('open'));
+        if (!wasOpen) {
+            ss.classList.add('open');
+            search.value = '';
+            options.forEach(o => o.classList.remove('ss-hidden'));
+            ss.querySelectorAll('.ss-group').forEach(g => g.classList.remove('ss-hidden'));
+            setTimeout(() => search.focus(), 50);
+        }
+    });
+
+    search.addEventListener('click', e => e.stopPropagation());
+
+    search.addEventListener('input', function() {
+        const term = norm(this.value.trim());
+        options.forEach(opt => opt.classList.toggle('ss-hidden', !!term && !norm(opt.textContent).includes(term)));
+        ss.querySelectorAll('.ss-group').forEach(function(group) {
+            let next = group.nextElementSibling;
+            let allHidden = true;
+            while (next && !next.classList.contains('ss-group')) {
+                if (!next.classList.contains('ss-hidden')) { allHidden = false; break; }
+                next = next.nextElementSibling;
+            }
+            group.classList.toggle('ss-hidden', allHidden);
+        });
+    });
+
+    options.forEach(function(opt) {
+        opt.addEventListener('click', function(e) {
+            e.stopPropagation();
+            options.forEach(o => o.classList.remove('ss-selected'));
+            opt.classList.add('ss-selected');
+            hidden.value = opt.dataset.value;
+            valueEl.textContent = opt.textContent.trim();
+            valueEl.classList.remove('placeholder');
+            ss.classList.remove('open');
+        });
+    });
+});
+document.addEventListener('click', function() {
+    document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('open'));
+});
+
+/* ── Toggle moneda ───────────────────────────────────── */
+function setCurrency(val) {
+    document.getElementById('currencyInput').value = val;
+    const btnBOB = document.getElementById('btnBOB');
+    const btnUSD = document.getElementById('btnUSD');
+    if (!btnBOB || !btnUSD) return;
+    btnBOB.dataset.active = val === 'BOB' ? '1' : '0';
+    btnUSD.dataset.active = val === 'USD' ? '1' : '0';
+}
+setCurrency(document.getElementById('currencyInput')?.value || 'BOB');
+
+
+/* ── Toggle moneda / billete ─────────────────────────── */
+function applyTipo(tipo) {
+    const hidden   = document.getElementById('itemTypeHidden');
+    const matGroup = document.getElementById('itemMaterialGroup');
+    const label    = document.getElementById('labelItemNombre');
+    if (hidden) hidden.value = tipo;
+    document.querySelectorAll('.tipo-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.tipo === tipo);
+    });
+    const esBillete = tipo === 'billete';
+    if (matGroup) matGroup.style.display = esBillete ? 'none' : '';
+    if (label)    label.textContent = esBillete ? 'Nombre del billete' : 'Nombre de la moneda';
+}
+(function () {
+    const hidden = document.getElementById('itemTypeHidden');
+    document.querySelectorAll('.tipo-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() { applyTipo(this.dataset.tipo); });
+    });
+    applyTipo(hidden ? hidden.value : 'moneda');
+})();
+
+/* ── Toggle precio visible ───────────────────────────── */
+const tipoSelect = document.getElementById('listing_type');
+const priceGroup = document.getElementById('price-group');
+function togglePrice() {
+    if (tipoSelect && priceGroup)
+        priceGroup.style.opacity = tipoSelect.value === 'intercambio' ? '.4' : '1';
+}
+if (tipoSelect) { tipoSelect.addEventListener('change', togglePrice); togglePrice(); }
+</script>
+{% endblock %}

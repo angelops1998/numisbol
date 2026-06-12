@@ -1,0 +1,33 @@
+﻿Inicial|Ceca|Periodo|Ensayador (es)
+JM|Potos�|1827-1829|Juan Palomo y Sierra; Diego Miguel L�pez
+J|Potos�|1830.0|Juan Palomo y Sierra
+JF|Potos�|1830-1831|Juan Palomo y Sierra; Francisco Jos� de Matos
+JL|Potos�|1830-1852|Juan Palomo y Sierra; Luis de Aguilar
+L|Potos�|1833.0|Luis de Aguilar
+LM|Potos�|1833-1855|Luis de Aguilar; Diego Miguel L�pez
+LR|Potos�|1839-1844|Luis de Aguilar; Rafael Mariano Bustillos
+R|Potos�|1844-1847|Rafael Mariano Bustillos
+M|Potos�|1848-1855|Manuel Berrios
+R|Potos�|1848.0|Manuel Tel�sforo Ram�rez
+M|Potos�|1848-1852|Fortunato Eguivar-Manuel Berrios
+JM|Oruro|1849.0|Joaqu�n Zenobra�n; Manuel Berrios
+FR|Potos�|1851.0|Fortunato Eguivar; Manuel Tel�sforo Ram�rez
+FP|Potos�|1852-1857|Fortunato Eguivar; Pedro Zambrana
+MF|Potos�|1851-1855|Manuel Berrios; Fortunato Eguivar
+J|La Paz|1853.0|Joaqu�n Zenobra�n
+J|La Plata|1853.0|Joaqu�n Zenobra�n
+MJ|Potos�|1852-1856|Manuel Berrios; Joaqu�n Zenobra�n
+F|La Paz|1854-1855|Fortunato Eguivar
+P|La Paz|1855-1859|Pedro Zambrana
+FS|Potos�|1855-1856|Fortunato Eguivar; 2do ensayador desconocido
+FJ|Potos�|1856-1862|Fortunato Eguivar; Joaqu�n Zenobra�n
+FP|Potos�|1862-1871|Fortunato Eguivar; Pedro Zambrana
+FE|Potos�|1867-1890|Fortunato Eguivar
+CT|La Paz-Potos�|1868;1870|Clemente Torretti
+ER|Potos�|1870-1872|Fortunato Eguivar; Manuel Tel�sforo Ram�rez
+EF|Potos�|1871.0|Fortunato Eguivar
+CB|Potos�|1890-1893|Carlos Bogen
+ES|Potos�|1894-1897|Edmundo Sleverlink
+CB|Potos�|1896-1899|Carlos Bogen
+MM|Potos�|1898-1908|Mariano Mattos
+AB|Potos�|1905-1906|Arturo Berrios

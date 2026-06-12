@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Mis publicaciones — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/mercado.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Mis publicaciones</h1>
+                    <p class="page-subtitle">{{ total }} anuncio{{ 's' if total != 1 else '' }} publicado{{ 's' if total != 1 else '' }}</p>
+                </div>
+                <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                    <a href="/mercado/mis-publicaciones/estadisticas" class="btn btn-outline">📊 Estadísticas</a>
+                    <a href="/mercado" class="btn btn-outline">Ver mercado</a>
+                    <a href="/mercado/publicar" class="btn btn-primary">+ Nuevo anuncio</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if listings %}
+        <div class="mis-listings">
+            {% for l in listings %}
+            <div class="mis-listing-row">
+                <div class="mis-listing-img">
+                    {% if l.image_url %}
+                        <img src="{{ l.image_url }}" alt="{{ l.title }}">
+                    {% else %}
+                        <div class="coin-item-no-img" style="height:100%;font-size:2rem">🪙</div>
+                    {% endif %}
+                </div>
+                <div class="mis-listing-body">
+                    <a href="/mercado/{{ l.id }}" class="mis-listing-title">{{ l.title }}</a>
+                    <div class="mis-listing-meta">
+                        {% if l.coin_year %}{{ l.coin_year }} · {% endif %}
+                        {% if l.coin_country %}{{ l.coin_country }} · {% endif %}
+                        Publicado el {{ l.created_at.strftime("%d/%m/%Y") }}
+                    </div>
+                </div>
+                <div class="mis-listing-price">
+                    {% if l.price %}
+                    <span class="market-price">Bs {{ "%.2f"|format(l.price) }}</span>
+                    {% else %}
+                    <span class="market-price-trade">Intercambio</span>
+                    {% endif %}
+                </div>
+                <div class="mis-listing-status">
+                    <span class="market-status-badge market-status-{{ l.status.value }}">
+                        {{ l.status.value|capitalize }}
+                    </span>
+                </div>
+                <div class="mis-listing-actions">
+                    <a href="/mercado/{{ l.id }}/editar" class="btn btn-outline" style="padding:.35rem .8rem;font-size:var(--font-xs)">Editar</a>
+                    <form method="post" action="/mercado/{{ l.id }}/eliminar"
+                          onsubmit="return confirm('¿Eliminar este anuncio?')" style="display:inline">
+                        <button type="submit" class="btn btn-danger" style="padding:.35rem .8rem;font-size:var(--font-xs)">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if total_paginas > 1 %}
+        <div class="pagination" style="margin-top:1.5rem">
+            {% if pagina > 1 %}
+            <a href="/mercado/mis-publicaciones?pagina={{ pagina - 1 }}" class="pag-btn">← Anterior</a>
+            {% else %}
+            <span class="pag-btn pag-disabled">← Anterior</span>
+            {% endif %}
+
+            {% for p in range(1, total_paginas + 1) %}
+                {% if p == pagina %}
+                <span class="pag-btn pag-active">{{ p }}</span>
+                {% elif p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+                <a href="/mercado/mis-publicaciones?pagina={{ p }}" class="pag-btn">{{ p }}</a>
+                {% elif p == pagina - 3 or p == pagina + 3 %}
+                <span class="pag-btn pag-ellipsis">…</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagina < total_paginas %}
+            <a href="/mercado/mis-publicaciones?pagina={{ pagina + 1 }}" class="pag-btn">Siguiente →</a>
+            {% else %}
+            <span class="pag-btn pag-disabled">Siguiente →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🛒</div>
+            <h3>Todavía no publicaste nada</h3>
+            <p>Publicá tus monedas en el mercado para que otros coleccionistas puedan contactarte.</p>
+            <a href="/mercado/publicar" class="btn btn-primary btn-lg">+ Publicar primera moneda</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

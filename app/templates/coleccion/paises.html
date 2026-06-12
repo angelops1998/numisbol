@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Países del Mundo — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/coleccion.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb"><a href="/coleccion">Mi Colección</a> / Países</p>
+                    <h1 class="page-title">Países del Mundo</h1>
+                    <p class="page-subtitle">
+                        Tenés monedas de <strong>{{ tienen_count }}</strong> de <strong>{{ total_paises }}</strong> países
+                    </p>
+                </div>
+                <a href="/coleccion" class="btn btn-outline">← Volver</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Barra de progreso global -->
+        <div class="world-progress-card">
+            <div class="world-progress-header">
+                <span class="world-progress-label">Progreso mundial</span>
+                <span class="world-progress-pct" id="pctLabel">{{ ((tienen_count / total_paises) * 100) | round(1) }}%</span>
+            </div>
+            <div class="world-progress-track">
+                <div class="world-progress-fill" style="width: {{ ((tienen_count / total_paises) * 100) | round(1) }}%"></div>
+            </div>
+            <div class="world-progress-sub">
+                <span class="world-tag world-tag--have">{{ tienen_count }} tenés</span>
+                <span class="world-tag world-tag--miss">{{ total_paises - tienen_count }} te faltan</span>
+            </div>
+        </div>
+
+        <!-- Buscador + toggle -->
+        <div class="world-toolbar">
+            <input type="search" id="countrySearch" class="filter-input" placeholder="Buscar país...">
+            <div class="world-view-toggle">
+                <button class="world-view-btn active" id="btnAll" onclick="setFilter('all')">Todos</button>
+                <button class="world-view-btn" id="btnHave" onclick="setFilter('have')">Tenés</button>
+                <button class="world-view-btn" id="btnMiss" onclick="setFilter('miss')">Te faltan</button>
+            </div>
+        </div>
+
+        <!-- Grilla de países -->
+        <div class="world-grid" id="worldGrid">
+            {% for country in countries %}
+            {% set info = tienen.get(country, {}) %}
+            {% set total_c = info.get('total', 0) %}
+            {% set monedas_c = info.get('moneda', 0) %}
+            {% set billetes_c = info.get('billete', 0) %}
+            <a href="/coleccion?q={{ country | urlencode }}"
+               class="world-country {% if total_c > 0 %}world-country--have{% else %}world-country--miss{% endif %}"
+               data-country="{{ country | lower }}"
+               data-state="{{ 'have' if total_c > 0 else 'miss' }}"
+               {% if total_c == 0 %}tabindex="-1" onclick="return false"{% endif %}>
+                <span class="world-country-name">{{ country }}</span>
+                {% if total_c > 0 %}
+                <span class="world-country-badges">
+                    {% if monedas_c > 0 %}<span class="world-badge world-badge--moneda">🪙 {{ monedas_c }}</span>{% endif %}
+                    {% if billetes_c > 0 %}<span class="world-badge world-badge--billete">💵 {{ billetes_c }}</span>{% endif %}
+                </span>
+                {% else %}
+                <span class="world-country-dash">—</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+
+        <p class="world-empty-msg" id="emptyMsg" style="display:none">
+            No hay países que coincidan con tu búsqueda.
+        </p>
+
+    </div>
+</div>
+
+<script>
+function norm(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+
+var currentFilter = 'all';
+var currentSearch = '';
+
+function setFilter(f) {
+    currentFilter = f;
+    document.getElementById('btnAll').classList.toggle('active', f==='all');
+    document.getElementById('btnHave').classList.toggle('active', f==='have');
+    document.getElementById('btnMiss').classList.toggle('active', f==='miss');
+    applyFilters();
+}
+
+document.getElementById('countrySearch').addEventListener('input', function(){
+    currentSearch = norm(this.value);
+    applyFilters();
+});
+
+function applyFilters(){
+    var items = document.querySelectorAll('.world-country');
+    var visible = 0;
+    items.forEach(function(el){
+        var nameMatch = !currentSearch || norm(el.dataset.country).includes(currentSearch);
+        var stateMatch = currentFilter === 'all' || el.dataset.state === currentFilter;
+        var show = nameMatch && stateMatch;
+        el.style.display = show ? '' : 'none';
+        if(show) visible++;
+    });
+    document.getElementById('emptyMsg').style.display = visible === 0 ? '' : 'none';
+}
+</script>
+{% endblock %}
