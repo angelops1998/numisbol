@@ -3,7 +3,7 @@
    ============================================================ */
 
 /* ── Encabezado de página ─────────────────────────────────── */
-.page-wrapper { padding-bottom: 4rem; }
+.page-wrapper { padding-bottom: 4rem; overflow-x: hidden; }
 .page-header {
     background: var(--bg-2);
     border-bottom: 1px solid var(--border);
@@ -305,10 +305,6 @@
 }
 .searchable-select.open .ss-arrow { transform: rotate(180deg); }
 
-.ss-dropup .ss-dropdown {
-    top: auto;
-    bottom: calc(100% + 4px);
-}
 
 .ss-dropdown {
     display: none;
@@ -671,14 +667,39 @@
         position: fixed;
         inset: 0;
         z-index: 200;
-        overflow-y: auto;
+        overflow: hidden;
         border-radius: 0;
+        padding: 0;
         transform: translateX(-100%);
         transition: transform .25s ease;
         box-shadow: none;
     }
     .filters-panel--open {
         transform: translateX(0);
+    }
+
+    .filters-form {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+    .filters-form .filters-header {
+        flex-shrink: 0;
+        padding: 1.25rem 1.5rem .75rem;
+        margin-bottom: 0;
+    }
+    .filters-body {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: .75rem 1.5rem 0;
+    }
+    .filters-footer {
+        flex-shrink: 0;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border);
+        background: var(--bg-card);
     }
 
     /* Dropdown del SS dentro del panel fijo tiene z-index mayor */
@@ -888,10 +909,12 @@
 /* ── Estadísticas ────────────────────────────────────────── */
 .stats-summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 1rem;
     grid-column: 1 / -1;
     box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
 }
 .stat-card {
     background: var(--surface);
@@ -922,12 +945,15 @@
     gap: 1rem;
     width: 100%;
     box-sizing: border-box;
+    overflow: hidden;
 }
 .stats-section {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 1.25rem;
+    overflow: hidden;
+    min-width: 0;
 }
 .stats-section--full { grid-column: 1 / -1; grid-row-start: auto; }
 .stats-section-title {
@@ -992,12 +1018,21 @@
     .stats-section--full { grid-column: 1; }
 }
 
+/* Bottom sheet CSS → main.css */
+
 @media (max-width: 640px) {
     .stats-grid { gap: .6rem; }
     .stats-section { padding: 1rem; }
     .stats-summary { gap: .5rem; grid-template-columns: repeat(2, 1fr); }
-    .stat-card { padding: .85rem 1rem; }
-    .stat-card--full { grid-column: span 2; text-align: center; }
+    .stat-card { padding: .75rem .85rem; min-width: 0; box-sizing: border-box; }
+    .stat-card--full { grid-column: 1 / -1; text-align: center; }
+    .stat-card-value { font-size: 1.1rem; word-break: break-all; }
+    .stats-bar-label { white-space: normal; word-break: break-word; }
+    .top-coin-row { gap: .6rem; padding: .6rem .75rem; }
+    .top-coin-img { width: 36px; height: 36px; }
+    .top-coin-value { font-size: .82rem; }
+    .top-coin-name { font-size: .82rem; white-space: normal; }
+    .top-coin-meta { font-size: .72rem; }
 }
 
 /* ── Ver más en estadísticas ─────────────────────────────── */
@@ -1237,4 +1272,53 @@
     font-size: .8rem;
     color: #4ade80;
     font-weight: 600;
+}
+
+/* ── Top 5 más valiosas ───────────────────────────────────── */
+.top-coins-list { display: flex; flex-direction: column; gap: .5rem; overflow: hidden; }
+.top-coin-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .75rem 1rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .15s;
+    overflow: hidden;
+    min-width: 0;
+    max-width: 100%;
+}
+.top-coin-row:hover { border-color: var(--accent); }
+.top-coin-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.top-coin-img--placeholder {
+    background: var(--bg-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+.top-coin-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.top-coin-name {
+    font-weight: 600;
+    font-size: .9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.top-coin-meta { font-size: .78rem; color: var(--text-dim); }
+.top-coin-value {
+    font-weight: 700;
+    font-size: .95rem;
+    color: #4ade80;
+    white-space: nowrap;
+    flex-shrink: 0;
 }

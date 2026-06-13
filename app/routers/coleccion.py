@@ -555,30 +555,36 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
     cond_raw      = group_count("condition")
     por_condicion = [(c.split(" → ")[0] if c else c, n) for c, n in cond_raw]
 
-    # Distribución por siglo — GROUP BY en DB, no en Python
-    siglo_expr = (func.floor(Coin.year / 100) * 100).label("siglo")
-    siglo_rows = (db.query(siglo_expr, func.count(Coin.id))
-                 .filter(Coin.user_id == user.id, Coin.year != None))
+    # Distribución por década
+    decada_expr = (func.floor(Coin.year / 10) * 10).label("decada")
+    decada_rows = (db.query(decada_expr, func.count(Coin.id))
+                   .filter(Coin.user_id == user.id, Coin.year != None))
     if tipo_filter:
-        siglo_rows = siglo_rows.filter(Coin.tipo == tipo_filter)
-    siglo_rows = siglo_rows.group_by(siglo_expr).order_by(siglo_expr).all()
-
-    def siglo_label(s):
-        s = int(s)
-        n = s // 100 + 1
-        sufijos = {1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",
-                   9:"IX",10:"X",11:"XI",12:"XII",13:"XIII",14:"XIV",15:"XV",
-                   16:"XVI",17:"XVII",18:"XVIII",19:"XIX",20:"XX",21:"XXI"}
-        return f"Siglo {sufijos.get(n, str(n))} ({s}s)"
-
-    por_siglo = [(siglo_label(s), n) for s, n in siglo_rows]
+        decada_rows = decada_rows.filter(Coin.tipo == tipo_filter)
+    decada_rows = decada_rows.group_by(decada_expr).order_by(func.count(Coin.id).desc()).all()
+    por_decada = [(f"{int(d)}s", n) for d, n in decada_rows]
 
     sin_anio_q = db.query(func.count(Coin.id)).filter(Coin.user_id == user.id, Coin.year == None)
     if tipo_filter:
         sin_anio_q = sin_anio_q.filter(Coin.tipo == tipo_filter)
     sin_anio = sin_anio_q.scalar() or 0
     if sin_anio:
-        por_siglo.append(("Sin año", sin_anio))
+        por_decada.append(("Sin año", sin_anio))
+
+    # Top 5 monedas más valiosas (en su moneda original)
+    top_q = (db.query(Coin)
+             .filter(Coin.user_id == user.id, Coin.estimated_value != None))
+    if tipo_filter:
+        top_q = top_q.filter(Coin.tipo == tipo_filter)
+
+    # Ordenar: USD primero convertido, luego BOB — si hay tasa unificamos, si no ordenamos por valor raw
+    top_coins_raw = top_q.all()
+    def valor_usd(c):
+        v = float(c.estimated_value)
+        if c.value_currency == "USD":
+            return v
+        return (v / usd_rate) if usd_rate else 0
+    top_coins = sorted(top_coins_raw, key=valor_usd, reverse=True)[:5]
 
     return templates.TemplateResponse(request, "coleccion/estadisticas.html", {
         "user": user,
@@ -596,7 +602,8 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
         "por_categoria": por_categoria,
         "por_condicion": por_condicion,
         "por_ceca": por_ceca,
-        "por_siglo": por_siglo,
+        "por_decada": por_decada,
+        "top_coins": top_coins,
     })
 
 

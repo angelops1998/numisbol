@@ -30,19 +30,21 @@
             <!-- Breadcrumb -->
             <p class="page-breadcrumb" style="margin-bottom:1.5rem">
                 <a href="/blog">Blog</a>
-                {% if post.categoria %} / <a href="/blog?categoria={{ post.categoria.slug }}">{{ post.categoria.nombre }}</a>{% endif %}
+                {% for cat in post.categorias %} / <a href="/blog?categoria={{ cat.slug }}">{{ cat.nombre }}</a>{% endfor %}
                 / {{ post.titulo | truncate(40) }}
             </p>
 
-            <!-- Categoría -->
-            {% if post.categoria %}
-            <a href="/blog?categoria={{ post.categoria.slug }}"
+            <!-- Categorías -->
+            {% if post.categorias %}
+            <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem">
+            {% for cat in post.categorias %}
+            <a href="/blog?categoria={{ cat.slug }}"
                class="blog-badge blog-badge-lg"
-               style="background:{{ post.categoria.color }}20;
-                      color:{{ post.categoria.color }};
-                      border-color:{{ post.categoria.color }}40">
-                {{ post.categoria.nombre }}
+               style="background:{{ cat.color }}20;color:{{ cat.color }};border-color:{{ cat.color }}40">
+                {{ cat.nombre }}
             </a>
+            {% endfor %}
+            </div>
             {% endif %}
 
             <!-- Título -->
@@ -184,8 +186,12 @@
                         {% endif %}
                     </div>
                     <div class="blog-rel-body">
-                        {% if r.categoria %}
-                        <span class="blog-rel-cat" style="background:{{ r.categoria.color }}22; color:{{ r.categoria.color }}">{{ r.categoria.nombre }}</span>
+                        {% if r.categorias %}
+                        <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.3rem">
+                        {% for cat in r.categorias %}
+                        <span class="blog-rel-cat" style="background:{{ cat.color }}22; color:{{ cat.color }}">{{ cat.nombre }}</span>
+                        {% endfor %}
+                        </div>
                         {% endif %}
                         <div class="blog-rel-post-title">{{ r.titulo }}</div>
                         <div class="blog-rel-meta">{{ r.created_at.strftime("%d/%m/%Y") }} · {{ r.vistas or 0 }} vistas</div>
@@ -382,8 +388,8 @@
         document.body.style.overflow = '';
         reset();
     }
-    function prev() { if (scale === 1) open((cur - 1 + items.length) % items.length); }
-    function next() { if (scale === 1) open((cur + 1) % items.length); }
+    function prev() { reset(); open((cur - 1 + items.length) % items.length); }
+    function next() { reset(); open((cur + 1) % items.length); }
 
     items.forEach((el, i) => el.addEventListener('click', () => open(i)));
     document.getElementById('galeriaClose').addEventListener('click', close);
@@ -433,32 +439,59 @@
     window.addEventListener('mouseup', () => { dragging = false; });
 
     /* ── Touch: pinch + drag ─── */
-    let t0dist = 0;
+    // pinch0 guarda el estado inicial del gesto para anclar el punto de zoom
+    let pinch0 = null;
     wrap.addEventListener('touchstart', e => {
         if (e.touches.length === 2) {
-            t0dist = Math.hypot(e.touches[1].clientX - e.touches[0].clientX,
-                                e.touches[1].clientY - e.touches[0].clientY);
-        } else if (e.touches.length === 1 && scale > 1) {
-            dragging = true;
-            dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
-            dragOx = ox; dragOy = oy;
-        }
-    }, { passive: true });
-    wrap.addEventListener('touchmove', e => {
-        if (e.touches.length === 2) {
             e.preventDefault();
-            const d   = Math.hypot(e.touches[1].clientX - e.touches[0].clientX,
-                                   e.touches[1].clientY - e.touches[0].clientY);
-            const mx  = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            const my  = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-            zoomAt(scale * d / t0dist, mx, my);
-            t0dist = d;
+            const r = wrap.getBoundingClientRect();
+            pinch0 = {
+                dist:  Math.hypot(e.touches[1].clientX - e.touches[0].clientX,
+                                  e.touches[1].clientY - e.touches[0].clientY),
+                mx:    (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                my:    (e.touches[0].clientY + e.touches[1].clientY) / 2,
+                scale, ox, oy,
+                wrapCx: r.left + r.width  / 2,
+                wrapCy: r.top  + r.height / 2
+            };
+            dragging = false;
+        } else if (e.touches.length === 1) {
+            pinch0 = null;
+            if (scale > 1) {
+                dragging = true;
+                dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
+                dragOx = ox; dragOy = oy;
+            }
+        }
+    }, { passive: false });
+    wrap.addEventListener('touchmove', e => {
+        if (e.touches.length === 2 && pinch0) {
+            e.preventDefault();
+            const d  = Math.hypot(e.touches[1].clientX - e.touches[0].clientX,
+                                  e.touches[1].clientY - e.touches[0].clientY);
+            const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+            const newScale = Math.max(MIN, Math.min(MAX, pinch0.scale * d / pinch0.dist));
+
+            // Punto en coordenadas de imagen que estaba bajo el pinch inicial
+            const imgPx = (pinch0.mx - pinch0.wrapCx - pinch0.ox) / pinch0.scale;
+            const imgPy = (pinch0.my - pinch0.wrapCy - pinch0.oy) / pinch0.scale;
+
+            // Nuevo offset: ese punto debe quedar bajo el midpoint actual
+            const newOx = mx - pinch0.wrapCx - imgPx * newScale;
+            const newOy = my - pinch0.wrapCy - imgPy * newScale;
+
+            apply(newScale, newOx, newOy);
         } else if (e.touches.length === 1 && dragging) {
             apply(scale, dragOx + e.touches[0].clientX - dragStartX,
                          dragOy + e.touches[0].clientY - dragStartY);
         }
     }, { passive: false });
-    wrap.addEventListener('touchend', () => { dragging = false; });
+    wrap.addEventListener('touchend', e => {
+        if (e.touches.length < 2) pinch0 = null;
+        if (e.touches.length === 0) dragging = false;
+    });
 
     /* ── Teclado ─── */
     document.addEventListener('keydown', e => {

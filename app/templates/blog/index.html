@@ -150,6 +150,8 @@
             {% endif %}
         </div>
 
+        <div id="blog-results"></div>
+
         {% if total == 0 %}
         <!-- ── Sin resultados ─────────────────────────────── -->
         <div class="blog-empty">
@@ -180,14 +182,15 @@
                 {% else %}
                 <div class="blog-dest-no-img">📰</div>
                 {% endif %}
-                {% if destacado.categoria %}
-                <span class="blog-badge"
-                      style="background:{{ destacado.categoria.color }}20;color:{{ destacado.categoria.color }};border-color:{{ destacado.categoria.color }}40">
-                    {{ destacado.categoria.nombre }}
-                </span>
-                {% endif %}
             </div>
             <div class="blog-dest-body">
+                {% if destacado.categorias %}
+                <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.6rem">
+                {% for cat in destacado.categorias %}
+                <span class="blog-badge" style="background:{{ cat.color }}20;color:{{ cat.color }};border-color:{{ cat.color }}40">{{ cat.nombre }}</span>
+                {% endfor %}
+                </div>
+                {% endif %}
                 <div class="blog-dest-meta">
                     <span>{{ destacado.autor.full_name or destacado.autor.username }}</span>
                     <span>·</span>
@@ -217,14 +220,18 @@
                     {% else %}
                     <div class="blog-card-no-img">📰</div>
                     {% endif %}
-                    {% if post.categoria %}
-                    <span class="blog-badge blog-badge-sm"
-                          style="background:{{ post.categoria.color }}20;color:{{ post.categoria.color }};border-color:{{ post.categoria.color }}40">
-                        {{ post.categoria.nombre }}
-                    </span>
-                    {% endif %}
                 </div>
                 <div class="blog-card-body">
+                    {% if post.categorias %}
+                    <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem">
+                    {% for cat in post.categorias %}
+                    <span class="blog-badge blog-badge-sm"
+                          style="background:{{ cat.color }}20;color:{{ cat.color }};border-color:{{ cat.color }}40">
+                        {{ cat.nombre }}
+                    </span>
+                    {% endfor %}
+                    </div>
+                    {% endif %}
                     <h3 class="blog-card-title">{{ post.titulo }}</h3>
                     {% if post.extracto %}
                     <p class="blog-card-extracto">{{ post.extracto }}</p>
@@ -249,13 +256,31 @@
         <!-- ── Más leídos ─────────────────────────────────── -->
         {% if mas_leidos %}
         <div class="blog-mas-leidos">
-            <div class="blog-mas-leidos-header">
-                <h3 class="blog-mas-leidos-title">🔥 Más leídos</h3>
-                <div class="blog-leidos-filters">
+            <h3 class="blog-mas-leidos-title">🔥 Más leídos</h3>
+            <div class="blog-mas-leidos-list" id="blogLeidosList">
+                {% for post in mas_leidos %}
+                <a href="/blog/{{ post.slug }}" class="blog-leido-item">
+                    <div class="blog-leido-img">
+                        {% if post.portada_url %}
+                        <img src="{{ post.portada_url }}" alt="">
+                        {% else %}
+                        <span>📰</span>
+                        {% endif %}
+                        <span class="blog-leido-num">{{ loop.index }}</span>
+                    </div>
+                    <div class="blog-leido-info">
+                        <span class="blog-leido-titulo">{{ post.titulo }}</span>
+                        <span class="blog-leido-vistas">👁 {{ post.vistas }} vistas</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            <div class="blog-leidos-filters" style="margin-top:1rem" id="blogLeidosFilters">
                 {% if categorias %}
                 <div class="blog-leidos-filter-wrap">
                 <label class="blog-cat-label" style="margin-bottom:.3rem">Categoría</label>
                 <div class="searchable-select blog-leidos-ss" id="blogLeidosSS">
+                    <input type="hidden" name="_leidos_cat" value="" id="blogLeidosCatHidden">
                     <div class="ss-display" tabindex="0" id="blogLeidosDisplay">
                         <span class="ss-value" id="blogLeidosLabel">Todas</span>
                         <span class="ss-arrow">▾</span>
@@ -279,6 +304,7 @@
                 <div class="blog-leidos-filter-wrap">
                 <label class="blog-cat-label" style="margin-bottom:.3rem">Autor</label>
                 <div class="searchable-select blog-leidos-ss" id="blogAutorSS">
+                    <input type="hidden" name="_leidos_autor" value="" id="blogLeidosAutorHidden">
                     <div class="ss-display" tabindex="0" id="blogAutorDisplay">
                         <span class="ss-value" id="blogAutorLabel">Todos</span>
                         <span class="ss-arrow">▾</span>
@@ -297,25 +323,6 @@
                 </div>
                 </div>
                 {% endif %}
-                </div>{# /blog-leidos-filters #}
-            </div>
-            <div class="blog-mas-leidos-list" id="blogLeidosList">
-                {% for post in mas_leidos %}
-                <a href="/blog/{{ post.slug }}" class="blog-leido-item">
-                    <span class="blog-leido-num">{{ loop.index }}</span>
-                    <div class="blog-leido-img">
-                        {% if post.portada_url %}
-                        <img src="{{ post.portada_url }}" alt="">
-                        {% else %}
-                        <span>📰</span>
-                        {% endif %}
-                    </div>
-                    <div class="blog-leido-info">
-                        <span class="blog-leido-titulo">{{ post.titulo | truncate(60) }}</span>
-                        <span class="blog-leido-vistas">👁 {{ post.vistas }} vistas</span>
-                    </div>
-                </a>
-                {% endfor %}
             </div>
         </div>
         {% endif %}
@@ -362,7 +369,19 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="/static/js/searchable-select.js"></script>
 <script>
+// ── Scroll a resultados si hay filtro activo (mobile) ────────
+(function () {
+    var hasFiltro = {{ 'true' if (cat_activa or q) else 'false' }};
+    if (!hasFiltro) return;
+    var anchor = document.getElementById('blog-results');
+    if (!anchor) return;
+    var navH = (document.querySelector('nav, header, .navbar') || {}).offsetHeight || 0;
+    var top  = anchor.getBoundingClientRect().top + window.scrollY - navH - 8;
+    window.scrollTo({ top: top, behavior: 'smooth' });
+})();
+
 // ── Dropdowns de fecha ────────────────────────────────────
 (function () {
     let anioVal = '{{ anio or "" }}';
@@ -419,7 +438,22 @@
     const list    = document.getElementById('blogCatList');
     if (!wrap) return;
 
-    function open()  { wrap.classList.add('open'); wrap.querySelector('.ss-search').focus(); }
+    var isTouch = window.matchMedia('(hover: none)').matches;
+    function open() {
+        wrap.classList.add('open');
+        if (!isTouch) wrap.querySelector('.ss-search').focus();
+        // Scroll suave para que el select y sus opciones queden visibles
+        requestAnimationFrame(function () {
+            var navH = (document.querySelector('nav, header, .navbar') || {}).offsetHeight || 0;
+            var rect = wrap.getBoundingClientRect();
+            var dropH = (wrap.querySelector('.ss-dropdown') || {}).offsetHeight || 220;
+            var bottom = rect.bottom + dropH;
+            if (bottom > window.innerHeight) {
+                var top = window.scrollY + rect.top - navH - 12;
+                window.scrollTo({ top: top, behavior: 'smooth' });
+            }
+        });
+    }
     function close() { wrap.classList.remove('open'); }
 
     display.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
@@ -441,55 +475,25 @@
     document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
 })();
 
-// Filtros de Más leídos (categoría + autor)
+// Filtros de Más leídos (categoría + autor) — usando searchable-select.js
 (function () {
-    let catVal = '', autorVal = '';
-    const results = document.getElementById('blogLeidosList');
+    const results   = document.getElementById('blogLeidosList');
+    const catHidden  = document.getElementById('blogLeidosCatHidden');
+    const autorHidden = document.getElementById('blogLeidosAutorHidden');
+    if (!results) return;
 
     function fetchLeidos() {
         const params = new URLSearchParams();
-        if (catVal)   params.set('categoria', catVal);
-        if (autorVal) params.set('autor', autorVal);
+        const cat   = catHidden  ? catHidden.value  : '';
+        const autor = autorHidden ? autorHidden.value : '';
+        if (cat)   params.set('categoria', cat);
+        if (autor) params.set('autor', autor);
         const url = '/blog/mas-leidos' + (params.toString() ? '?' + params.toString() : '');
         fetch(url).then(r => r.text()).then(html => { results.innerHTML = html; });
     }
 
-    function initSS(wrapperId, displayId, labelId, listId, onChange) {
-        const wrap    = document.getElementById(wrapperId);
-        const display = document.getElementById(displayId);
-        const label   = document.getElementById(labelId);
-        const list    = document.getElementById(listId);
-        if (!wrap) return;
-
-        function open()  { wrap.classList.add('open'); wrap.querySelector('.ss-search').focus(); }
-        function close() { wrap.classList.remove('open'); }
-
-        display.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
-        display.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
-
-        wrap.querySelector('.ss-search').addEventListener('input', function () {
-            const q = this.value.toLowerCase();
-            list.querySelectorAll('.ss-option').forEach(li => {
-                li.style.display = li.textContent.trim().toLowerCase().includes(q) ? '' : 'none';
-            });
-        });
-
-        list.addEventListener('click', e => {
-            const li = e.target.closest('.ss-option');
-            if (!li) return;
-            list.querySelectorAll('.ss-option').forEach(i => i.classList.remove('ss-selected'));
-            li.classList.add('ss-selected');
-            label.textContent = li.textContent.trim();
-            close();
-            onChange(li.dataset.value);
-            fetchLeidos();
-        });
-
-        document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
-    }
-
-    initSS('blogLeidosSS',  'blogLeidosDisplay', 'blogLeidosLabel', 'blogLeidosList2', v => catVal   = v);
-    initSS('blogAutorSS',   'blogAutorDisplay',  'blogAutorLabel',  'blogAutorList',   v => autorVal = v);
+    if (catHidden)   catHidden.addEventListener('change',   fetchLeidos);
+    if (autorHidden) autorHidden.addEventListener('change', fetchLeidos);
 })();
 
 (function () {
@@ -507,5 +511,8 @@
         });
     }
 })();
+
+var leidosFilters = document.getElementById('blogLeidosFilters');
+if (leidosFilters) initSearchableSelects({ container: leidosFilters });
 </script>
 {% endblock %}

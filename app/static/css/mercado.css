@@ -695,7 +695,7 @@
 .ss-dropdown {
     display: none;
     position: absolute;
-    bottom: calc(100% + 4px);
+    top: calc(100% + 4px);
     left: 0; right: 0;
     background: var(--bg-card);
     border: 1px solid var(--border-light);

@@ -41,11 +41,11 @@
                 {% endif %}
             </div>
             <div class="blog-card-body">
-                {% if p.categoria %}
-                <span class="blog-badge blog-badge-sm" style="background:{{ p.categoria.color }}20; color:{{ p.categoria.color }}; border-color:{{ p.categoria.color }}40">
-                    {{ p.categoria.nombre }}
+                {% for cat in p.categorias %}
+                <span class="blog-badge blog-badge-sm" style="background:{{ cat.color }}20; color:{{ cat.color }}; border-color:{{ cat.color }}40">
+                    {{ cat.nombre }}
                 </span>
-                {% endif %}
+                {% endfor %}
                 <h2 class="blog-card-title">{{ p.titulo }}</h2>
                 {% if p.extracto %}<p class="blog-card-extract">{{ p.extracto }}</p>{% endif %}
                 <div class="blog-card-meta">

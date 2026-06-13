@@ -82,47 +82,25 @@
                 <!-- ── Columna lateral ────────────────────── -->
                 <div class="blog-form-side">
 
-                    <!-- Publicar -->
-                    <div class="blog-side-card">
-                        <h3 class="blog-side-title">Publicación</h3>
-                        <div class="form-group" style="margin:0">
-                            <label>Estado</label>
-                            <div class="blog-radio-group">
-                                <label class="blog-radio">
-                                    <input type="radio" name="publicado" value="si"
-                                           {% if not post or post.publicado %}checked{% endif %}>
-                                    <span>🌐 Publicado</span>
-                                </label>
-                                <label class="blog-radio">
-                                    <input type="radio" name="publicado" value="no"
-                                           {% if post and not post.publicado %}checked{% endif %}>
-                                    <span>📝 Borrador</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="blog-form-actions">
-                            <button type="submit" class="btn btn-primary btn-full btn-lg">
-                                {% if post %}Guardar cambios{% else %}Publicar artículo{% endif %}
-                            </button>
-                            <a href="{% if post %}/blog/{{ post.slug }}{% else %}/blog{% endif %}"
-                               class="btn btn-outline btn-full">Cancelar</a>
-                        </div>
-                    </div>
-
                     <!-- Categoría -->
                     <div class="blog-side-card">
                         <h3 class="blog-side-title">Categoría</h3>
 
-                        <!-- Select buscable -->
-                        <input type="hidden" name="categoria_id" id="categoria_id"
-                               value="{{ post.categoria_id if post and post.categoria_id else '' }}">
-
+                        <!-- Multi-select de categorías -->
+                        <div id="catTagsWrap" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem;min-height:1.5rem">
+                            {% if post and post.categorias %}
+                            {% for c in post.categorias %}
+                            <span class="cat-tag" data-id="{{ c.id }}" style="display:inline-flex;align-items:center;gap:.3rem;background:{{ c.color }}22;color:{{ c.color }};border:1px solid {{ c.color }}55;border-radius:20px;padding:.2rem .65rem;font-size:.8rem;font-weight:600">
+                                {{ c.nombre }}
+                                <button type="button" onclick="removeTag(this)" style="background:none;border:none;cursor:pointer;color:inherit;font-size:.9rem;line-height:1;padding:0">✕</button>
+                                <input type="hidden" name="categoria_ids" value="{{ c.id }}">
+                            </span>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
                         <div class="searchable-select" id="catSelect">
                             <div class="ss-display" tabindex="0" id="catDisplay">
-                                <span class="ss-value" id="catLabel">
-                                    {% if post and post.categoria %}{{ post.categoria.nombre }}
-                                    {% else %}Sin categoría{% endif %}
-                                </span>
+                                <span class="ss-value placeholder" id="catLabel">+ Agregar categoría</span>
                                 <span class="ss-arrow">▾</span>
                             </div>
                             <div class="ss-dropdown">
@@ -130,10 +108,8 @@
                                     <input type="text" class="ss-search" placeholder="Buscar categoría..." autocomplete="off">
                                 </div>
                                 <ul class="ss-list" id="catList">
-                                    <li class="ss-option" data-value="">Sin categoría</li>
                                     {% for c in categorias %}
-                                    <li class="ss-option {% if post and post.categoria_id == c.id %}ss-selected{% endif %}"
-                                        data-value="{{ c.id }}">{{ c.nombre }}</li>
+                                    <li class="ss-option" data-value="{{ c.id }}" data-nombre="{{ c.nombre }}" data-color="{{ c.color }}">{{ c.nombre }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>
@@ -201,6 +177,33 @@
                         <small style="display:block;margin-top:.4rem;color:var(--text-dim)">
                             Podés seleccionar varias a la vez.
                         </small>
+                    </div>
+
+                    <!-- Publicar -->
+                    <div class="blog-side-card">
+                        <h3 class="blog-side-title">Publicación</h3>
+                        <div class="form-group" style="margin:0">
+                            <label>Estado</label>
+                            <div class="blog-radio-group">
+                                <label class="blog-radio">
+                                    <input type="radio" name="publicado" value="si"
+                                           {% if not post or post.publicado %}checked{% endif %}>
+                                    <span>🌐 Publicado</span>
+                                </label>
+                                <label class="blog-radio">
+                                    <input type="radio" name="publicado" value="no"
+                                           {% if post and not post.publicado %}checked{% endif %}>
+                                    <span>📝 Borrador</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="blog-form-actions">
+                            <button type="submit" class="btn btn-primary btn-full btn-lg">
+                                {% if post %}Guardar cambios{% else %}Publicar artículo{% endif %}
+                            </button>
+                            <a href="{% if post %}/blog/{{ post.slug }}{% else %}/blog{% endif %}"
+                               class="btn btn-outline btn-full">Cancelar</a>
+                        </div>
                     </div>
 
                 </div>
@@ -288,17 +291,40 @@ tituloIn?.addEventListener('input', function () {
 // Dispara al cargar si hay valor
 if (tituloIn?.value) tituloIn.dispatchEvent(new Event('input'));
 
-// ── Searchable select de categoría ───────────────────────
+// ── Multi-select de categorías con tags ──────────────────
 (function(){
     const wrap    = document.getElementById('catSelect');
     const display = document.getElementById('catDisplay');
     const label   = document.getElementById('catLabel');
-    const hidden  = document.getElementById('categoria_id');
     const list    = document.getElementById('catList');
+    const tagsWrap = document.getElementById('catTagsWrap');
     if (!wrap) return;
 
+    function getSelectedIds() {
+        return Array.from(tagsWrap.querySelectorAll('.cat-tag')).map(t => t.dataset.id);
+    }
+
+    function updateOptionVisibility() {
+        const selected = getSelectedIds();
+        list.querySelectorAll('.ss-option').forEach(li => {
+            li.style.opacity = selected.includes(li.dataset.value) ? '.35' : '';
+            li.style.pointerEvents = selected.includes(li.dataset.value) ? 'none' : '';
+        });
+    }
+
+    function addTag(id, nombre, color) {
+        if (getSelectedIds().includes(id)) return;
+        const span = document.createElement('span');
+        span.className = 'cat-tag';
+        span.dataset.id = id;
+        span.style.cssText = `display:inline-flex;align-items:center;gap:.3rem;background:${color}22;color:${color};border:1px solid ${color}55;border-radius:20px;padding:.2rem .65rem;font-size:.8rem;font-weight:600`;
+        span.innerHTML = `${nombre}<button type="button" onclick="removeTag(this)" style="background:none;border:none;cursor:pointer;color:inherit;font-size:.9rem;line-height:1;padding:0">✕</button><input type="hidden" name="categoria_ids" value="${id}">`;
+        tagsWrap.appendChild(span);
+        updateOptionVisibility();
+    }
+
     function open()  { wrap.classList.add('open'); wrap.querySelector('.ss-search').focus(); }
-    function close() { wrap.classList.remove('open'); }
+    function close() { wrap.classList.remove('open'); wrap.querySelector('.ss-search').value = ''; list.querySelectorAll('.ss-option').forEach(li => li.style.display = ''); }
 
     display.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
     display.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') { e.preventDefault(); open(); }});
@@ -313,17 +339,29 @@ if (tituloIn?.value) tituloIn.dispatchEvent(new Event('input'));
     list.addEventListener('click', e => {
         const li = e.target.closest('.ss-option');
         if (!li) return;
-        list.querySelectorAll('.ss-option').forEach(i => i.classList.remove('ss-selected'));
-        li.classList.add('ss-selected');
-        hidden.value = li.dataset.value;
-        label.textContent = li.textContent.trim();
+        addTag(li.dataset.value, li.dataset.nombre, li.dataset.color || '#B0B0D0');
         close();
     });
 
     document.addEventListener('click', e => {
         if (!wrap.contains(e.target)) close();
     });
+
+    updateOptionVisibility();
+
+    window.addTagFromCrear = function(id, nombre, color) { addTag(id, nombre, color); };
 })();
+
+window.removeTag = function(btn) {
+    const tag = btn.closest('.cat-tag');
+    if (tag) {
+        tag.remove();
+        // re-enable option
+        const id = tag.dataset.id;
+        const li = document.querySelector(`#catList .ss-option[data-value="${id}"]`);
+        if (li) { li.style.opacity = ''; li.style.pointerEvents = ''; }
+    }
+};
 
 // ── Toggle nueva categoría ────────────────────────────────
 function toggleNuevaCat() {
@@ -348,23 +386,19 @@ async function crearCategoria() {
         const res  = await fetch('/blog/admin/categoria', { method: 'POST', body: fd });
         const data = await res.json();
         if (res.ok && data.id) {
-            const list   = document.getElementById('catList');
-            const hidden = document.getElementById('categoria_id');
-            const label  = document.getElementById('catLabel');
-            // Agregar al buscador si no existe
+            const list = document.getElementById('catList');
+            // Agregar opción al dropdown si no existe
             if (!list.querySelector(`[data-value="${data.id}"]`)) {
                 const li = document.createElement('li');
                 li.className = 'ss-option';
                 li.dataset.value = data.id;
+                li.dataset.nombre = data.nombre;
+                li.dataset.color = '#B0B0D0';
                 li.textContent = data.nombre;
                 list.appendChild(li);
             }
-            // Seleccionar automáticamente
-            list.querySelectorAll('.ss-option').forEach(i => i.classList.remove('ss-selected'));
-            const newLi = list.querySelector(`[data-value="${data.id}"]`);
-            newLi?.classList.add('ss-selected');
-            hidden.value = data.id;
-            label.textContent = data.nombre;
+            // Agregar como tag seleccionado
+            if (typeof addTagFromCrear === 'function') addTagFromCrear(String(data.id), data.nombre, '#B0B0D0');
             msg.style.color = '#7DD4A8';
             msg.textContent = '✓ "' + data.nombre + '" creada y seleccionada.';
             input.value = '';

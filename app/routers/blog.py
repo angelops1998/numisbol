@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, extract, func as sqlfunc
 from typing import List, Optional
 from ..database import get_db
-from ..models.blog import BlogPost, BlogCategoria, BlogPostImagen, slugify
+from ..models.blog import BlogPost, BlogCategoria, BlogPostImagen, blog_post_categorias, slugify
 from ..models.user import User
 from ..auth import get_current_user, get_current_user_optional
 from ..routers.coleccion import save_upload
@@ -77,6 +77,14 @@ async def blog_index(
     # Si hay filtros activos, solo se muestra si coincide con ellos.
     hay_filtro = bool(q.strip() or categoria or anio or mes)
 
+    def _apply_cat_filter(qry, cat_slug):
+        if cat_slug == "__sin_categoria__":
+            return qry.filter(~BlogPost.categorias.any())
+        cat_obj = db.query(BlogCategoria).filter(BlogCategoria.slug == cat_slug).first()
+        if cat_obj:
+            return qry.filter(BlogPost.categorias.any(BlogCategoria.id == cat_obj.id))
+        return qry
+
     destacado_q = db.query(BlogPost).filter(BlogPost.publicado == True)
     if hay_filtro:
         if q.strip():
@@ -85,12 +93,8 @@ async def blog_index(
                 or_(BlogPost.titulo.ilike(term), BlogPost.extracto.ilike(term),
                     BlogPost.contenido.ilike(term))
             )
-        if categoria == "__sin_categoria__":
-            destacado_q = destacado_q.filter(BlogPost.categoria_id == None)
-        elif categoria:
-            cat_obj = db.query(BlogCategoria).filter(BlogCategoria.slug == categoria).first()
-            if cat_obj:
-                destacado_q = destacado_q.filter(BlogPost.categoria_id == cat_obj.id)
+        if categoria:
+            destacado_q = _apply_cat_filter(destacado_q, categoria)
         if anio:
             destacado_q = destacado_q.filter(extract("year", BlogPost.created_at) == anio)
         if mes:
@@ -106,7 +110,7 @@ async def blog_index(
         ilike_filter = or_(
             BlogPost.titulo.ilike(term),
             BlogPost.extracto.ilike(term),
-            BlogPost.categoria.has(BlogCategoria.nombre.ilike(term)),
+            BlogPost.categorias.any(BlogCategoria.nombre.ilike(term)),
             BlogPost.autor.has(or_(
                 User.full_name.ilike(term),
                 User.username.ilike(term),
@@ -125,12 +129,8 @@ async def blog_index(
             )
         else:
             posts_q = posts_q.filter(ilike_filter)
-    if categoria == "__sin_categoria__":
-        posts_q = posts_q.filter(BlogPost.categoria_id == None)
-    elif categoria:
-        cat = db.query(BlogCategoria).filter(BlogCategoria.slug == categoria).first()
-        if cat:
-            posts_q = posts_q.filter(BlogPost.categoria_id == cat.id)
+    if categoria:
+        posts_q = _apply_cat_filter(posts_q, categoria)
     if anio:
         posts_q = posts_q.filter(extract("year", BlogPost.created_at) == anio)
     if mes:
@@ -220,11 +220,11 @@ async def mas_leidos_fragment(
 ):
     q = db.query(BlogPost).filter(BlogPost.publicado == True, BlogPost.vistas > 0)
     if categoria == "__sin_categoria__":
-        q = q.filter(BlogPost.categoria_id == None)
+        q = q.filter(~BlogPost.categorias.any())
     elif categoria:
         cat = db.query(BlogCategoria).filter(BlogCategoria.slug == categoria).first()
         if cat:
-            q = q.filter(BlogPost.categoria_id == cat.id)
+            q = q.filter(BlogPost.categorias.any(BlogCategoria.id == cat.id))
     if autor:
         a = db.query(User).filter(User.username == autor).first()
         if a:
@@ -233,7 +233,7 @@ async def mas_leidos_fragment(
     html = ""
     for i, post in enumerate(posts, 1):
         img = f'<img src="{post.portada_url}" alt="">' if post.portada_url else "<span>📰</span>"
-        titulo = post.titulo[:60] + ("…" if len(post.titulo) > 60 else "")
+        titulo = post.titulo
         html += f'''<a href="/blog/{post.slug}" class="blog-leido-item">
             <span class="blog-leido-num">{i}</span>
             <div class="blog-leido-img">{img}</div>
@@ -301,7 +301,7 @@ async def blog_nuevo_post(
     titulo: str = Form(""),
     extracto: str = Form(""),
     contenido: str = Form(""),
-    categoria_id: str = Form(""),
+    categoria_ids: List[str] = Form(default=[]),
     publicado: str = Form("si"),
     portada: UploadFile = File(None),
     imagenes: List[UploadFile] = File(default=[]),
@@ -318,12 +318,16 @@ async def blog_nuevo_post(
             "user": user, "categorias": categorias, "post": None,
             "errors": errors,
             "form": {"titulo": titulo, "extracto": extracto,
-                     "contenido": contenido, "categoria_id": categoria_id},
+                     "contenido": contenido, "categoria_ids": categoria_ids},
         }, status_code=422)
 
     portada_url = None
     if portada and portada.filename:
         portada_url = save_upload(portada)
+
+    cats = db.query(BlogCategoria).filter(
+        BlogCategoria.id.in_([int(i) for i in categoria_ids if i])
+    ).all()
 
     post = BlogPost(
         titulo=titulo.strip(),
@@ -331,12 +335,12 @@ async def blog_nuevo_post(
         extracto=extracto.strip() or None,
         contenido=contenido.strip(),
         portada_url=portada_url,
-        categoria_id=int(categoria_id) if categoria_id else None,
         autor_id=user.id,
         publicado=(publicado == "si"),
+        categorias=cats,
     )
     db.add(post)
-    db.flush()   # genera el id sin commit
+    db.flush()
 
     for i, img in enumerate(imagenes):
         if img and img.filename:
@@ -370,7 +374,7 @@ async def blog_editar_post(
     titulo: str = Form(""),
     extracto: str = Form(""),
     contenido: str = Form(""),
-    categoria_id: str = Form(""),
+    categoria_ids: List[str] = Form(default=[]),
     publicado: str = Form("si"),
     portada: UploadFile = File(None),
     imagenes: List[UploadFile] = File(default=[]),
@@ -398,13 +402,11 @@ async def blog_editar_post(
         if url:
             post.portada_url = url
 
-    # Eliminar imágenes marcadas
     for img_id in eliminar_imagenes:
         img = db.get(BlogPostImagen, int(img_id))
         if img and img.post_id == post.id:
             db.delete(img)
 
-    # Agregar nuevas imágenes
     orden_base = len(post.imagenes)
     for i, img in enumerate(imagenes):
         if img and img.filename:
@@ -412,12 +414,16 @@ async def blog_editar_post(
             if url:
                 db.add(BlogPostImagen(post_id=post.id, url=url, orden=orden_base + i))
 
-    post.titulo       = titulo.strip()
-    post.slug         = unique_slug(db, titulo, exclude_id=post.id)
-    post.extracto     = extracto.strip() or None
-    post.contenido    = contenido.strip()
-    post.categoria_id = int(categoria_id) if categoria_id else None
-    post.publicado    = (publicado == "si")
+    cats = db.query(BlogCategoria).filter(
+        BlogCategoria.id.in_([int(i) for i in categoria_ids if i])
+    ).all()
+
+    post.titulo     = titulo.strip()
+    post.slug       = unique_slug(db, titulo, exclude_id=post.id)
+    post.extracto   = extracto.strip() or None
+    post.contenido  = contenido.strip()
+    post.categorias = cats
+    post.publicado  = (publicado == "si")
     db.commit()
     return RedirectResponse(url=f"/blog/{post.slug}", status_code=302)
 
@@ -444,7 +450,7 @@ async def crear_categoria(
     db: Session = Depends(get_db),
 ):
     user = get_current_user(request, db)
-    nombre = nombre.strip()
+    nombre = nombre.strip().upper()
     if not nombre:
         raise HTTPException(status_code=422, detail="Nombre requerido")
     slug = slugify(nombre)
@@ -492,11 +498,12 @@ async def blog_detalle(request: Request, slug: str, db: Session = Depends(get_db
     db.commit()
 
     relacionados = []
-    if post.categoria_id:
+    if post.categorias:
+        cat_ids = [c.id for c in post.categorias]
         relacionados = (
             db.query(BlogPost)
             .filter(BlogPost.publicado == True,
-                    BlogPost.categoria_id == post.categoria_id,
+                    BlogPost.categorias.any(BlogCategoria.id.in_(cat_ids)),
                     BlogPost.id != post.id)
             .order_by(BlogPost.created_at.desc())
             .limit(3).all()

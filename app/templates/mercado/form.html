@@ -46,7 +46,6 @@
                     <p style="font-size:var(--font-sm);color:#bfdbfe;margin-bottom:1rem;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.35);border-radius:var(--radius);padding:.55rem .85rem;">
                         ℹ️ Importar una moneda <strong style="color:#93c5fd">no la modifica ni la elimina</strong> de tu colección. Seguirá apareciendo aunque la marques como vendida en el mercado.
                     </p>
-
                     <div class="coin-ac" id="coinAC">
                         <div class="coin-ac-field">
                             <input type="text" id="coinACInput"
@@ -57,7 +56,6 @@
                         <ul class="cp-list coin-ac-dropdown" id="coinACDropdown" style="display:none"></ul>
                         <input type="hidden" id="coin_id" name="coin_id" value="{{ coin_origen.id if coin_origen else '' }}">
                     </div>
-
                     <!-- Preview de la moneda seleccionada -->
                     <div id="coinACPreview" style="display:none;margin-top:.75rem;background:rgba(34,197,94,.07);border:1.5px solid rgba(34,197,94,.4);border-radius:var(--radius);padding:.75rem 1rem;align-items:center;gap:.85rem">
                         <div style="font-size:1.3rem;line-height:1">✅</div>
@@ -80,7 +78,7 @@
                             <input type="text" id="title" name="title"
                                 value="{{ listing.title if listing else '' }}"
                                 placeholder="Ej: Vendo 1 Boliviano 1987 en excelente estado"
-                                required autofocus>
+                                required>
                         </div>
 
                         <div class="form-group">
@@ -263,6 +261,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="/static/js/searchable-select.js"></script>
 <script>
 /* ── Coin Autocomplete ───────────────────────────────── */
 (function () {
@@ -386,20 +385,48 @@
             .catch(function() { closeDropdown(); });
     }
 
-    input.addEventListener('input', function() {
-        const q = this.value.trim();
-        clearTimeout(debounce);
-        if (!q) { closeDropdown(); return; }
-        debounce = setTimeout(function() { fetchCoins(q); }, 220);
-    });
+    // En mobile usamos el bottom sheet en lugar del dropdown inline
+    if (window.matchMedia('(hover: none)').matches) {
+        input.addEventListener('focus', function() { this.blur(); });
+        input.addEventListener('click', function() {
+            if (hidden.value) return; // Ya seleccionado
+            openSearchSheet({
+                title: 'Importar desde mi colección',
+                placeholder: 'Nombre, año, país…',
+                fetchFn: function(q, cb) {
+                    fetch('/coleccion/api/search?q=' + encodeURIComponent(q) + '&limit=12')
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            cb(data.map(function(c) {
+                                const meta = [c.year, c.country, c.condition].filter(Boolean).join(' · ');
+                                return {
+                                    label: c.name,
+                                    sublabel: meta,
+                                    img: c.img || null,
+                                    onSelect: function() { applySelection(c); }
+                                };
+                            }));
+                        })
+                        .catch(function() { cb([]); });
+                }
+            });
+        });
+    } else {
+        input.addEventListener('input', function() {
+            const q = this.value.trim();
+            clearTimeout(debounce);
+            if (!q) { closeDropdown(); return; }
+            debounce = setTimeout(function() { fetchCoins(q); }, 220);
+        });
 
-    input.addEventListener('focus', function() {
-        if (this.value.trim() && !hidden.value) fetchCoins(this.value.trim());
-    });
+        input.addEventListener('focus', function() {
+            if (this.value.trim() && !hidden.value) fetchCoins(this.value.trim());
+        });
 
-    input.addEventListener('blur', function() {
-        setTimeout(closeDropdown, 150);
-    });
+        input.addEventListener('blur', function() {
+            setTimeout(closeDropdown, 150);
+        });
+    }
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeDropdown();
@@ -417,58 +444,7 @@
 })();
 
 /* ── Searchable select ───────────────────────────────── */
-function norm(s) { return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
-document.querySelectorAll('.searchable-select').forEach(function(ss) {
-    const display  = ss.querySelector('.ss-display');
-    const valueEl  = ss.querySelector('.ss-value');
-    const search   = ss.querySelector('.ss-search');
-    const options  = ss.querySelectorAll('.ss-option');
-    const hidden   = ss.querySelector('input[type=hidden]');
-
-    display.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const wasOpen = ss.classList.contains('open');
-        document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('open'));
-        if (!wasOpen) {
-            ss.classList.add('open');
-            search.value = '';
-            options.forEach(o => o.classList.remove('ss-hidden'));
-            ss.querySelectorAll('.ss-group').forEach(g => g.classList.remove('ss-hidden'));
-            setTimeout(() => search.focus(), 50);
-        }
-    });
-
-    search.addEventListener('click', e => e.stopPropagation());
-
-    search.addEventListener('input', function() {
-        const term = norm(this.value.trim());
-        options.forEach(opt => opt.classList.toggle('ss-hidden', !!term && !norm(opt.textContent).includes(term)));
-        ss.querySelectorAll('.ss-group').forEach(function(group) {
-            let next = group.nextElementSibling;
-            let allHidden = true;
-            while (next && !next.classList.contains('ss-group')) {
-                if (!next.classList.contains('ss-hidden')) { allHidden = false; break; }
-                next = next.nextElementSibling;
-            }
-            group.classList.toggle('ss-hidden', allHidden);
-        });
-    });
-
-    options.forEach(function(opt) {
-        opt.addEventListener('click', function(e) {
-            e.stopPropagation();
-            options.forEach(o => o.classList.remove('ss-selected'));
-            opt.classList.add('ss-selected');
-            hidden.value = opt.dataset.value;
-            valueEl.textContent = opt.textContent.trim();
-            valueEl.classList.remove('placeholder');
-            ss.classList.remove('open');
-        });
-    });
-});
-document.addEventListener('click', function() {
-    document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('open'));
-});
+initSearchableSelects();
 
 /* ── Toggle moneda ───────────────────────────────────── */
 function setCurrency(val) {

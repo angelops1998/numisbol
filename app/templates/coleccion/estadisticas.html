@@ -112,8 +112,33 @@
             {% if tipo != 'billete' %}
             {{ stats_block("Por ceca", por_ceca, "stats-bar-fill--ceca") }}
             {% endif %}
-            {{ stats_block("Por siglo", por_siglo, "stats-bar-fill--siglo", badge=false, section_class="stats-section--full") }}
+            {{ stats_block("Por década", por_decada, "stats-bar-fill--siglo", badge=false, section_class="stats-section--full") }}
             {{ stats_block("Por categoría", por_categoria, "stats-bar-fill--cat", section_class="stats-section--full") }}
+
+            {% if top_coins %}
+            <div class="stats-section stats-section--full">
+                <h2 class="stats-section-title">Top 5 más valiosas</h2>
+                <div class="top-coins-list">
+                    {% for coin in top_coins %}
+                    <a href="/coleccion/{{ coin.id }}" class="top-coin-row">
+                        {% if coin.image_url %}
+                        <img src="{{ coin.image_url }}" class="top-coin-img" alt="">
+                        {% else %}
+                        <div class="top-coin-img top-coin-img--placeholder">{{ '🪙' if coin.tipo == 'moneda' else '💵' }}</div>
+                        {% endif %}
+                        <div class="top-coin-info">
+                            <span class="top-coin-name">{{ coin.name }}</span>
+                            <span class="top-coin-meta">{{ coin.year or '—' }} · {{ coin.country or '—' }}</span>
+                        </div>
+                        <span class="top-coin-value">
+                            {% if coin.value_currency == 'USD' %}US$ {{ "%.2f"|format(coin.estimated_value) }}
+                            {% else %}Bs {{ "%.0f"|format(coin.estimated_value) }}{% endif %}
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         {% if total_usd_unificado and (total_bob or total_usd) %}

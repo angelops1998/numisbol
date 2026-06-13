@@ -38,7 +38,17 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git config *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8000/)",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "mcp__Claude_in_Chrome__computer",
+      "mcp__Claude_in_Chrome__resize_window",
+      "mcp__Claude_in_Chrome__javascript_tool",
+      "Bash(pkill -f uvicorn)",
+      "Bash(python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload)",
+      "PowerShell(psql -U postgres -d numismatica -c \"SELECT id, username, email FROM users ORDER BY id;\" 2>&1)"
     ]
   }
 }

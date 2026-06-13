@@ -85,7 +85,7 @@
                             <input type="text" id="name" name="name"
                                 value="{{ coin.name if coin and coin.name else '' }}"
                                 placeholder="Ej: 1 Boliviano, Melgarejo, Peso boliviano"
-                                required autofocus>
+                                required>
                         </div>
 
                         <div class="form-group" data-coin-only>
@@ -479,105 +479,9 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="/static/js/searchable-select.js"></script>
 <script>
-const FREE_TEXT_FIELDS = ['mint', 'currency_unit'];
-function norm(s) { return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
-
-document.querySelectorAll('.searchable-select').forEach(function(ss) {
-    const display   = ss.querySelector('.ss-display');
-    const valueEl   = ss.querySelector('.ss-value');
-    const search    = ss.querySelector('.ss-search');
-    const options   = ss.querySelectorAll('.ss-option');
-    const hidden    = ss.querySelector('input[type=hidden]');
-    const list      = ss.querySelector('.ss-list');
-    const fieldName = ss.dataset.name;
-    const allowFree = FREE_TEXT_FIELDS.includes(fieldName);
-
-    // "Usar «...»" custom option, injected only for free-text fields
-    let customOpt = null;
-    if (allowFree) {
-        customOpt = document.createElement('li');
-        customOpt.className = 'ss-option ss-custom-opt ss-hidden';
-        list.appendChild(customOpt);
-        customOpt.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const val = search.value.trim();
-            if (!val) return;
-            options.forEach(o => o.classList.remove('ss-selected'));
-            customOpt.classList.add('ss-selected');
-            hidden.value = val;
-            valueEl.textContent = val;
-            valueEl.classList.remove('placeholder');
-            ss.classList.remove('open');
-        });
-    }
-
-    display.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const wasOpen = ss.classList.contains('open');
-        document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('open'));
-        if (!wasOpen) {
-            ss.classList.add('open');
-            search.value = '';
-            options.forEach(o => o.classList.remove('ss-hidden'));
-            if (customOpt) customOpt.classList.add('ss-hidden');
-            setTimeout(() => search.focus(), 50);
-        }
-    });
-
-    search.addEventListener('input', function() {
-        const term = norm(this.value.trim());
-        const raw  = this.value.trim();
-        options.forEach(opt =>
-            opt.classList.toggle('ss-hidden', !norm(opt.textContent).includes(term))
-        );
-        // hide group headers when all their options are hidden
-        ss.querySelectorAll('.ss-group').forEach(function(group) {
-            let next = group.nextElementSibling;
-            let allHidden = true;
-            while (next && !next.classList.contains('ss-group')) {
-                if (!next.classList.contains('ss-hidden') && !next.classList.contains('ss-custom-opt')) {
-                    allHidden = false; break;
-                }
-                next = next.nextElementSibling;
-            }
-            group.classList.toggle('ss-hidden', allHidden);
-        });
-        // show/hide "Usar «...»" option
-        if (customOpt) {
-            const hasExact = Array.from(options).some(o =>
-                !o.classList.contains('ss-custom-opt') &&
-                o.dataset.value && o.dataset.value.toLowerCase() === term
-            );
-            if (raw && !hasExact) {
-                customOpt.textContent = `Usar «${raw}»`;
-                customOpt.classList.remove('ss-hidden');
-            } else {
-                customOpt.classList.add('ss-hidden');
-            }
-        }
-    });
-
-    search.addEventListener('click', e => e.stopPropagation());
-
-    options.forEach(function(opt) {
-        if (opt === customOpt) return;
-        opt.addEventListener('click', function(e) {
-            e.stopPropagation();
-            options.forEach(o => o.classList.remove('ss-selected'));
-            if (customOpt) customOpt.classList.remove('ss-selected');
-            opt.classList.add('ss-selected');
-            hidden.value = opt.dataset.value;
-            valueEl.textContent = opt.textContent.trim();
-            valueEl.classList.remove('placeholder');
-            ss.classList.remove('open');
-        });
-    });
-});
-
-document.addEventListener('click', function() {
-    document.querySelectorAll('.searchable-select').forEach(s => s.classList.remove('open'));
-});
+initSearchableSelects({ freeTextFields: ['mint', 'currency_unit'] });
 
 // ── Toggle moneda / billete ───────────────────────────────────
 (function() {

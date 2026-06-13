@@ -42,6 +42,7 @@ async def registro(
         errors.append("El nombre de usuario debe tener al menos 3 caracteres.")
     if not email.strip():
         errors.append("El correo electrónico es obligatorio.")
+    password = password.strip()
     if not password:
         errors.append("La contraseña es obligatoria.")
     elif len(password) < 8:
@@ -108,6 +109,7 @@ async def login(
     db: Session = Depends(get_db),
 ):
     # Validación manual para mostrar errores en HTML, no JSON
+    password = password.strip()
     if not email.strip() or not password:
         return templates.TemplateResponse(
             request, "auth/login.html",
