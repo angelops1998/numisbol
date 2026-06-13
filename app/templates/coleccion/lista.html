@@ -255,56 +255,9 @@
     </div>
 </div>
 
+<script src="/static/js/searchable-select.js"></script>
 <script>
-// ── Searchable-select en filtros ──────────────────────────
-function norm(s) { return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
-document.querySelectorAll('#filtersPanel .searchable-select').forEach(function(ss) {
-    var display  = ss.querySelector('.ss-display');
-    var valueEl  = ss.querySelector('.ss-value');
-    var search   = ss.querySelector('.ss-search');
-    var options  = ss.querySelectorAll('.ss-option');
-    var hidden   = ss.querySelector('input[type=hidden]');
-
-    if (!display) return;
-
-    display.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var wasOpen = ss.classList.contains('open');
-        document.querySelectorAll('.searchable-select').forEach(function(s){ s.classList.remove('open'); });
-        if (!wasOpen) {
-            ss.classList.add('open');
-            if (search) { search.value = ''; setTimeout(function(){ search.focus(); }, 50); }
-            options.forEach(function(o){ o.classList.remove('ss-hidden'); });
-        }
-    });
-
-    if (search) {
-        search.addEventListener('input', function() {
-            var term = norm(this.value);
-            options.forEach(function(opt){
-                opt.classList.toggle('ss-hidden', !norm(opt.textContent).includes(term));
-            });
-        });
-        search.addEventListener('click', function(e){ e.stopPropagation(); });
-    }
-
-    options.forEach(function(opt) {
-        opt.addEventListener('click', function(e) {
-            e.stopPropagation();
-            options.forEach(function(o){ o.classList.remove('ss-selected'); });
-            opt.classList.add('ss-selected');
-            hidden.value = opt.dataset.value;
-            var label = opt.dataset.label || opt.textContent.trim();
-            valueEl.textContent = label;
-            valueEl.classList.toggle('placeholder', !opt.dataset.value);
-            ss.classList.remove('open');
-        });
-    });
-});
-
-document.addEventListener('click', function() {
-    document.querySelectorAll('.searchable-select').forEach(function(s){ s.classList.remove('open'); });
-});
+initSearchableSelects({ container: document.getElementById('filtersPanel') });
 
 // ── Toggle panel filtros (mobile) ─────────────────────────
 (function(){

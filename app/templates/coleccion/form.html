@@ -393,7 +393,7 @@
                             <div id="usdRateGroup" class="pc-rate-row" style="display:none">
                                 <span class="pc-rate-label">1 USD =</span>
                                 <input type="number" id="purchase_usd_rate" name="purchase_usd_rate"
-                                    value="{{ coin.purchase_usd_rate if coin and coin.purchase_usd_rate else '' }}"
+                                    value="{{ coin.purchase_usd_rate|float if coin and coin.purchase_usd_rate else '' }}"
                                     placeholder="6.96" min="0" step="0.01" class="pc-rate-input">
                                 <span class="pc-rate-label">BOB</span>
                                 <span id="purchaseEquiv" class="pc-equiv"></span>
@@ -483,6 +483,16 @@
 <script>
 initSearchableSelects({ freeTextFields: ['mint', 'currency_unit'] });
 
+// ── Limitar 2 decimales en todos los inputs numéricos ────────
+document.querySelectorAll('input[type=number]').forEach(function(el) {
+    el.addEventListener('input', function() {
+        if (this.value.includes('.')) {
+            var parts = this.value.split('.');
+            if (parts[1].length > 2) this.value = parts[0] + '.' + parts[1].slice(0, 2);
+        }
+    });
+});
+
 // ── Toggle moneda / billete ───────────────────────────────────
 (function() {
     const hidden   = document.getElementById('tipoHidden');
@@ -555,7 +565,9 @@ initSearchableSelects({ freeTextFields: ['mint', 'currency_unit'] });
         document.getElementById('pcBOB').classList.toggle('active', val === 'BOB');
         document.getElementById('pcUSD').classList.toggle('active', val === 'USD');
         var rateGroup = document.getElementById('usdRateGroup');
-        if (rateGroup) rateGroup.style.display = val === 'USD' ? 'flex' : 'none';
+        if (rateGroup) rateGroup.style.display = 'flex';
+        var rateLabel = rateGroup ? rateGroup.querySelector('.pc-rate-label') : null;
+        if (rateLabel) rateLabel.textContent = val === 'USD' ? '1 USD =' : 'Tipo de cambio ref.: 1 USD =';
         updateEquiv();
     }
 

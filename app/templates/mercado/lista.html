@@ -29,7 +29,7 @@
         <button class="filters-toggle-btn" id="filtersToggle" aria-expanded="false">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/></svg>
             Filtros
-            {% if filters.q or filters.tipo or filters.condicion or filters.pais or filters.precio_max %}
+            {% if filters.q or filters.tipo or filters.condicion or filters.pais or filters.precio_max or filters.verificado %}
             <span class="filters-active-dot"></span>
             {% endif %}
         </button>
@@ -131,6 +131,26 @@
                     </div>
 
                     <div class="filter-group">
+                        <label class="filter-label">Vendedor</label>
+                        <div class="searchable-select" data-name="verificado">
+                            <input type="hidden" name="verificado" value="{{ filters.verificado }}">
+                            <div class="ss-display" tabindex="0">
+                                <span class="ss-value {% if not filters.verificado %}placeholder{% endif %}">
+                                    {% if filters.verificado == '1' %}Solo verificados
+                                    {% else %}Todos{% endif %}
+                                </span>
+                                <span class="ss-arrow">▾</span>
+                            </div>
+                            <div class="ss-dropdown">
+                                <ul class="ss-list">
+                                    <li class="ss-option {% if not filters.verificado %}ss-selected{% endif %}" data-value="">Todos</li>
+                                    <li class="ss-option {% if filters.verificado == '1' %}ss-selected{% endif %}" data-value="1">✓ Solo verificados</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
                         <label class="filter-label">Precio máximo (Bs)</label>
                         <input type="number" name="precio_max" value="{{ filters.precio_max }}"
                             placeholder="Sin límite" min="0" class="filter-input">
@@ -199,6 +219,15 @@
                                 {% endif %}
                                 <span class="market-seller-user">@{{ l.seller.username }}</span>
                             </div>
+                            {% if l.seller.is_verified %}
+                            <div class="badge-ver-wrap">
+                                <svg class="badge-ver-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <div class="badge-ver-text">
+                                    <span class="badge-ver-title">Vendedor verificado</span>
+                                    <span class="badge-ver-sub">Confiable · NumisBol</span>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </a>
                     {% endfor %}

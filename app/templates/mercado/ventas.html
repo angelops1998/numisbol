@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+{% block title %}Reporte de ventas — NumisBol{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/mercado.css">
+<style>
+/* ── Filtros ── */
+.vt-filters-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.1rem 1.2rem; margin-bottom: 1.5rem;
+}
+.vt-filters {
+    display: flex; gap: .75rem; flex-wrap: wrap; align-items: flex-end;
+}
+.vt-filter-group { display: flex; flex-direction: column; gap: .3rem; flex: 1; min-width: 120px; }
+.vt-filter-group label { font-size: .68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.vt-filter-group input, .vt-filter-group select {
+    background: var(--bg-primary); border: 1px solid var(--border);
+    color: var(--text-primary); border-radius: 9px;
+    padding: .55rem .75rem; font-size: .85rem; min-width: 0; width: 100%;
+    transition: border-color .15s; color-scheme: dark;
+}
+.vt-filter-group select option {
+    background: var(--bg-card, #1e1e2e); color: var(--text-primary, #e0e0f0);
+}
+.vt-filter-group input:focus, .vt-filter-group select:focus {
+    outline: none; border-color: var(--accent);
+}
+.vt-filter-group input[type=text] { max-width: 220px; }
+.vt-filter-group input[type=date] { max-width: 160px; }
+.vt-filter-group select { max-width: 140px; }
+.vt-filter-actions { display: flex; gap: .5rem; align-items: center; align-self: flex-end; }
+.vt-btn-filter {
+    padding: .55rem 1.2rem; background: var(--accent); color: #000;
+    border: none; border-radius: 9px; font-weight: 700; cursor: pointer;
+    font-size: .85rem; white-space: nowrap;
+}
+.vt-btn-filter:hover { opacity: .88; }
+.vt-btn-clear {
+    padding: .55rem .9rem; background: transparent; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 9px; font-size: .82rem;
+    cursor: pointer; text-decoration: none; white-space: nowrap;
+}
+.vt-btn-clear:hover { color: var(--text-primary); border-color: var(--text-dim); }
+.vt-quick-btns { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; flex-wrap: wrap; }
+.vt-quick-label { font-size: .72rem; color: var(--text-dim); }
+.vt-quick-btn {
+    font-size: .75rem; padding: .3rem .75rem;
+    border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text-dim); text-decoration: none; transition: all .15s;
+}
+.vt-quick-btn:hover { border-color: var(--accent); color: var(--accent); }
+.vt-empty-state {
+    text-align: center; padding: 3rem 1rem; color: var(--text-dim);
+}
+.vt-empty-state .vt-empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+.vt-empty-state p { font-size: .9rem; }
+
+/* ── Resumen ── */
+.vt-summary {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+.vt-sum-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: .85rem 1rem;
+}
+.vt-sum-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); margin-bottom: .4rem; }
+.vt-sum-val { font-size: 1.2rem; font-weight: 800; }
+.vt-sum-sub { font-size: .72rem; color: var(--text-dim); margin-top: .2rem; }
+.vt-sum-card--green .vt-sum-val { color: #22c55e; }
+.vt-sum-card--red   .vt-sum-val { color: #f87171; }
+.vt-sum-card--amber .vt-sum-val { color: #fbbf24; }
+
+/* ── Tabla ── */
+.vt-table-wrap { overflow-x: auto; }
+.vt-table {
+    width: 100%; border-collapse: collapse; font-size: .83rem;
+}
+.vt-table th {
+    text-align: left; padding: .5rem .75rem;
+    color: var(--text-dim); font-size: .7rem; text-transform: uppercase;
+    letter-spacing: .05em; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.vt-table td {
+    padding: .65rem .75rem; border-bottom: 1px solid rgba(255,255,255,.04);
+    vertical-align: middle;
+}
+.vt-table tr:last-child td { border-bottom: none; }
+.vt-table tr:hover td { background: rgba(255,255,255,.025); }
+
+.vt-title-link { color: var(--text-primary); text-decoration: none; font-weight: 600; }
+.vt-title-link:hover { color: var(--accent); }
+.vt-meta { font-size: .7rem; color: var(--text-dim); margin-top: .15rem; }
+.vt-price { white-space: nowrap; font-weight: 700; color: #22c55e; }
+.vt-pub-price { white-space: nowrap; color: var(--text-dim); font-size: .8rem; }
+.vt-cost { white-space: nowrap; color: #f87171; font-size: .82rem; }
+.vt-ganancia-pos { color: #4ade80; font-weight: 700; white-space: nowrap; }
+.vt-ganancia-neg { color: #f87171; font-weight: 700; white-space: nowrap; }
+.vt-rate { font-size: .72rem; color: var(--text-dim); white-space: nowrap; }
+.vt-date { color: var(--text-dim); white-space: nowrap; font-size: .8rem; }
+.vt-note { color: var(--text-muted); font-style: italic; max-width: 160px;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .78rem; }
+.vt-dim { color: var(--text-dim); }
+
+/* ── Cards mobile ── */
+.vt-cards { display: none; }
+.vt-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1rem; margin-bottom: .75rem;
+}
+.vt-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; margin-bottom: .5rem; }
+.vt-card-title { font-weight: 700; font-size: .9rem; }
+.vt-card-date { font-size: .72rem; color: var(--text-dim); white-space: nowrap; }
+.vt-card-meta { font-size: .72rem; color: var(--text-dim); margin-bottom: .6rem; }
+.vt-card-row { display: flex; justify-content: space-between; font-size: .8rem; margin-top: .35rem; }
+.vt-card-row span:first-child { color: var(--text-dim); }
+.vt-card-note { font-size: .75rem; color: var(--text-muted); font-style: italic;
+                margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--border); }
+
+/* ── Paginación ── */
+.vt-pag { display: flex; justify-content: center; gap: .4rem; margin-top: 1.25rem; flex-wrap: wrap; }
+.vt-pag a, .vt-pag span {
+    padding: .4rem .8rem; border-radius: 8px; font-size: .82rem;
+    border: 1px solid var(--border); color: var(--text-dim); text-decoration: none;
+}
+.vt-pag a:hover { background: var(--bg-hover); color: var(--text-primary); }
+.vt-pag .active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.vt-pag .disabled { opacity: .35; pointer-events: none; }
+
+@media (max-width: 700px) {
+    .vt-summary { grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .vt-sum-card { padding: .7rem .85rem; }
+    .vt-sum-label { font-size: .62rem; }
+    .vt-sum-val { font-size: 1rem; }
+    .vt-sum-sub { font-size: .67rem; }
+
+    .vt-table-wrap { display: none; }
+    .vt-cards { display: block; }
+
+    .vt-filters { flex-direction: column; gap: .55rem; }
+    .vt-filter-group { min-width: 0; width: 100%; }
+    .vt-filter-group input,
+    .vt-filter-group select { max-width: 100% !important; width: 100%; }
+    .vt-filter-actions { width: 100%; }
+    .vt-btn-filter { flex: 1; text-align: center; }
+    .vt-btn-clear { flex: 1; text-align: center; }
+
+    .vt-quick-btns { gap: .35rem; flex-wrap: wrap; }
+    .vt-quick-btn { font-size: .7rem; padding: .28rem .6rem; }
+
+    .vt-card { padding: .85rem; }
+    .vt-card-title { font-size: .85rem; }
+    .vt-card-row { font-size: .78rem; }
+
+    .vt-pag a, .vt-pag span { padding: .38rem .65rem; font-size: .78rem; }
+}
+@media (max-width: 480px) {
+    .vt-summary { grid-template-columns: 1fr; gap: .4rem; }
+    .vt-filters-card { padding: .8rem .85rem; }
+    .vt-card-header { flex-direction: column; gap: .2rem; }
+    .vt-card-date { align-self: flex-start; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Reporte de ventas</h1>
+                    <p class="page-subtitle">{{ total }} venta{{ 's' if total != 1 else '' }} encontrada{{ 's' if total != 1 else '' }}</p>
+                </div>
+                <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                    <a href="/mercado/mis-publicaciones/estadisticas" class="btn btn-outline">📊 Estadísticas</a>
+                    <a href="/mercado/mis-publicaciones" class="btn btn-outline">Mis publicaciones</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="padding-top:1.25rem;padding-bottom:2rem">
+
+        <!-- Filtros -->
+        <div class="vt-filters-card">
+            <form method="get" class="vt-filters">
+                <div class="vt-filter-group">
+                    <label>Buscar</label>
+                    <input type="text" name="q" value="{{ q }}" placeholder="Nombre del artículo…">
+                </div>
+                <div class="vt-filter-group">
+                    <label>Desde</label>
+                    <input type="date" name="desde" value="{{ desde }}">
+                </div>
+                <div class="vt-filter-group">
+                    <label>Hasta</label>
+                    <input type="date" name="hasta" value="{{ hasta }}">
+                </div>
+                <div class="vt-filter-group">
+                    <label>Moneda</label>
+                    <select name="moneda">
+                        <option value="" {% if not moneda %}selected{% endif %}>Todas</option>
+                        <option value="BOB" {% if moneda == 'BOB' %}selected{% endif %}>Bolivianos (Bs)</option>
+                        <option value="USD" {% if moneda == 'USD' %}selected{% endif %}>Dólares (US$)</option>
+                    </select>
+                </div>
+                <div class="vt-filter-actions">
+                    <button type="submit" class="vt-btn-filter">Filtrar</button>
+                    {% if q or desde or hasta or moneda %}
+                    <a href="/mercado/mis-publicaciones/ventas" class="vt-btn-clear">✕ Limpiar</a>
+                    {% endif %}
+                </div>
+            </form>
+            <div class="vt-quick-btns">
+                <span class="vt-quick-label">Acceso rápido:</span>
+                <a href="#" class="vt-quick-btn" id="btnSemana">Última semana</a>
+                <a href="#" class="vt-quick-btn" id="btnMes">Último mes</a>
+                <a href="#" class="vt-quick-btn" id="btnAnio">Este año</a>
+            </div>
+        </div>
+
+        {% if not has_filter %}
+        <div class="vt-empty-state">
+            <div class="vt-empty-icon">🔍</div>
+            <p>Usá los filtros para buscar ventas por nombre, fecha o moneda.</p>
+        </div>
+        {% else %}
+
+        <!-- Resumen financiero del filtro -->
+        {% if total > 0 %}
+        <div class="vt-summary">
+            <div class="vt-sum-card vt-sum-card--green">
+                <div class="vt-sum-label">Ingresos</div>
+                {% if tot_bob > 0 %}<div class="vt-sum-val">Bs {{ "%.2f"|format(tot_bob) }}</div>{% endif %}
+                {% if tot_usd > 0 %}
+                <div class="vt-sum-val" style="color:#38bdf8">US$ {{ "%.2f"|format(tot_usd) }}</div>
+                {% if tot_usd_en_bob > 0 %}
+                <div class="vt-sum-sub">≈ Bs {{ "%.2f"|format(tot_usd_en_bob) }} convertido</div>
+                {% endif %}
+                {% endif %}
+                {% if tot_bob > 0 and tot_usd_en_bob > 0 %}
+                <div class="vt-sum-sub" style="color:#22c55e;font-weight:700">Total: Bs {{ "%.2f"|format(tot_ingreso) }}</div>
+                {% endif %}
+            </div>
+            <div class="vt-sum-card vt-sum-card--red">
+                <div class="vt-sum-label">Costos</div>
+                {% if tot_costo_bob > 0 %}<div class="vt-sum-val">Bs {{ "%.2f"|format(tot_costo_bob) }}</div>{% endif %}
+                {% if tot_costo_usd > 0 %}
+                <div class="vt-sum-val" style="color:#f87171">US$ {{ "%.2f"|format(tot_costo_usd) }}</div>
+                {% if tot_costo_usd_en_bob > 0 %}
+                <div class="vt-sum-sub">≈ Bs {{ "%.2f"|format(tot_costo_usd_en_bob) }} convertido</div>
+                {% endif %}
+                {% endif %}
+                {% if tot_costo_bob > 0 and tot_costo_usd_en_bob > 0 %}
+                <div class="vt-sum-sub" style="color:#f87171;font-weight:700">Total: Bs {{ "%.2f"|format(tot_costo) }}</div>
+                {% endif %}
+                {% if not tot_costo_bob and not tot_costo_usd %}
+                <div class="vt-sum-val vt-dim">—</div>
+                {% endif %}
+            </div>
+            <div class="vt-sum-card {% if tot_ganancia is not none %}{% if tot_ganancia >= 0 %}vt-sum-card--amber{% else %}vt-sum-card--red{% endif %}{% endif %}">
+                <div class="vt-sum-label">Ganancia</div>
+                {% if tot_ganancia is not none %}
+                <div class="vt-sum-val">{{ '+' if tot_ganancia >= 0 else '' }}Bs {{ "%.2f"|format(tot_ganancia) }}</div>
+                <div class="vt-sum-sub">ingresos − costos (en Bs)</div>
+                {% else %}
+                <div class="vt-sum-val vt-dim">—</div>
+                <div class="vt-sum-sub">registrá costos para verla</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tabla desktop -->
+        <div class="vt-table-wrap">
+            {% if ventas %}
+            <table class="vt-table">
+                <thead>
+                    <tr>
+                        <th>Artículo</th>
+                        <th>Precio pub.</th>
+                        <th>Precio venta</th>
+                        <th>Costo</th>
+                        <th>Ganancia</th>
+                        <th>Tasa</th>
+                        <th>Fecha venta</th>
+                        <th>Notas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in ventas %}
+                    {% set venta_val = l.sale_price_actual|float if l.sale_price_actual else (l.price|float if l.price else 0) %}
+                    {% set venta_bob = venta_val * (l.usd_rate|float if l.usd_rate else 1) if l.currency == 'USD' else venta_val %}
+                    {% set costo_val = l.cost|float if l.cost else 0 %}
+                    {% set costo_bob = costo_val * (l.cost_usd_rate|float if l.cost_usd_rate else 1) if l.cost_currency == 'USD' else costo_val %}
+                    {% set gan = venta_bob - costo_bob if l.cost else none %}
+                    <tr>
+                        <td>
+                            <a href="/mercado/{{ l.id }}" class="vt-title-link">{{ l.title }}</a>
+                            <div class="vt-meta">{{ (l.item_type or 'moneda')|capitalize }}{% if l.coin_country %} · {{ l.coin_country }}{% endif %}</div>
+                        </td>
+                        <td class="vt-pub-price">
+                            {% if l.price %}
+                                {% if l.currency == 'USD' %}US$ {{ "%.2f"|format(l.price|float) }}{% else %}Bs {{ "%.2f"|format(l.price|float) }}{% endif %}
+                            {% else %}<span class="vt-dim">—</span>{% endif %}
+                        </td>
+                        <td class="vt-price">
+                            {% if l.sale_price_actual or l.price %}
+                                {% if l.currency == 'USD' %}US$ {{ "%.2f"|format(venta_val) }}{% else %}Bs {{ "%.2f"|format(venta_val) }}{% endif %}
+                                {% if l.currency != 'USD' and l.usd_rate %}
+                                <div style="font-size:.72rem;color:#38bdf8;font-weight:400">≈ US$ {{ "%.2f"|format(venta_val / l.usd_rate|float) }}</div>
+                                {% endif %}
+                            {% else %}<span class="vt-dim">—</span>{% endif %}
+                        </td>
+                        <td class="vt-cost">
+                            {% if l.cost %}
+                                {% if l.cost_currency == 'USD' %}US$ {{ "%.2f"|format(costo_val) }}{% else %}Bs {{ "%.2f"|format(costo_val) }}{% endif %}
+                            {% else %}<span class="vt-dim">—</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if gan is not none %}
+                                <span class="{{ 'vt-ganancia-pos' if gan >= 0 else 'vt-ganancia-neg' }}">
+                                    {{ '+' if gan >= 0 else '' }}Bs {{ "%.2f"|format(gan) }}
+                                </span>
+                            {% else %}<span class="vt-dim">—</span>{% endif %}
+                        </td>
+                        <td class="vt-rate">
+                            {% if l.currency == 'USD' and l.usd_rate %}1 USD = Bs {{ l.usd_rate|float }}{% else %}<span class="vt-dim">—</span>{% endif %}
+                        </td>
+                        <td class="vt-date">
+                            {% if l.sold_at %}{{ l.sold_at.strftime('%d/%m/%Y') }}{% else %}<span class="vt-dim">—</span>{% endif %}
+                        </td>
+                        <td class="vt-note" title="{{ l.sale_notes or '' }}">{{ l.sale_notes or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-hint" style="padding:1rem 0">No hay ventas que coincidan con los filtros.</p>
+            {% endif %}
+        </div>
+
+        <!-- Cards mobile -->
+        <div class="vt-cards">
+            {% for l in ventas %}
+            {% set venta_val = l.sale_price_actual|float if l.sale_price_actual else (l.price|float if l.price else 0) %}
+            {% set venta_bob = venta_val * (l.usd_rate|float if l.usd_rate else 1) if l.currency == 'USD' else venta_val %}
+            {% set costo_val = l.cost|float if l.cost else 0 %}
+            {% set costo_bob = costo_val * (l.cost_usd_rate|float if l.cost_usd_rate else 1) if l.cost_currency == 'USD' else costo_val %}
+            {% set gan = venta_bob - costo_bob if l.cost else none %}
+            <div class="vt-card">
+                <div class="vt-card-header">
+                    <a href="/mercado/{{ l.id }}" class="vt-title-link vt-card-title">{{ l.title }}</a>
+                    <span class="vt-card-date">{% if l.sold_at %}{{ l.sold_at.strftime('%d/%m/%Y') }}{% endif %}</span>
+                </div>
+                <div class="vt-card-meta">{{ (l.item_type or 'moneda')|capitalize }}{% if l.coin_country %} · {{ l.coin_country }}{% endif %}</div>
+                <div class="vt-card-row">
+                    <span>Precio publicado</span>
+                    <span>{% if l.price %}{% if l.currency == 'USD' %}US$ {{ "%.2f"|format(l.price|float) }}{% else %}Bs {{ "%.2f"|format(l.price|float) }}{% endif %}{% else %}—{% endif %}</span>
+                </div>
+                <div class="vt-card-row">
+                    <span>Precio de venta</span>
+                    <span>
+                        <strong class="vt-price">{% if l.currency == 'USD' %}US$ {{ "%.2f"|format(venta_val) }}{% else %}Bs {{ "%.2f"|format(venta_val) }}{% endif %}</strong>
+                        {% if l.currency != 'USD' and l.usd_rate %}
+                        <div style="font-size:.7rem;color:#38bdf8">≈ US$ {{ "%.2f"|format(venta_val / l.usd_rate|float) }}</div>
+                        {% endif %}
+                    </span>
+                </div>
+                {% if l.cost %}
+                <div class="vt-card-row">
+                    <span>Costo</span>
+                    <span class="vt-cost">{% if l.cost_currency == 'USD' %}US$ {{ "%.2f"|format(costo_val) }}{% else %}Bs {{ "%.2f"|format(costo_val) }}{% endif %}</span>
+                </div>
+                {% endif %}
+                {% if gan is not none %}
+                <div class="vt-card-row">
+                    <span>Ganancia</span>
+                    <span class="{{ 'vt-ganancia-pos' if gan >= 0 else 'vt-ganancia-neg' }}">{{ '+' if gan >= 0 else '' }}Bs {{ "%.2f"|format(gan) }}</span>
+                </div>
+                {% endif %}
+                {% if l.currency == 'USD' and l.usd_rate %}
+                <div class="vt-card-row">
+                    <span>Tasa</span>
+                    <span class="vt-rate">1 USD = Bs {{ l.usd_rate|float }}</span>
+                </div>
+                {% endif %}
+                {% if l.sale_notes %}
+                <div class="vt-card-note">📝 {{ l.sale_notes }}</div>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="empty-hint">No hay ventas que coincidan con los filtros.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% set total_pags = ((total + per_page - 1) // per_page) %}
+        {% if total_pags > 1 %}
+        {% macro page_url(p) %}?q={{ q }}&desde={{ desde }}&hasta={{ hasta }}&moneda={{ moneda }}&pagina={{ p }}{% endmacro %}
+        <div class="vt-pag">
+            <a href="{{ page_url(pagina - 1) }}" class="{% if pagina == 1 %}disabled{% endif %}">‹ Ant.</a>
+            {% for p in range([1, pagina - 2]|max, [total_pags + 1, pagina + 3]|min) %}
+            <a href="{{ page_url(p) }}" class="{% if p == pagina %}active{% endif %}">{{ p }}</a>
+            {% endfor %}
+            <a href="{{ page_url(pagina + 1) }}" class="{% if pagina == total_pags %}disabled{% endif %}">Sig. ›</a>
+        </div>
+        {% endif %}
+
+        {% endif %}{# end has_filter #}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function setQuickRange(days) {
+    const hasta = new Date();
+    const desde = new Date();
+    desde.setDate(desde.getDate() - days);
+    const fmt = d => d.toISOString().slice(0, 10);
+    const url = new URL(window.location.href);
+    url.searchParams.set('desde', fmt(desde));
+    url.searchParams.set('hasta', fmt(hasta));
+    url.searchParams.delete('pagina');
+    window.location.href = url.toString();
+}
+function setThisYear() {
+    const y = new Date().getFullYear();
+    const url = new URL(window.location.href);
+    url.searchParams.set('desde', `${y}-01-01`);
+    url.searchParams.set('hasta', `${y}-12-31`);
+    url.searchParams.delete('pagina');
+    window.location.href = url.toString();
+}
+document.getElementById('btnSemana').addEventListener('click', e => { e.preventDefault(); setQuickRange(7); });
+document.getElementById('btnMes').addEventListener('click',   e => { e.preventDefault(); setQuickRange(30); });
+document.getElementById('btnAnio').addEventListener('click',  e => { e.preventDefault(); setThisYear(); });
+</script>
+{% endblock %}

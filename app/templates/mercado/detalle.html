@@ -19,7 +19,7 @@
     <div class="container">
 
         <!-- Acciones rápidas del dueño -->
-        {% if es_dueno %}
+        {% if es_dueno and listing.status.value != 'vendido' %}
         <div class="owner-actions owner-actions--top" style="margin-top:-.5rem">
             <p class="owner-actions-title">Estado del anuncio</p>
             <div class="owner-quick-btns">
@@ -32,13 +32,11 @@
                 </form>
                 {% endif %}
                 {% endfor %}
-                {% if listing.status.value != 'vendido' %}
                 <button type="button" class="btn owner-btn"
                     style="background:#16a34a;color:#fff;border-color:#16a34a"
                     onclick="document.getElementById('modalVenta').classList.add('modal-open')">
                     Marcar como vendido ✓
                 </button>
-                {% endif %}
                 <div class="owner-btn-sep"></div>
                 <a href="/mercado/{{ listing.id }}/editar" class="btn btn-outline owner-btn">✏ Editar</a>
                 <form method="post" action="/mercado/{{ listing.id }}/eliminar"
@@ -46,14 +44,6 @@
                     <button type="submit" class="btn btn-danger owner-btn">🗑 Eliminar</button>
                 </form>
             </div>
-            {% if listing.status.value == 'vendido' %}
-            <div style="margin-top:.75rem;padding:.75rem 1rem;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius)">
-                <p style="font-size:.78rem;font-weight:700;color:#22c55e;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.05em">Venta registrada</p>
-                {% if listing.sold_at %}<p style="font-size:.82rem;color:var(--text-dim)">Fecha: {{ listing.sold_at.strftime('%d/%m/%Y') }}</p>{% endif %}
-                {% if listing.sale_price_actual %}<p style="font-size:.82rem;color:var(--text-dim)">Precio de venta: <strong style="color:var(--text-primary)">{{ listing.currency }} {{ "%.2f"|format(listing.sale_price_actual|float) }}</strong></p>{% endif %}
-                {% if listing.sale_notes %}<p style="font-size:.82rem;color:var(--text-dim);margin-top:.3rem;font-style:italic">📝 {{ listing.sale_notes }}</p>{% endif %}
-            </div>
-            {% endif %}
         </div>
         {% endif %}
 
@@ -165,7 +155,15 @@
                 <!-- Vendedor -->
                 <div class="seller-card">
                     <div class="seller-info">
-                        <div class="seller-name">{{ listing.seller.full_name or listing.seller.username }}</div>
+                        <div class="seller-name">
+                            {{ listing.seller.full_name or listing.seller.username }}
+                            {% if listing.seller.is_verified %}
+                            <span class="badge-ver badge-ver--lg" title="Vendedor verificado">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Verificado
+                            </span>
+                            {% endif %}
+                        </div>
                         <div class="seller-username">@{{ listing.seller.username }}</div>
                         <div class="seller-since">Miembro desde {{ listing.seller.created_at.strftime("%B %Y") }}</div>
                     </div>

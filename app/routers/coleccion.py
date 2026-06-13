@@ -577,14 +577,16 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
     if tipo_filter:
         top_q = top_q.filter(Coin.tipo == tipo_filter)
 
-    # Ordenar: USD primero convertido, luego BOB — si hay tasa unificamos, si no ordenamos por valor raw
-    top_coins_raw = top_q.all()
-    def valor_usd(c):
-        v = float(c.estimated_value)
-        if c.value_currency == "USD":
-            return v
-        return (v / usd_rate) if usd_rate else 0
-    top_coins = sorted(top_coins_raw, key=valor_usd, reverse=True)[:5]
+    # Ordenar en SQL usando valor unificado en USD
+    from sqlalchemy import case as sa_case
+    if usd_rate:
+        valor_usd_expr = sa_case(
+            (Coin.value_currency == "USD", Coin.estimated_value),
+            else_=Coin.estimated_value / usd_rate
+        )
+    else:
+        valor_usd_expr = Coin.estimated_value
+    top_coins = top_q.order_by(valor_usd_expr.desc()).limit(5).all()
 
     return templates.TemplateResponse(request, "coleccion/estadisticas.html", {
         "user": user,
@@ -764,7 +766,7 @@ async def agregar(
         estimated_value  = to_decimal(estimated_value),
         purchase_price   = to_decimal(purchase_price),
         purchase_currency= pc,
-        purchase_usd_rate= to_decimal(purchase_usd_rate) if pc == "USD" else None,
+        purchase_usd_rate= to_decimal(purchase_usd_rate),
         value_currency   = value_currency if value_currency in ("BOB", "USD") else "BOB",
         quantity         = max(1, to_int(quantity) or 1),
         description      = description.strip() or None,
@@ -860,7 +862,7 @@ async def editar(
     coin.estimated_value = to_decimal(estimated_value)
     coin.purchase_price  = to_decimal(purchase_price)
     coin.purchase_currency = pc
-    coin.purchase_usd_rate = to_decimal(purchase_usd_rate) if pc == "USD" else None
+    coin.purchase_usd_rate = to_decimal(purchase_usd_rate)
     coin.value_currency  = value_currency if value_currency in ("BOB", "USD") else "BOB"
     coin.quantity       = max(1, to_int(quantity) or 1)
     coin.description    = description.strip() or None

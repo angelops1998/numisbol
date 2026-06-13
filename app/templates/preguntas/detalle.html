@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}{{ pregunta.titulo }} — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/preguntas.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header" style="padding:2rem 0 1.5rem">
+        <div class="container">
+            <div class="page-header-inner" style="gap:1rem">
+                <div style="min-width:0">
+                    <p class="page-breadcrumb" style="margin-bottom:.5rem"><a href="/preguntas">Preguntas</a> / Detalle</p>
+                    <h1 class="page-title" style="font-size:1.3rem;line-height:1.4;margin:0">{{ pregunta.titulo }}</h1>
+                </div>
+                <a href="/preguntas" class="btn btn-outline" style="flex-shrink:0;margin-top:1rem">← Volver</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width:800px;padding-bottom:3rem">
+
+        <!-- Pregunta -->
+        <div class="pq-detail-header">
+
+            <!-- Badges de estado -->
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:{% if pregunta.cuerpo or pregunta.image_1_url %}1rem{% else %}.75rem{% endif %}">
+                {% if pregunta.is_closed %}
+                <span class="pq-badge pq-badge--closed">✕ Cerrada</span>
+                {% elif pregunta.respuestas|length > 0 %}
+                <span class="pq-badge pq-badge--answered">✓ Respondida · {{ pregunta.respuestas|length }} respuesta{{ 's' if pregunta.respuestas|length != 1 }}</span>
+                {% else %}
+                <span class="pq-badge pq-badge--open">● Sin respuesta aún</span>
+                {% endif %}
+            </div>
+
+            <!-- Fotos -->
+            {% if pregunta.image_1_url or pregunta.image_2_url %}
+            <div class="pq-imgs">
+                {% if pregunta.image_1_url %}<img src="{{ pregunta.image_1_url }}" alt="Foto 1">{% endif %}
+                {% if pregunta.image_2_url %}<img src="{{ pregunta.image_2_url }}" alt="Foto 2">{% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Descripción -->
+            {% if pregunta.cuerpo %}
+            <div class="pq-detail-body">{{ pregunta.cuerpo }}</div>
+            {% endif %}
+
+            <!-- Meta -->
+            <div class="pq-detail-meta">
+                <span>Preguntado por
+                    <strong style="color:var(--text-primary)">@{{ pregunta.autor.username }}</strong>
+                    {% if pregunta.autor.is_verified %}
+                    <span class="pq-ver-dot"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                    {% endif %}
+                </span>
+                <span style="color:var(--border-light)">·</span>
+                <span>{{ pregunta.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                <span style="color:var(--border-light)">·</span>
+                <span>{{ pregunta.views or 0 }} vistas</span>
+
+                {% if es_autor or (user and user.is_admin) %}
+                <div class="pq-detail-actions">
+                    {% if es_autor %}
+                    <form method="post" action="/preguntas/{{ pregunta.id }}/cerrar" style="display:inline">
+                        <button type="submit" class="btn btn-outline btn-sm">
+                            {% if pregunta.is_closed %}↺ Reabrir{% else %}Cerrar pregunta{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="/preguntas/{{ pregunta.id }}/eliminar"
+                          onsubmit="return confirm('¿Eliminar esta pregunta y todas sus respuestas?')" style="display:inline">
+                        <button type="submit" class="btn btn-danger btn-sm">🗑 Eliminar</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Respuestas -->
+        <div class="pq-resp-section" id="respuestas">
+            <div class="pq-resp-count">
+                {% set n = pregunta.respuestas|length %}
+                {{ n }} respuesta{{ 's' if n != 1 else '' }}
+            </div>
+
+            {% set sorted_resp = pregunta.respuestas|sort(attribute='is_best', reverse=True) %}
+            {% if sorted_resp %}
+            <div class="pq-resp-list">
+                {% for r in sorted_resp %}
+                <div class="pq-resp-card {% if r.is_best %}pq-resp-card--best{% endif %}">
+                    {% if r.is_best %}
+                    <div class="pq-resp-best-badge">✓ Mejor respuesta</div>
+                    {% endif %}
+
+                    <div class="pq-resp-body">{{ r.cuerpo }}</div>
+
+                    <div class="pq-resp-meta">
+                        <span style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+                            {% if r.autor.is_verified %}
+                            <span class="pq-resp-verified">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span>
+                                    <strong style="display:block;font-size:.72rem;color:var(--text-primary);line-height:1.2">@{{ r.autor.username }}</strong>
+                                    <span style="font-size:.63rem;color:var(--text-dim)">Verificado · NumisBol</span>
+                                </span>
+                            </span>
+                            {% else %}
+                            <strong>@{{ r.autor.username }}</strong>
+                            {% endif %}
+                            <span style="color:var(--border-light)">·</span>
+                            {{ r.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </span>
+                        {% if es_autor and not pregunta.is_closed and not r.is_best %}
+                        <form method="post" action="/preguntas/{{ pregunta.id }}/mejor/{{ r.id }}" style="display:inline">
+                            <button type="submit" class="btn btn-outline btn-sm"
+                                    style="font-size:.68rem;padding:.22rem .65rem;color:#4ade80;border-color:rgba(74,222,128,.3)">
+                                ✓ Marcar como mejor
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center;padding:2.5rem 1rem;color:var(--text-dim)">
+                <div style="font-size:2rem;margin-bottom:.5rem">🤔</div>
+                <p style="font-size:.9rem">Todavía nadie respondió. ¡Sé el primero!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Formulario respuesta / mensajes -->
+        {% if not pregunta.is_closed %}
+            {% if user %}
+            <div class="pq-answer-form">
+                <h3>Tu respuesta</h3>
+                {% if resp_error %}
+                <div class="alert alert-error" style="margin-bottom:.85rem">{{ resp_error }}</div>
+                {% endif %}
+                <form method="post" action="/preguntas/{{ pregunta.id }}/responder">
+                    <div class="form-group" style="margin-bottom:.85rem">
+                        <textarea name="cuerpo" class="form-input" rows="5"
+                                  placeholder="Compartí lo que sabés sobre esta moneda..."></textarea>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end">
+                        <button type="submit" class="btn btn-primary">Publicar respuesta</button>
+                    </div>
+                </form>
+            </div>
+            {% else %}
+            <div class="pq-closed-notice">
+                <a href="/auth/login?next=/preguntas/{{ pregunta.id }}" class="btn btn-primary btn-sm">Iniciá sesión</a>
+                <span style="margin-left:.5rem">para responder esta pregunta.</span>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="pq-closed-notice">
+            Esta pregunta está cerrada y ya no acepta nuevas respuestas.
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

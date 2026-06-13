@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Nueva pregunta — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/preguntas.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb"><a href="/preguntas">Preguntas</a> / Nueva</p>
+                    <h1 class="page-title">Hacer una pregunta</h1>
+                </div>
+                <a href="/preguntas" class="btn btn-outline">← Volver</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width:680px;padding-bottom:3rem">
+
+        <!-- Barra de cuota -->
+        {% set pct = (activas / max_activas * 100)|int %}
+        <div class="pq-quota">
+            <span class="pq-quota-label" style="color:var(--text-primary);font-weight:600">
+                {{ activas }}/{{ max_activas }}
+            </span>
+            <div class="pq-quota-bar">
+                <div class="pq-quota-fill
+                    {% if activas >= max_activas %}pq-quota-fill--full
+                    {% elif activas >= max_activas - 1 %}pq-quota-fill--warn{% endif %}"
+                     style="width:{{ pct }}%"></div>
+            </div>
+            <span class="pq-quota-label">
+                {% if activas >= max_activas %}
+                <span style="color:#f87171">Límite alcanzado</span>
+                {% else %}
+                preguntas activas
+                {% endif %}
+            </span>
+        </div>
+
+        {% if activas >= max_activas %}
+        <div class="empty-state">
+            <div class="empty-icon">🚫</div>
+            <h3>Límite alcanzado</h3>
+            <p>Tenés {{ max_activas }} preguntas abiertas. Cerrá alguna antes de publicar una nueva.</p>
+            <a href="/preguntas" class="btn btn-outline" style="margin-top:.75rem">Ver mis preguntas</a>
+        </div>
+
+        {% else %}
+
+        {% if error %}
+        <div class="alert alert-error" style="margin-bottom:1.25rem">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/preguntas/nueva" enctype="multipart/form-data"
+              class="settings-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1.35rem">
+
+            <div class="form-group">
+                <label for="titulo" class="form-label">
+                    Título <span class="required">*</span>
+                </label>
+                <input type="text" id="titulo" name="titulo" value="{{ titulo }}"
+                       class="form-input" maxlength="200" required
+                       placeholder="Ej: ¿Cuánto vale una moneda boliviana de 1 peso 1908?">
+                <small class="form-hint">Sé específico. Mínimo 10 caracteres.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="cuerpo" class="form-label">
+                    Descripción <span style="color:var(--text-dim);font-weight:400">(opcional)</span>
+                </label>
+                <textarea id="cuerpo" name="cuerpo" class="form-input" rows="5"
+                          placeholder="Agregá más detalles: año, país, estado de conservación, características especiales...">{{ cuerpo }}</textarea>
+            </div>
+
+            <!-- Fotos -->
+            <div class="form-group">
+                <label class="form-label">
+                    Fotos <span style="color:var(--text-dim);font-weight:400">(opcional · máx. 2)</span>
+                </label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
+                    <div>
+                        <label class="img-upload-label" for="foto1" id="lbl1">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                 width="26" height="26"><path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                            <span style="font-weight:600">Foto 1</span>
+                            <span style="font-size:.65rem;color:var(--text-dim)">JPG · PNG · WEBP</span>
+                        </label>
+                        <input type="file" id="foto1" name="foto1" accept=".jpg,.jpeg,.png,.webp"
+                               style="display:none" onchange="previewImg(this,'prev1','lbl1')">
+                        <img id="prev1" src="" alt=""
+                             style="display:none;width:100%;border-radius:10px;margin-top:.5rem;max-height:150px;object-fit:cover;border:1px solid var(--border)">
+                    </div>
+                    <div>
+                        <label class="img-upload-label" for="foto2" id="lbl2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                 width="26" height="26"><path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                            <span style="font-weight:600">Foto 2</span>
+                            <span style="font-size:.65rem;color:var(--text-dim)">JPG · PNG · WEBP</span>
+                        </label>
+                        <input type="file" id="foto2" name="foto2" accept=".jpg,.jpeg,.png,.webp"
+                               style="display:none" onchange="previewImg(this,'prev2','lbl2')">
+                        <img id="prev2" src="" alt=""
+                             style="display:none;width:100%;border-radius:10px;margin-top:.5rem;max-height:150px;object-fit:cover;border:1px solid var(--border)">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:.75rem;justify-content:flex-end;padding-top:.25rem">
+                <a href="/preguntas" class="btn btn-outline">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Publicar pregunta</button>
+            </div>
+        </form>
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function previewImg(input, prevId, lblId) {
+    var prev = document.getElementById(prevId);
+    var lbl  = document.getElementById(lblId);
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            prev.src = e.target.result;
+            prev.style.display = 'block';
+            lbl.style.borderColor = '#7c3aed';
+            lbl.style.background  = 'rgba(124,58,237,.06)';
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        prev.style.display = 'none';
+        lbl.style.borderColor = '';
+        lbl.style.background  = '';
+    }
+}
+</script>
+{% endblock %}

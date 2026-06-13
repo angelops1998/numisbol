@@ -289,6 +289,8 @@ async def eliminar_comentario(
 @router.get("/nuevo/articulo", response_class=HTMLResponse)
 async def blog_nuevo_get(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
+    if not user or not user.is_verified:
+        raise HTTPException(status_code=403, detail="Solo usuarios verificados pueden publicar artículos.")
     categorias = get_categorias(db)
     return templates.TemplateResponse(request, "blog/form.html", {
         "user": user, "categorias": categorias, "post": None,
@@ -308,6 +310,8 @@ async def blog_nuevo_post(
     db: Session = Depends(get_db),
 ):
     user = get_current_user(request, db)
+    if not user or not user.is_verified:
+        raise HTTPException(status_code=403, detail="Solo usuarios verificados pueden publicar artículos.")
     categorias = get_categorias(db)
     errors = []
     if not titulo.strip():    errors.append("El título es obligatorio.")

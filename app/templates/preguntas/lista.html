@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Preguntas — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/preguntas.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header" style="padding:2.5rem 0 1.5rem">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Preguntas</h1>
+                    <p class="page-subtitle">Consultá y ayudá a la comunidad numismática</p>
+                </div>
+                {% if user %}
+                <a href="/preguntas/nueva" class="btn btn-primary" style="margin-top:.5rem">+ Hacer una pregunta</a>
+                {% else %}
+                <a href="/auth/login" class="btn btn-outline" style="margin-top:.5rem">Iniciá sesión para preguntar</a>
+                {% endif %}
+            </div>
+
+            <!-- Buscador integrado en el header -->
+            <form method="get" action="/preguntas" class="pq-search-wrap">
+                <input type="search" name="q" value="{{ q }}"
+                       placeholder="Buscar preguntas..." class="pq-search-input" autocomplete="off">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+                {% if q %}<button type="button" class="pq-search-clear" onclick="window.location='/preguntas'">✕</button>{% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="container" style="padding-bottom:2.5rem">
+
+        <!-- Toolbar -->
+        <div class="pq-toolbar">
+            <span class="pq-toolbar-count">
+                {% if q %}
+                    <strong>{{ total }}</strong> resultado{{ 's' if total != 1 }} para "<em>{{ q }}</em>"
+                {% else %}
+                    <strong>{{ total }}</strong> pregunta{{ 's' if total != 1 }} en la comunidad
+                {% endif %}
+            </span>
+        </div>
+
+        {% if preguntas %}
+        <div class="pq-grid">
+            {% for p in preguntas %}
+            {% set n_resp = resp_counts.get(p.id, 0) %}
+            <a href="/preguntas/{{ p.id }}"
+               class="pq-card{% if p.is_closed %} pq-card--closed{% elif n_resp > 0 %} pq-card--answered{% endif %}">
+
+                <!-- Stats -->
+                <div class="pq-stats">
+                    <div class="pq-stat">
+                        <span class="pq-stat-num {% if n_resp > 0 and not p.is_closed %}pq-stat-num--answered{% endif %}">
+                            {{ n_resp }}
+                        </span>
+                        <span class="pq-stat-label">resp.</span>
+                    </div>
+                    <div class="pq-stat">
+                        <span class="pq-stat-num" style="font-size:.8rem;color:var(--text-dim);font-weight:600">{{ p.views or 0 }}</span>
+                        <span class="pq-stat-label">vistas</span>
+                    </div>
+                </div>
+
+                <!-- Cuerpo -->
+                <div class="pq-body">
+                    <div class="pq-title">{{ p.titulo }}</div>
+                    {% if p.cuerpo %}
+                    <div class="pq-excerpt">{{ p.cuerpo }}</div>
+                    {% endif %}
+                    <div class="pq-meta">
+                        {% if p.is_closed %}
+                        <span class="pq-badge pq-badge--closed">✕ Cerrada</span>
+                        {% elif n_resp > 0 %}
+                        <span class="pq-badge pq-badge--answered">✓ Respondida</span>
+                        {% else %}
+                        <span class="pq-badge pq-badge--open">● Sin respuesta</span>
+                        {% endif %}
+                        <span class="pq-meta-sep">·</span>
+                        <span>@{{ p.autor.username }}{% if p.autor.is_verified %} <span class="pq-ver-dot"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>{% endif %}</span>
+                        <span class="pq-meta-sep">·</span>
+                        <span>{{ p.created_at.strftime('%d/%m/%Y') }}</span>
+                        {% if p.image_1_url or p.image_2_url %}
+                        <span class="pq-meta-sep">·</span>
+                        <span style="color:var(--text-dim)">📷 {{ (1 if p.image_1_url else 0) + (1 if p.image_2_url else 0) }} foto{{ 's' if (1 if p.image_1_url else 0) + (1 if p.image_2_url else 0) > 1 }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        {% if total_paginas > 1 %}
+        {% set base = '/preguntas?' ~ ('q=' ~ q ~ '&' if q) %}
+        <div class="pq-pagination">
+            {% if pagina > 1 %}
+            <a href="{{ base }}pagina={{ pagina - 1 }}" class="pag-btn">← Anterior</a>
+            {% else %}
+            <span class="pag-btn pag-disabled">← Anterior</span>
+            {% endif %}
+
+            {% for p in range(1, total_paginas + 1) %}
+                {% if p == pagina %}
+                <span class="pag-btn pag-active">{{ p }}</span>
+                {% elif p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+                <a href="{{ base }}pagina={{ p }}" class="pag-btn">{{ p }}</a>
+                {% elif p == pagina - 3 or p == pagina + 3 %}
+                <span class="pag-btn pag-ellipsis">…</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagina < total_paginas %}
+            <a href="{{ base }}pagina={{ pagina + 1 }}" class="pag-btn">Siguiente →</a>
+            {% else %}
+            <span class="pag-btn pag-disabled">Siguiente →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            {% if q %}
+            <h3>Sin resultados para "{{ q }}"</h3>
+            <p>Probá con otras palabras o revisá la ortografía.</p>
+            <a href="/preguntas" class="btn btn-outline" style="margin-top:.5rem">Ver todas las preguntas</a>
+            {% else %}
+            <h3>Todavía no hay preguntas</h3>
+            <p>Sé el primero en consultar algo a la comunidad.</p>
+            {% if user %}
+            <a href="/preguntas/nueva" class="btn btn-primary" style="margin-top:.75rem">+ Hacer una pregunta</a>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

@@ -5,7 +5,9 @@ from .listing import Listing, ListingType, ListingStatus
 from .anuncio import Anuncio
 from .blog import BlogPost, BlogCategoria, BlogPostImagen
 from .setting import AppSetting
+from .pregunta import Pregunta, Respuesta
 
 __all__ = ["User", "Coin", "CustomOption",
            "PasswordResetToken", "Listing", "ListingType", "ListingStatus",
-           "Anuncio", "BlogPost", "BlogCategoria", "AppSetting"]
+           "Anuncio", "BlogPost", "BlogCategoria", "AppSetting",
+           "Pregunta", "Respuesta"]

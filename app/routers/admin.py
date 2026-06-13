@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.setting import AppSetting
+from ..models.user import User
 from ..auth import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -57,3 +58,24 @@ async def configuracion_post(
     except (ValueError, AttributeError):
         pass
     return RedirectResponse(url="/admin/configuracion?saved=1", status_code=302)
+
+
+@router.get("/usuarios", response_class=HTMLResponse)
+async def usuarios(request: Request, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    users = db.query(User).order_by(User.username).all()
+    return templates.TemplateResponse(request, "admin/usuarios.html", {
+        "user": user, "users": users,
+        "saved": request.query_params.get("saved"),
+    })
+
+
+@router.post("/usuarios/{uid}/verificar")
+async def toggle_verificado(uid: int, request: Request, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    u = db.query(User).filter(User.id == uid).first()
+    if not u:
+        raise HTTPException(status_code=404)
+    u.is_verified = not u.is_verified
+    db.commit()
+    return RedirectResponse(url="/admin/usuarios?saved=1", status_code=302)

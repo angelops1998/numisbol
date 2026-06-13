@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Preguntas — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/mercado.css">{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <h1 class="page-title">Preguntas de la comunidad</h1>
+                    <p class="page-subtitle">Consultá y ayudá a otros coleccionistas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="mercado-acceso-wrap">
+            <div class="mercado-acceso-icon">🔒</div>
+            <h2 class="mercado-acceso-title">Acceso restringido</h2>
+            <p class="mercado-acceso-desc">
+                Para ver y participar en las preguntas de la comunidad necesitás
+                tener una cuenta en NumisBol.
+            </p>
+            <div class="mercado-acceso-btns">
+                <a href="/auth/registro" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+                <a href="/auth/login"    class="btn btn-outline btn-lg">Iniciar sesión</a>
+            </div>
+            <p class="mercado-acceso-sub">
+                ¿Ya tenés cuenta? <a href="/auth/login">Iniciá sesión</a> para acceder a las preguntas.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

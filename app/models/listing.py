@@ -42,6 +42,12 @@ class Listing(Base):
     image_url   = Column(String(500), nullable=True)
     image_back_url = Column(String(500), nullable=True)
 
+    usd_rate          = Column(Numeric(10, 4), nullable=True)  # tasa BOB/USD al momento de publicar
+
+    cost              = Column(Numeric(12, 2), nullable=True)   # costo de adquisición
+    cost_currency     = Column(String(3), default="BOB", nullable=True)
+    cost_usd_rate     = Column(Numeric(10, 4), nullable=True)   # tasa si el costo fue en USD
+
     sale_notes        = Column(Text, nullable=True)
     sale_price_actual = Column(Numeric(12, 2), nullable=True)
     sold_at           = Column(DateTime(timezone=True), nullable=True)

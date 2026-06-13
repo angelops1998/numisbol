@@ -13,10 +13,14 @@
                     <h1 class="page-title">Blog numismático</h1>
                     <p class="page-subtitle">Artículos, noticias y curiosidades de la comunidad</p>
                 </div>
-                {% if user %}
+                {% if user and user.is_verified %}
                 <a href="/blog/nuevo/articulo" class="btn btn-primary">
                     ✏ Escribir artículo
                 </a>
+                {% elif user %}
+                <button type="button" class="btn btn-outline" id="btnNoVerificado" style="opacity:.6">
+                    ✏ Escribir artículo
+                </button>
                 {% endif %}
             </div>
         </div>
@@ -99,16 +103,15 @@
 
             <!-- Categorías -->
             {% if categorias %}
-            <div class="blog-cat-select-wrap">
+            <div class="blog-cat-select-wrap" id="blogCatSelectWrap">
                 <label class="blog-cat-label">Categoría</label>
-                <div class="searchable-select" id="blogCatSelect">
-                    <div class="ss-display" tabindex="0" id="blogCatDisplay">
-                        <span class="ss-value" id="blogCatLabel">
-                            {% if cat_activa %}
-                                {{ categorias | selectattr('slug', 'equalto', cat_activa) | map(attribute='nombre') | first | default('Todas las categorías') }}
-                            {% else %}
-                                Todas las categorías
-                            {% endif %}
+                <div class="searchable-select" data-name="categoria">
+                    <input type="hidden" id="blogCatHidden" value="{{ cat_activa or '' }}">
+                    <div class="ss-display" tabindex="0">
+                        <span class="ss-value {% if not cat_activa %}placeholder{% endif %}">
+                            {% if cat_activa == '__sin_categoria__' %}Sin categoría
+                            {% elif cat_activa %}{{ categorias | selectattr('slug', 'equalto', cat_activa) | map(attribute='nombre') | first | default('Todas las categorías') }}
+                            {% else %}Todas las categorías{% endif %}
                         </span>
                         <span class="ss-arrow">▾</span>
                     </div>
@@ -116,33 +119,12 @@
                         <div class="ss-search-wrap">
                             <input type="text" class="ss-search" placeholder="Buscar categoría..." autocomplete="off">
                         </div>
-                        <ul class="ss-list" id="blogCatList">
-                            {% set p = [] %}
-                            {% if q %}{% set p = p + ['q=' + q] %}{% endif %}
-                            {% if anio %}{% set p = p + ['anio=' + anio|string] %}{% endif %}
-                            {% if mes %}{% set p = p + ['mes=' + mes|string] %}{% endif %}
-                            <li class="ss-option {% if not cat_activa %}ss-selected{% endif %}"
-                                data-href="/blog{% if p %}?{{ p|join('&') }}{% endif %}">
-                                Todas las categorías
-                            </li>
+                        <ul class="ss-list">
+                            <li class="ss-option {% if not cat_activa %}ss-selected{% endif %}" data-value="">Todas las categorías</li>
                             {% for c in categorias %}
-                            {% set pc = ['categoria=' + c.slug] %}
-                            {% if q %}{% set pc = pc + ['q=' + q] %}{% endif %}
-                            {% if anio %}{% set pc = pc + ['anio=' + anio|string] %}{% endif %}
-                            {% if mes %}{% set pc = pc + ['mes=' + mes|string] %}{% endif %}
-                            <li class="ss-option {% if cat_activa == c.slug %}ss-selected{% endif %}"
-                                data-href="/blog?{{ pc|join('&') }}">
-                                {{ c.nombre }}
-                            </li>
+                            <li class="ss-option {% if cat_activa == c.slug %}ss-selected{% endif %}" data-value="{{ c.slug }}">{{ c.nombre }}</li>
                             {% endfor %}
-                            {% set psc = ['categoria=__sin_categoria__'] %}
-                            {% if q %}{% set psc = psc + ['q=' + q] %}{% endif %}
-                            {% if anio %}{% set psc = psc + ['anio=' + anio|string] %}{% endif %}
-                            {% if mes %}{% set psc = psc + ['mes=' + mes|string] %}{% endif %}
-                            <li class="ss-option {% if cat_activa == '__sin_categoria__' %}ss-selected{% endif %}"
-                                data-href="/blog?{{ psc|join('&') }}">
-                                Sin categoría
-                            </li>
+                            <li class="ss-option {% if cat_activa == '__sin_categoria__' %}ss-selected{% endif %}" data-value="__sin_categoria__">Sin categoría</li>
                         </ul>
                     </div>
                 </div>
@@ -162,7 +144,7 @@
             {% else %}
             <h2>Todavía no hay artículos</h2>
             <p>Sé el primero en compartir algo con la comunidad.</p>
-            {% if user %}
+            {% if user and user.is_verified %}
             <a href="/blog/nuevo/articulo" class="btn btn-primary btn-lg" style="margin-top:1rem">
                 ✏ Escribir el primer artículo
             </a>
@@ -366,6 +348,30 @@
         {% endif %}
     </div>
 </div>
+
+{% if user and not user.is_verified %}
+<div class="modal-overlay" id="modalNoVerificado"
+     onclick="if(event.target===this)this.classList.remove('modal-open')">
+    <div class="modal-box" style="max-width:380px">
+        <div style="padding:1.75rem 1.5rem 1.25rem;text-align:center">
+            <div style="font-size:2rem;margin-bottom:.75rem">🔒</div>
+            <h3 style="font-size:1.05rem;font-weight:700;color:var(--text-primary);margin-bottom:.75rem">Función exclusiva para verificados</h3>
+            <p style="color:var(--text-dim);font-size:.875rem;line-height:1.65;margin-bottom:1.25rem">
+                Solo los <strong style="color:#ddd6fe">usuarios verificados por NumisBol</strong>
+                pueden publicar artículos en el blog.<br><br>
+                La verificación es asignada por el equipo de administración a usuarios de confianza de la comunidad.
+            </p>
+            <div style="display:inline-flex;align-items:center;gap:.4rem;background:linear-gradient(135deg,rgba(49,46,129,.6),rgba(76,29,149,.5));border:1px solid rgba(139,92,246,.35);border-radius:20px;padding:.3rem .8rem;margin-bottom:1.25rem">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="color:#a78bfa"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span style="font-size:.72rem;font-weight:700;color:#ddd6fe;letter-spacing:.04em">USUARIO VERIFICADO</span>
+            </div>
+        </div>
+        <div style="padding:.75rem 1.5rem 1.25rem;text-align:center;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="document.getElementById('modalNoVerificado').classList.remove('modal-open')">Entendido</button>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -432,47 +438,19 @@
 
 // Select de categorías
 (function () {
-    const wrap    = document.getElementById('blogCatSelect');
-    const display = document.getElementById('blogCatDisplay');
-    const label   = document.getElementById('blogCatLabel');
-    const list    = document.getElementById('blogCatList');
+    var wrap = document.getElementById('blogCatSelectWrap');
     if (!wrap) return;
-
-    var isTouch = window.matchMedia('(hover: none)').matches;
-    function open() {
-        wrap.classList.add('open');
-        if (!isTouch) wrap.querySelector('.ss-search').focus();
-        // Scroll suave para que el select y sus opciones queden visibles
-        requestAnimationFrame(function () {
-            var navH = (document.querySelector('nav, header, .navbar') || {}).offsetHeight || 0;
-            var rect = wrap.getBoundingClientRect();
-            var dropH = (wrap.querySelector('.ss-dropdown') || {}).offsetHeight || 220;
-            var bottom = rect.bottom + dropH;
-            if (bottom > window.innerHeight) {
-                var top = window.scrollY + rect.top - navH - 12;
-                window.scrollTo({ top: top, behavior: 'smooth' });
-            }
-        });
-    }
-    function close() { wrap.classList.remove('open'); }
-
-    display.addEventListener('click', () => wrap.classList.contains('open') ? close() : open());
-    display.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
-
-    wrap.querySelector('.ss-search').addEventListener('input', function () {
-        const q = this.value.toLowerCase();
-        list.querySelectorAll('.ss-option').forEach(li => {
-            li.style.display = li.textContent.trim().toLowerCase().includes(q) ? '' : 'none';
-        });
+    initSearchableSelects({ container: wrap });
+    var hidden = document.getElementById('blogCatHidden');
+    if (!hidden) return;
+    hidden.addEventListener('change', function () {
+        var params = new URLSearchParams(window.location.search);
+        params.delete('pagina');
+        var val = this.value;
+        if (val) params.set('categoria', val);
+        else params.delete('categoria');
+        window.location.href = '/blog' + (params.toString() ? '?' + params.toString() : '');
     });
-
-    list.addEventListener('click', e => {
-        const li = e.target.closest('.ss-option');
-        if (!li) return;
-        window.location.href = li.dataset.href;
-    });
-
-    document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
 })();
 
 // Filtros de Más leídos (categoría + autor) — usando searchable-select.js
@@ -514,5 +492,12 @@
 
 var leidosFilters = document.getElementById('blogLeidosFilters');
 if (leidosFilters) initSearchableSelects({ container: leidosFilters });
+
+var btnNoVer = document.getElementById('btnNoVerificado');
+if (btnNoVer) {
+    btnNoVer.addEventListener('click', function () {
+        document.getElementById('modalNoVerificado').classList.add('modal-open');
+    });
+}
 </script>
 {% endblock %}
