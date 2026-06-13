@@ -141,6 +141,7 @@
                             </p>
                         </div>
                         <form method="post" action="/coleccion/{{ coin.id }}/toggle-publico">
+                {{ csrf_input(request) }}
                             <button type="submit" class="btn {% if coin.is_public %}btn-outline share-toggle-on{% else %}btn-outline{% endif %}">
                                 {% if coin.is_public %}🔓 Pública{% else %}🔒 Privada{% endif %}
                             </button>
@@ -168,6 +169,7 @@
                     <a href="/coleccion/{{ coin.id }}/editar" class="btn btn-outline" style="flex:1;text-align:center">✏ Editar</a>
                     <form method="post" action="/coleccion/{{ coin.id }}/eliminar" style="flex:1"
                           onsubmit="return confirm('¿Está seguro de eliminar esta moneda?')">
+                {{ csrf_input(request) }}
                         <button type="submit" class="btn btn-danger" style="width:100%">🗑 Eliminar</button>
                     </form>
                 </div>

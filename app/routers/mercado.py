@@ -1,9 +1,9 @@
 import os, shutil, uuid, json
 from typing import Optional
 from datetime import datetime, timezone
+from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func, extract
 import sqlalchemy as sa
@@ -15,7 +15,6 @@ from ..auth import get_current_user, get_current_user_optional
 from ..routers.coleccion import COUNTRIES, CONDITIONS as CONDITION_GROUPS
 
 router = APIRouter(prefix="/mercado", tags=["mercado"])
-templates = Jinja2Templates(directory="app/templates")
 PER_PAGE = 20
 
 UPLOAD_DIR = "app/static/img/uploads"

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Colecciones — Admin NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    {% include "admin/_sidebar.html" %}
+
+    <main class="admin-main">
+        <h1 class="admin-page-title">Colecciones</h1>
+        <p class="admin-page-sub">Explorá el inventario de cualquier coleccionista</p>
+
+        <!-- Selector de usuario -->
+        <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
+            <form method="get" action="/admin/coleccion" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+                <div class="form-group" style="margin:0;flex:1;min-width:200px">
+                    <label class="form-label" style="font-size:.75rem">Coleccionista</label>
+                    <select name="uid" class="form-input" onchange="this.form.submit()">
+                        <option value="0">— Seleccionar usuario —</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}" {% if u.id == uid %}selected{% endif %}>
+                            @{{ u.username }}{% if u.is_verified %} ✓{% endif %} — {{ u.full_name or u.email }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if uid %}
+                <div class="form-group" style="margin:0;flex:1;min-width:180px">
+                    <label class="form-label" style="font-size:.75rem">Buscar moneda</label>
+                    <input type="search" name="q" value="{{ q }}" placeholder="Nombre..." class="form-input admin-search-input" style="max-width:100%">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:.05rem">Buscar</button>
+                <a href="/admin/coleccion?uid={{ uid }}" class="btn btn-outline btn-sm" style="margin-bottom:.05rem">Limpiar</a>
+                {% endif %}
+            </form>
+        </div>
+
+        {% if usuario_sel %}
+
+        <!-- Info del usuario -->
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem">
+            <div>
+                <span style="font-size:1rem;font-weight:700;color:var(--text-primary)">@{{ usuario_sel.username }}</span>
+                {% if usuario_sel.is_verified %}<span class="badge-ver" style="margin-left:.4rem">✓ Verificado</span>{% endif %}
+                {% if usuario_sel.is_admin %}<span class="badge-admin" style="margin-left:.3rem">Admin</span>{% endif %}
+                <div style="font-size:.78rem;color:var(--text-dim);margin-top:.15rem">{{ usuario_sel.email }}</div>
+            </div>
+            <div style="margin-left:auto;font-size:.82rem;color:var(--text-dim)">
+                <strong style="color:var(--text-primary);font-size:1.1rem">{{ total }}</strong> moneda{{ 's' if total != 1 }}
+            </div>
+        </div>
+
+        {% if monedas %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Foto</th>
+                        <th>Nombre</th>
+                        <th>País</th>
+                        <th>Año</th>
+                        <th>Material</th>
+                        <th>Estado</th>
+                        <th>Valor est.</th>
+                        <th>Pública</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in monedas %}
+                    <tr>
+                        <td style="width:52px">
+                            {% if m.image_url %}
+                            <img src="{{ m.image_url }}" alt="{{ m.name }}"
+                                 style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+                            {% else %}
+                            <div style="width:44px;height:44px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem">🪙</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/coleccion/{{ m.id }}" target="_blank"
+                               style="color:var(--text-primary);font-weight:600;font-size:.83rem;text-decoration:none">
+                                {{ m.name }}
+                            </a>
+                            {% if m.denomination %}
+                            <div style="font-size:.7rem;color:var(--text-dim)">{{ m.denomination }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:.8rem;color:var(--text-dim)">{{ m.country or '—' }}</td>
+                        <td style="font-size:.8rem;color:var(--text-dim)">{{ m.year or '—' }}</td>
+                        <td style="font-size:.78rem;color:var(--text-dim)">{{ m.material or '—' }}</td>
+                        <td style="font-size:.78rem;color:var(--text-dim)">
+                            {{ m.condition.split(' → ')[0] if m.condition else '—' }}
+                        </td>
+                        <td style="font-size:.82rem;font-weight:600;color:var(--text-primary);white-space:nowrap">
+                            {% if m.estimated_value %}
+                                {{ m.estimated_value|int }} {{ m.value_currency or 'USD' }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if m.is_public %}
+                            <span class="badge-status badge-activo">Sí</span>
+                            {% else %}
+                            <span style="color:var(--text-dim);font-size:.75rem">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_paginas > 1 %}
+        <div class="pq-pagination" style="margin-top:1.5rem">
+            {% if pagina > 1 %}<a href="?uid={{ uid }}&q={{ q }}&pagina={{ pagina-1 }}" class="pag-btn">← Anterior</a>{% else %}<span class="pag-btn pag-disabled">← Anterior</span>{% endif %}
+            {% for p in range(1, total_paginas+1) %}
+                {% if p == pagina %}<span class="pag-btn pag-active">{{ p }}</span>
+                {% elif p == 1 or p == total_paginas or (p >= pagina-2 and p <= pagina+2) %}<a href="?uid={{ uid }}&q={{ q }}&pagina={{ p }}" class="pag-btn">{{ p }}</a>{% endif %}
+            {% endfor %}
+            {% if pagina < total_paginas %}<a href="?uid={{ uid }}&q={{ q }}&pagina={{ pagina+1 }}" class="pag-btn">Siguiente →</a>{% else %}<span class="pag-btn pag-disabled">Siguiente →</span>{% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🪙</div>
+            <p>{{ 'Sin resultados para "' ~ q ~ '"' if q else 'Este usuario no tiene monedas en su colección.' }}</p>
+        </div>
+        {% endif %}
+
+        {% elif uid == 0 %}
+        <div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <p>Seleccioná un coleccionista para ver su inventario.</p>
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+{% endblock %}

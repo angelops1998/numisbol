@@ -3,21 +3,60 @@ from fastapi.exceptions import HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from .database import engine, Base
+from starlette.middleware.base import BaseHTTPMiddleware
+from .database import engine
 from .routers import auth, main as main_router, coleccion, recovery, mercado, perfil, anuncios, blog, moneda_publica, admin, preguntas
-from . import models  # noqa: F401 – registra los modelos en Base
 from .auth import NotAuthenticatedException
+from .csrf import get_csrf_token, set_csrf_cookie, validate_csrf
+import secrets, hmac, hashlib
 
 _templates = Jinja2Templates(directory="app/templates")
-
-# Crear tablas (en producción usar Alembic)
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="NumisColect",
     description="Plataforma para coleccionistas de monedas",
     version="0.1.0",
 )
+
+# Rutas POST excluidas de CSRF (login/registro manejan su propio flujo)
+_CSRF_EXEMPT = {"/auth/login", "/auth/registro", "/auth/token"}
+
+class CSRFMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "POST" and request.url.path not in _CSRF_EXEMPT:
+            # Leer y cachear el body para que el router pueda leerlo después
+            body = await request.body()
+            async def receive():
+                return {"type": "http.request", "body": body, "more_body": False}
+            request._receive = receive
+
+            from urllib.parse import parse_qs
+            content_type = request.headers.get("content-type", "")
+            form_token = ""
+            if "application/x-www-form-urlencoded" in content_type:
+                parsed = parse_qs(body.decode("utf-8", errors="replace"))
+                form_token = parsed.get("csrf_token", [""])[0]
+            elif "multipart/form-data" in content_type:
+                # Buscar el token en el body crudo del multipart
+                decoded = body.decode("utf-8", errors="replace")
+                import re
+                m = re.search(r'name="csrf_token"\r\n\r\n([^\r\n]+)', decoded)
+                form_token = m.group(1) if m else ""
+
+            try:
+                validate_csrf(request, form_token)
+            except HTTPException:
+                return _templates.TemplateResponse(
+                    request, "403.html", {}, status_code=403
+                )
+
+        response = await call_next(request)
+        if "csrf_token" not in request.cookies:
+            token = secrets.token_hex(32)
+            set_csrf_cookie(response, token)
+        return response
+
+app.add_middleware(CSRFMiddleware)
 
 @app.exception_handler(NotAuthenticatedException)
 async def not_authenticated_handler(request: Request, exc: NotAuthenticatedException):

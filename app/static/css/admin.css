@@ -1,0 +1,195 @@
+/* ══════════════════════════════════════════════════════════════
+   ADMIN PANEL — NumisBol
+   ══════════════════════════════════════════════════════════════ */
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 60px);
+}
+
+/* ── Sidebar ────────────────────────────────────────────────── */
+.admin-sidebar {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+}
+.admin-sidebar-title {
+    font-size: .65rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: 0 1.25rem .5rem;
+}
+.admin-nav-link {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .65rem 1.25rem;
+    font-size: .85rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: background .15s, color .15s;
+    border-left: 3px solid transparent;
+}
+.admin-nav-link:hover {
+    background: rgba(255,255,255,.04);
+    color: var(--text-primary);
+}
+.admin-nav-link.active {
+    background: rgba(124,58,237,.1);
+    color: #a78bfa;
+    border-left-color: #7c3aed;
+}
+.admin-nav-link .nav-icon { font-size: 1rem; width: 1.1rem; text-align: center; flex-shrink: 0; }
+.admin-nav-sep { height: 1px; background: var(--border); margin: .75rem 1.25rem; }
+
+/* ── Main content ───────────────────────────────────────────── */
+.admin-main {
+    padding: 2rem 2rem 3rem;
+    min-width: 0;
+}
+.admin-page-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 .25rem;
+}
+.admin-page-sub {
+    font-size: .8rem;
+    color: var(--text-dim);
+    margin: 0 0 1.75rem;
+}
+
+/* ── Stat cards ─────────────────────────────────────────────── */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.admin-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+.admin-stat-label {
+    font-size: .7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 600;
+}
+.admin-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+.admin-stat-card--purple .admin-stat-value { color: #a78bfa; }
+.admin-stat-card--green  .admin-stat-value { color: #4ade80; }
+.admin-stat-card--blue   .admin-stat-value { color: #60a5fa; }
+.admin-stat-card--orange .admin-stat-value { color: #fb923c; }
+
+/* ── Table ──────────────────────────────────────────────────── */
+.admin-table-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+}
+.admin-table th {
+    text-align: left;
+    padding: .65rem 1rem;
+    color: var(--text-dim);
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.admin-table td {
+    padding: .7rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    vertical-align: middle;
+}
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table tr:hover td { background: rgba(255,255,255,.02); }
+
+/* ── Search bar ─────────────────────────────────────────────── */
+.admin-search-form {
+    display: flex;
+    gap: .6rem;
+    margin-bottom: 1.25rem;
+}
+.admin-search-input {
+    flex: 1;
+    max-width: 360px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: .55rem 1rem;
+    color: var(--text-primary);
+    font-size: .85rem;
+    outline: none;
+}
+.admin-search-input:focus { border-color: var(--border-light); }
+
+/* ── Badges ─────────────────────────────────────────────────── */
+.badge-admin    { background: rgba(251,146,60,.15); color:#fb923c; border:1px solid rgba(251,146,60,.25); font-size:.65rem; font-weight:700; padding:.15rem .5rem; border-radius:20px; letter-spacing:.04em; text-transform:uppercase; }
+.badge-ver      { background: linear-gradient(135deg,#1d4ed8,#7c3aed); color:#fff; font-size:.65rem; font-weight:700; padding:.15rem .5rem; border-radius:20px; }
+.badge-status   { font-size:.65rem; font-weight:700; padding:.15rem .5rem; border-radius:20px; text-transform:uppercase; letter-spacing:.03em; }
+.badge-activo   { background:rgba(74,222,128,.1); color:#4ade80; border:1px solid rgba(74,222,128,.2); }
+.badge-vendido  { background:rgba(96,165,250,.1); color:#60a5fa; border:1px solid rgba(96,165,250,.2); }
+.badge-cerrado  { background:rgba(156,163,175,.08); color:#9ca3af; border:1px solid rgba(156,163,175,.18); }
+
+/* ── Action buttons ─────────────────────────────────────────── */
+.btn-danger-sm {
+    background: rgba(239,68,68,.12);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,.25);
+    border-radius: 7px;
+    padding: .28rem .65rem;
+    font-size: .72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+}
+.btn-danger-sm:hover { background: rgba(239,68,68,.22); }
+.btn-toggle-sm {
+    border-radius: 7px;
+    padding: .28rem .65rem;
+    font-size: .72rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: background .15s;
+}
+.btn-toggle-on  { background: linear-gradient(135deg,#1d4ed8,#7c3aed); color:#fff; border-color:transparent; }
+.btn-toggle-off { background: var(--bg-card); color: var(--text-dim); }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .admin-sidebar { display: none; }
+    .admin-main { padding: 1.25rem 1rem 2rem; }
+    .admin-stats { grid-template-columns: repeat(2, 1fr); }
+}

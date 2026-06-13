@@ -1,8 +1,8 @@
 import secrets
 from datetime import datetime, timedelta, timezone
+from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.user import User
@@ -10,7 +10,6 @@ from ..models.password_reset import PasswordResetToken
 from ..auth import hash_password, get_current_user_optional
 
 router = APIRouter(prefix="/auth", tags=["recovery"])
-templates = Jinja2Templates(directory="app/templates")
 
 TOKEN_EXPIRE_HOURS = 2
 

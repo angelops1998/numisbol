@@ -55,6 +55,7 @@
 
         <form method="post" action="/preguntas/nueva" enctype="multipart/form-data"
               class="settings-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1.35rem">
+                {{ csrf_input(request) }}
 
             <div class="form-group">
                 <label for="titulo" class="form-label">

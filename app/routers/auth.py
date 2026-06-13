@@ -1,6 +1,6 @@
+from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from ..database import get_db
@@ -13,7 +13,6 @@ from ..auth import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/registro", response_class=HTMLResponse)

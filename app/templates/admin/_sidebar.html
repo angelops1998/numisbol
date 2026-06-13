@@ -1,0 +1,39 @@
+<aside class="admin-sidebar">
+    <div class="admin-sidebar-title">Panel Admin</div>
+
+    <a href="/admin" class="admin-nav-link {% if request.url.path == '/admin' or request.url.path == '/admin/' %}active{% endif %}">
+        <span class="nav-icon">📊</span> Dashboard
+    </a>
+
+    <div class="admin-nav-sep"></div>
+    <div class="admin-sidebar-title" style="margin-top:.5rem">Gestión</div>
+
+    <a href="/admin/usuarios" class="admin-nav-link {% if '/admin/usuarios' in request.url.path %}active{% endif %}">
+        <span class="nav-icon">👥</span> Usuarios
+    </a>
+    <a href="/admin/mercado" class="admin-nav-link {% if '/admin/mercado' in request.url.path %}active{% endif %}">
+        <span class="nav-icon">🏪</span> Mercado
+    </a>
+    <a href="/admin/coleccion" class="admin-nav-link {% if '/admin/coleccion' in request.url.path %}active{% endif %}">
+        <span class="nav-icon">🪙</span> Colecciones
+    </a>
+    <a href="/admin/preguntas" class="admin-nav-link {% if '/admin/preguntas' in request.url.path %}active{% endif %}">
+        <span class="nav-icon">💬</span> Preguntas
+    </a>
+    <a href="/admin/blog" class="admin-nav-link {% if '/admin/blog' in request.url.path %}active{% endif %}">
+        <span class="nav-icon">📝</span> Blog
+    </a>
+    <a href="/admin/anuncios" class="admin-nav-link {% if '/admin/anuncios' in request.url.path %}active{% endif %}">
+        <span class="nav-icon">📢</span> Anuncios
+    </a>
+
+    <div class="admin-nav-sep"></div>
+    <div class="admin-sidebar-title" style="margin-top:.5rem">Sistema</div>
+
+    <a href="/admin/configuracion" class="admin-nav-link {% if '/admin/configuracion' in request.url.path %}active{% endif %}">
+        <span class="nav-icon">⚙️</span> Configuración
+    </a>
+    <a href="/" class="admin-nav-link">
+        <span class="nav-icon">↩</span> Volver al sitio
+    </a>
+</aside>

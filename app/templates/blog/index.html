@@ -11,7 +11,7 @@
             <div class="page-header-inner">
                 <div>
                     <h1 class="page-title">Blog numismático</h1>
-                    <p class="page-subtitle">Artículos, noticias y curiosidades de la comunidad</p>
+                    <p class="page-subtitle">{{ total }} artículo{{ 's' if total != 1 }} · noticias y curiosidades de la comunidad</p>
                 </div>
                 {% if user and user.is_verified %}
                 <a href="/blog/nuevo/articulo" class="btn btn-primary">

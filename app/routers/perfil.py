@@ -1,6 +1,6 @@
+from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from ..database import get_db
@@ -9,7 +9,6 @@ from ..auth import get_current_user, get_current_user_optional, hash_password, v
 from ..routers.coleccion import save_upload   # reutilizamos la misma función
 
 router = APIRouter(prefix="/perfil", tags=["perfil"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 # ── Mi perfil (ver + editar) ──────────────────────────────────────────────────

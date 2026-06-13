@@ -1,8 +1,8 @@
 import os, shutil, uuid
 from typing import Optional
+from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from ..database import get_db
@@ -11,7 +11,6 @@ from ..models.setting import AppSetting
 from ..auth import get_current_user, get_current_user_optional
 
 router = APIRouter(prefix="/coleccion", tags=["coleccion"])
-templates = Jinja2Templates(directory="app/templates")
 
 UPLOAD_DIR = "app/static/img/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -387,17 +386,21 @@ def get_custom_options(db: Session, field_name: str) -> list:
     ]
 
 
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+
 def save_upload(file: UploadFile) -> Optional[str]:
-    """Guarda un archivo subido y devuelve la URL relativa."""
     if not file or not file.filename:
         return None
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in (".jpg", ".jpeg", ".png", ".webp"):
         return None
+    data = file.file.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="La imagen no puede superar 5 MB.")
     filename = f"{uuid.uuid4().hex}{ext}"
     path = os.path.join(UPLOAD_DIR, filename)
     with open(path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+        f.write(data)
     return f"/static/img/uploads/{filename}"
 
 

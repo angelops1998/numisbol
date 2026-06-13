@@ -56,6 +56,7 @@
                     <a href="/mercado/{{ l.id }}/editar" class="btn btn-outline" style="padding:.35rem .8rem;font-size:var(--font-xs)">Editar</a>
                     <form method="post" action="/mercado/{{ l.id }}/eliminar"
                           onsubmit="return confirm('¿Eliminar este anuncio?')" style="display:inline">
+                {{ csrf_input(request) }}
                         <button type="submit" class="btn btn-danger" style="padding:.35rem .8rem;font-size:var(--font-xs)">Eliminar</button>
                     </form>
                 </div>

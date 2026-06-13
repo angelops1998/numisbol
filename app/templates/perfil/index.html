@@ -77,6 +77,7 @@
              id="tab-info">
             <form method="post" action="/perfil/editar"
                   enctype="multipart/form-data" class="perfil-form" novalidate>
+                {{ csrf_input(request) }}
 
                 <div class="perfil-form-grid">
 
@@ -177,6 +178,7 @@
 
             <form method="post" action="/perfil/contrasena"
                   class="perfil-form perfil-form-narrow" novalidate>
+                {{ csrf_input(request) }}
 
                 <div class="form-group">
                     <label for="password_actual">Contraseña actual</label>

@@ -78,6 +78,7 @@
                 <a href="/blog/{{ post.slug }}/editar" class="btn btn-outline btn-sm">✏ Editar</a>
                 <form method="post" action="/blog/{{ post.slug }}/eliminar"
                       onsubmit="return confirm('¿Eliminar este artículo?')">
+                {{ csrf_input(request) }}
                     <button type="submit" class="btn btn-danger btn-sm">🗑 Eliminar</button>
                 </form>
                 {% if not post.publicado %}
@@ -213,6 +214,7 @@
 
             {% if user %}
             <form method="post" action="/blog/{{ post.slug }}/comentar" class="blog-com-form">
+                {{ csrf_input(request) }}
                 <div class="blog-com-form-row">
                     <div class="blog-com-avatar">
                         {% if user.avatar_url %}
@@ -258,6 +260,7 @@
                             <form method="post" action="/blog/{{ post.slug }}/comentarios/{{ c.id }}/eliminar"
                                   style="margin-left:auto"
                                   onsubmit="return confirm('¿Eliminar este comentario?')">
+                {{ csrf_input(request) }}
                                 <button type="submit" class="blog-com-delete" title="Eliminar">✕</button>
                             </form>
                             {% endif %}

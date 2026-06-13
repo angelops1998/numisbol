@@ -1,6 +1,6 @@
+from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.anuncio import Anuncio
@@ -8,7 +8,6 @@ from ..auth import get_current_user
 from ..routers.coleccion import save_upload
 
 router = APIRouter(prefix="/admin/anuncios", tags=["anuncios"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 def require_admin(request, db):

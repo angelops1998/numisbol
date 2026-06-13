@@ -53,6 +53,7 @@
         <div class="form-page-layout">
 
             <form method="post" action="{{ action }}" enctype="multipart/form-data" class="coin-form">
+                {{ csrf_input(request) }}
 
                 {% if errors %}
                 <div class="alert alert-error">

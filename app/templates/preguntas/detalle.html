@@ -62,6 +62,7 @@
                 <div class="pq-detail-actions">
                     {% if es_autor %}
                     <form method="post" action="/preguntas/{{ pregunta.id }}/cerrar" style="display:inline">
+                {{ csrf_input(request) }}
                         <button type="submit" class="btn btn-outline btn-sm">
                             {% if pregunta.is_closed %}↺ Reabrir{% else %}Cerrar pregunta{% endif %}
                         </button>
@@ -69,6 +70,7 @@
                     {% endif %}
                     <form method="post" action="/preguntas/{{ pregunta.id }}/eliminar"
                           onsubmit="return confirm('¿Eliminar esta pregunta y todas sus respuestas?')" style="display:inline">
+                {{ csrf_input(request) }}
                         <button type="submit" class="btn btn-danger btn-sm">🗑 Eliminar</button>
                     </form>
                 </div>
@@ -112,6 +114,7 @@
                         </span>
                         {% if es_autor and not pregunta.is_closed and not r.is_best %}
                         <form method="post" action="/preguntas/{{ pregunta.id }}/mejor/{{ r.id }}" style="display:inline">
+                {{ csrf_input(request) }}
                             <button type="submit" class="btn btn-outline btn-sm"
                                     style="font-size:.68rem;padding:.22rem .65rem;color:#4ade80;border-color:rgba(74,222,128,.3)">
                                 ✓ Marcar como mejor
@@ -139,6 +142,7 @@
                 <div class="alert alert-error" style="margin-bottom:.85rem">{{ resp_error }}</div>
                 {% endif %}
                 <form method="post" action="/preguntas/{{ pregunta.id }}/responder">
+                {{ csrf_input(request) }}
                     <div class="form-group" style="margin-bottom:.85rem">
                         <textarea name="cuerpo" class="form-input" rows="5"
                                   placeholder="Compartí lo que sabés sobre esta moneda..."></textarea>

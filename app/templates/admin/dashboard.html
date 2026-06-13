@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Admin — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+    {% include "admin/_sidebar.html" %}
+
+    <main class="admin-main">
+        <h1 class="admin-page-title">Panel de administración</h1>
+        <p class="admin-page-sub">Resumen general de NumisBol</p>
+
+        <!-- Estadísticas -->
+        <div class="admin-stats">
+            <div class="admin-stat-card admin-stat-card--purple">
+                <span class="admin-stat-label">Usuarios</span>
+                <span class="admin-stat-value">{{ stats.usuarios }}</span>
+                <span style="font-size:.72rem;color:var(--text-dim)">{{ stats.verificados }} verificados</span>
+            </div>
+            <div class="admin-stat-card admin-stat-card--blue">
+                <span class="admin-stat-label">Monedas en colección</span>
+                <span class="admin-stat-value">{{ stats.monedas }}</span>
+            </div>
+            <div class="admin-stat-card admin-stat-card--green">
+                <span class="admin-stat-label">Publicaciones</span>
+                <span class="admin-stat-value">{{ stats.publicaciones }}</span>
+                <span style="font-size:.72rem;color:var(--text-dim)">en el mercado</span>
+            </div>
+            <div class="admin-stat-card">
+                <span class="admin-stat-label">Preguntas</span>
+                <span class="admin-stat-value">{{ stats.preguntas }}</span>
+                <span style="font-size:.72rem;color:var(--text-dim)">{{ stats.respuestas }} respuestas</span>
+            </div>
+            <div class="admin-stat-card admin-stat-card--orange">
+                <span class="admin-stat-label">Blog</span>
+                <span class="admin-stat-value">{{ stats.blog }}</span>
+                <span style="font-size:.72rem;color:var(--text-dim)">{{ stats.comentarios }} comentarios</span>
+            </div>
+        </div>
+
+        <!-- Usuarios recientes -->
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--text-primary)">Últimos registros</h2>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Registro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios_recientes %}
+                    <tr>
+                        <td>
+                            <strong style="color:var(--text-primary)">{{ u.username }}</strong>
+                        </td>
+                        <td style="color:var(--text-dim)">{{ u.email }}</td>
+                        <td style="display:flex;gap:.35rem;flex-wrap:wrap">
+                            {% if u.is_admin %}<span class="badge-admin">Admin</span>{% endif %}
+                            {% if u.is_verified %}<span class="badge-ver">✓ Verificado</span>{% endif %}
+                            {% if not u.is_admin and not u.is_verified %}<span style="color:var(--text-dim);font-size:.75rem">Usuario</span>{% endif %}
+                        </td>
+                        <td style="color:var(--text-dim);font-size:.78rem">{{ u.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:1rem;text-align:right">
+            <a href="/admin/usuarios" class="btn btn-outline btn-sm">Ver todos los usuarios →</a>
+        </div>
+    </main>
+</div>
+{% endblock %}

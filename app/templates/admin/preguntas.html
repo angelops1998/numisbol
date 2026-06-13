@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Preguntas — Admin NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    {% include "admin/_sidebar.html" %}
+
+    <main class="admin-main">
+        <h1 class="admin-page-title">Preguntas</h1>
+        <p class="admin-page-sub">{{ total }} pregunta{{ 's' if total != 1 }} en la comunidad</p>
+
+        {% if saved %}
+        <div class="alert alert-success" style="margin-bottom:1rem">✓ Pregunta eliminada.</div>
+        {% endif %}
+
+        <form method="get" action="/admin/preguntas" class="admin-search-form">
+            <input type="search" name="q" value="{{ q }}" placeholder="Buscar por título..." class="admin-search-input">
+            <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+            {% if q %}<a href="/admin/preguntas" class="btn btn-outline btn-sm">Limpiar</a>{% endif %}
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Título</th>
+                        <th>Autor</th>
+                        <th>Respuestas</th>
+                        <th>Vistas</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in preguntas %}
+                    <tr>
+                        <td style="color:var(--text-dim);font-size:.75rem">{{ p.id }}</td>
+                        <td>
+                            <a href="/preguntas/{{ p.id }}" target="_blank"
+                               style="color:var(--text-primary);font-weight:600;text-decoration:none;font-size:.82rem">
+                                {{ p.titulo }}
+                            </a>
+                        </td>
+                        <td style="font-size:.8rem;color:var(--text-primary)">@{{ p.autor.username }}</td>
+                        <td style="font-size:.82rem;color:var(--text-dim);text-align:center">{{ p.respuestas|length }}</td>
+                        <td style="font-size:.82rem;color:var(--text-dim);text-align:center">{{ p.views or 0 }}</td>
+                        <td>
+                            {% if p.is_closed %}
+                            <span class="badge-status badge-cerrado">Cerrada</span>
+                            {% else %}
+                            <span class="badge-status badge-activo">Abierta</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:.75rem;color:var(--text-dim);white-space:nowrap">{{ p.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <form method="post" action="/admin/preguntas/{{ p.id }}/eliminar"
+                                  onsubmit="return confirm('¿Eliminar esta pregunta y sus respuestas?')" style="display:inline">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn-danger-sm">🗑 Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not preguntas %}
+                    <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-dim)">No hay preguntas.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_paginas > 1 %}
+        <div class="pq-pagination" style="margin-top:1.5rem">
+            {% if pagina > 1 %}<a href="?q={{ q }}&pagina={{ pagina-1 }}" class="pag-btn">← Anterior</a>{% else %}<span class="pag-btn pag-disabled">← Anterior</span>{% endif %}
+            {% for p in range(1, total_paginas+1) %}
+                {% if p == pagina %}<span class="pag-btn pag-active">{{ p }}</span>
+                {% elif p == 1 or p == total_paginas or (p >= pagina-2 and p <= pagina+2) %}<a href="?q={{ q }}&pagina={{ p }}" class="pag-btn">{{ p }}</a>{% endif %}
+            {% endfor %}
+            {% if pagina < total_paginas %}<a href="?q={{ q }}&pagina={{ pagina+1 }}" class="pag-btn">Siguiente →</a>{% else %}<span class="pag-btn pag-disabled">Siguiente →</span>{% endif %}
+        </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

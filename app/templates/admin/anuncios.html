@@ -1,116 +1,90 @@
 {% extends "base.html" %}
 {% block title %}Anuncios — Admin NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/css/perfil.css">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-    <div class="page-header">
-        <div class="container">
-            <div class="page-header-inner">
-                <div>
-                    <p class="page-breadcrumb"><a href="/">Inicio</a> / Admin / Anuncios</p>
-                    <h1 class="page-title">Gestión de anuncios</h1>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="admin-layout">
+    {% include "admin/_sidebar.html" %}
 
-    <div class="container" style="max-width:900px">
+    <main class="admin-main">
+        <h1 class="admin-page-title">Anuncios del inicio</h1>
+        <p class="admin-page-sub">Flyers y eventos que se muestran en la página principal</p>
 
         {% if request.query_params.get('ok') %}
-        <div class="alert alert-success" style="margin-bottom:1.5rem">
-            <span class="alert-icon">✓</span> Anuncio publicado correctamente.
-        </div>
+        <div class="alert alert-success" style="margin-bottom:1.5rem">✓ Anuncio publicado correctamente.</div>
         {% endif %}
         {% if error %}
-        <div class="alert alert-error" style="margin-bottom:1.5rem">
-            <span class="alert-icon">⚠</span> {{ error }}
-        </div>
+        <div class="alert alert-error" style="margin-bottom:1.5rem">⚠ {{ error }}</div>
         {% endif %}
 
         <!-- Formulario nuevo anuncio -->
-        <div class="admin-card" style="margin-bottom:2rem">
-            <h2 class="admin-card-title">Subir nuevo flyer / anuncio</h2>
-            <form method="post" action="/admin/anuncios/crear"
-                  enctype="multipart/form-data" class="admin-form" novalidate>
-
-                <div class="form-group">
-                    <label for="titulo">Título del evento</label>
-                    <input type="text" id="titulo" name="titulo"
-                           placeholder="Día de Museos — Oruro 2026">
-                </div>
-
-                <div class="form-group">
-                    <label for="descripcion">
-                        Descripción breve
-                        <span class="optional">(opcional)</span>
-                    </label>
-                    <textarea id="descripcion" name="descripcion" rows="2"
-                              placeholder="Fecha, lugar y detalles del evento..."></textarea>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 120px;gap:1rem">
+        <div class="admin-table-wrap" style="padding:1.5rem;margin-bottom:2rem">
+            <h2 style="font-size:.95rem;font-weight:700;color:var(--text-primary);margin:0 0 1.25rem">Subir nuevo flyer</h2>
+            <form method="post" action="/admin/anuncios/crear" enctype="multipart/form-data" novalidate>
+                {{ csrf_input(request) }}
+                <div style="display:flex;flex-direction:column;gap:1rem">
                     <div class="form-group" style="margin:0">
-                        <label for="imagen">Imagen del flyer</label>
-                        <input type="file" id="imagen" name="imagen"
-                               accept="image/*" required
-                               style="background:var(--bg-input);border:1px solid var(--border-light);
-                                      border-radius:var(--radius);padding:.65rem 1rem;
-                                      color:var(--text-muted);width:100%;font-family:inherit;
-                                      font-size:var(--font-sm)">
-                        <small>JPG, PNG o WebP. Se recomienda formato vertical (flyer).</small>
+                        <label class="form-label">Título del evento</label>
+                        <input type="text" name="titulo" class="form-input" placeholder="Día de Museos — Oruro 2026">
                     </div>
                     <div class="form-group" style="margin:0">
-                        <label for="orden">Orden</label>
-                        <input type="number" id="orden" name="orden" value="0" min="0"
-                               title="Menor número = aparece primero">
-                        <small>0 = primero</small>
+                        <label class="form-label">Descripción <span style="color:var(--text-dim);font-weight:400">(opcional)</span></label>
+                        <textarea name="descripcion" class="form-input" rows="2" placeholder="Fecha, lugar y detalles..."></textarea>
                     </div>
-                </div>
-
-                <div class="form-actions" style="border:none;padding-top:.75rem;margin-top:.5rem">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        Publicar anuncio
-                    </button>
+                    <div style="display:grid;grid-template-columns:1fr 140px;gap:1rem">
+                        <div class="form-group" style="margin:0">
+                            <label class="form-label">Imagen del flyer</label>
+                            <input type="file" name="imagen" accept="image/*" required
+                                   class="form-input" style="padding:.5rem .75rem">
+                            <small style="color:var(--text-dim);font-size:.72rem">JPG, PNG o WebP · máx. 5 MB</small>
+                        </div>
+                        <div class="form-group" style="margin:0">
+                            <label class="form-label">Orden</label>
+                            <input type="number" name="orden" value="0" min="0" class="form-input">
+                            <small style="color:var(--text-dim);font-size:.72rem">0 = primero</small>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary">Publicar anuncio</button>
+                    </div>
                 </div>
             </form>
         </div>
 
-        <!-- Lista de anuncios existentes -->
-        <h2 class="admin-card-title" style="margin-bottom:1rem">
-            Anuncios publicados ({{ anuncios | length }})
+        <!-- Lista de anuncios -->
+        <h2 style="font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem">
+            Anuncios publicados ({{ anuncios|length }})
         </h2>
 
         {% if anuncios %}
-        <div class="admin-anuncios-list">
+        <div style="display:flex;flex-direction:column;gap:.75rem">
             {% for a in anuncios %}
-            <div class="admin-anuncio-row {% if not a.activo %}admin-anuncio-inactivo{% endif %}">
-                <div class="admin-anuncio-thumb">
-                    <img src="{{ a.imagen_url }}" alt="{{ a.titulo }}">
-                </div>
-                <div class="admin-anuncio-info">
-                    <div class="admin-anuncio-titulo">{{ a.titulo }}</div>
+            <div style="display:flex;gap:1rem;align-items:center;background:var(--bg-card);
+                        border:1px solid var(--border);border-radius:var(--radius-lg);
+                        padding:.85rem 1rem;opacity:{{ '0.5' if not a.activo else '1' }}">
+                <img src="{{ a.imagen_url }}" alt="{{ a.titulo }}"
+                     style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid var(--border)">
+                <div style="flex:1;min-width:0">
+                    <div style="font-weight:600;color:var(--text-primary);font-size:.88rem">{{ a.titulo }}</div>
                     {% if a.descripcion %}
-                    <div class="admin-anuncio-desc">{{ a.descripcion }}</div>
+                    <div style="font-size:.75rem;color:var(--text-dim);margin-top:.15rem">{{ a.descripcion }}</div>
                     {% endif %}
-                    <div class="admin-anuncio-meta">
-                        Orden: {{ a.orden }} &nbsp;·&nbsp;
-                        {{ a.created_at.strftime("%d/%m/%Y") }}
-                        {% if not a.activo %}
-                        &nbsp;·&nbsp; <span style="color:var(--error-text)">Oculto</span>
-                        {% endif %}
+                    <div style="font-size:.7rem;color:var(--text-dim);margin-top:.2rem">
+                        Orden: {{ a.orden }} · {{ a.created_at.strftime('%d/%m/%Y') }}
+                        {% if not a.activo %} · <span style="color:#f87171">Oculto</span>{% endif %}
                     </div>
                 </div>
-                <div class="admin-anuncio-actions">
-                    <form method="post" action="/admin/anuncios/{{ a.id }}/toggle">
-                        <button type="submit" class="btn btn-outline btn-sm"
-                                title="{{ 'Mostrar' if not a.activo else 'Ocultar' }}">
+                <div style="display:flex;gap:.5rem;flex-shrink:0">
+                    <form method="post" action="/admin/anuncios/{{ a.id }}/toggle" style="display:inline">
+                        {{ csrf_input(request) }}
+                        <button type="submit" class="btn btn-outline btn-sm">
                             {{ '👁 Mostrar' if not a.activo else '🙈 Ocultar' }}
                         </button>
                     </form>
                     <form method="post" action="/admin/anuncios/{{ a.id }}/eliminar"
-                          onsubmit="return confirm('¿Eliminar este anuncio?')">
-                        <button type="submit" class="btn btn-danger btn-sm">🗑 Eliminar</button>
+                          onsubmit="return confirm('¿Eliminar este anuncio?')" style="display:inline">
+                        {{ csrf_input(request) }}
+                        <button type="submit" class="btn-danger-sm">🗑 Eliminar</button>
                     </form>
                 </div>
             </div>
@@ -118,10 +92,10 @@
         </div>
         {% else %}
         <div class="empty-state">
-            <p>No hay anuncios publicados aún. Subí el primer flyer.</p>
+            <div class="empty-icon">📢</div>
+            <p>No hay anuncios publicados aún.</p>
         </div>
         {% endif %}
-
-    </div>
+    </main>
 </div>
 {% endblock %}

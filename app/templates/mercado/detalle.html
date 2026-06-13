@@ -26,6 +26,7 @@
                 {% for st in ['activo', 'reservado'] %}
                 {% if st != listing.status.value %}
                 <form method="post" action="/mercado/{{ listing.id }}/estado" style="display:contents">
+                {{ csrf_input(request) }}
                     <input type="hidden" name="nuevo_estado" value="{{ st }}">
                     <button type="submit" class="btn owner-btn"
                         style="background:#b45309;color:#fff;border-color:#b45309">Marcar como {{ st }}</button>
@@ -41,6 +42,7 @@
                 <a href="/mercado/{{ listing.id }}/editar" class="btn btn-outline owner-btn">✏ Editar</a>
                 <form method="post" action="/mercado/{{ listing.id }}/eliminar"
                       onsubmit="return confirm('¿Eliminar este anuncio?')" style="display:contents">
+                {{ csrf_input(request) }}
                     <button type="submit" class="btn btn-danger owner-btn">🗑 Eliminar</button>
                 </form>
             </div>
@@ -221,6 +223,7 @@
                             <button class="modal-close" onclick="document.getElementById('modalVenta').classList.remove('modal-open')">✕</button>
                         </div>
                         <form method="post" action="/mercado/{{ listing.id }}/estado">
+                {{ csrf_input(request) }}
                             <input type="hidden" name="nuevo_estado" value="vendido">
                             <div class="modal-body">
                                 <div class="form-group" style="margin-bottom:1rem">

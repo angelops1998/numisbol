@@ -31,6 +31,7 @@
         <form method="post"
               action="{% if post %}/blog/{{ post.slug }}/editar{% else %}/blog/nuevo/articulo{% endif %}"
               enctype="multipart/form-data" class="blog-form" novalidate>
+                {{ csrf_input(request) }}
 
             <div class="blog-form-layout">
 

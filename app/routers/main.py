@@ -1,6 +1,6 @@
+from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from ..database import get_db
@@ -12,7 +12,6 @@ from ..models.listing import Listing, ListingStatus
 from ..models.blog import BlogPost
 
 router = APIRouter(tags=["main"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _pg_estimate(db: Session, table: str) -> int:
@@ -34,10 +33,12 @@ async def home(request: Request, db: Session = Depends(get_db)):
         .all()
     )
 
-    # Estimaciones vía pg_class — O(1) en vez de full scan
+    from ..models.user import User
+    from ..models.coin import Coin
+    from sqlalchemy import func
     stats = {
-        "monedas":        _pg_estimate(db, "coins"),
-        "coleccionistas": _pg_estimate(db, "users"),
+        "monedas":        db.query(func.count(Coin.id)).scalar(),
+        "coleccionistas": db.query(func.count(User.id)).scalar(),
         "en_venta":       db.query(Listing).filter(Listing.status == ListingStatus.activo).count(),
         "articulos":      db.query(BlogPost).filter(BlogPost.publicado == True).count(),
     }

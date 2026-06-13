@@ -1,13 +1,12 @@
+from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.coin import Coin
 from ..auth import get_current_user_optional
 
 router = APIRouter(prefix="/moneda", tags=["moneda-publica"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/{coin_id}", response_class=HTMLResponse)

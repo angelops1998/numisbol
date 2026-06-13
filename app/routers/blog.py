@@ -454,6 +454,8 @@ async def crear_categoria(
     db: Session = Depends(get_db),
 ):
     user = get_current_user(request, db)
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Sin permiso")
     nombre = nombre.strip().upper()
     if not nombre:
         raise HTTPException(status_code=422, detail="Nombre requerido")

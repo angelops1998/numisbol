@@ -1,84 +1,88 @@
 {% extends "base.html" %}
 {% block title %}Usuarios — Admin NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/css/perfil.css">
-<style>
-.user-table { width:100%; border-collapse:collapse; font-size:.85rem; }
-.user-table th { text-align:left; padding:.5rem .75rem; color:var(--text-dim); font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border); }
-.user-table td { padding:.7rem .75rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
-.user-table tr:hover td { background:rgba(255,255,255,.025); }
-.badge-verificado { display:inline-flex; align-items:center; gap:.3rem; background:linear-gradient(135deg,#1d4ed8,#7c3aed); color:#fff; font-size:.7rem; font-weight:700; padding:.2rem .6rem; border-radius:20px; letter-spacing:.04em; }
-.badge-verificado svg { width:11px; height:11px; }
-.badge-no { font-size:.75rem; color:var(--text-dim); }
-.toggle-ver { padding:.3rem .75rem; border-radius:8px; border:none; cursor:pointer; font-size:.78rem; font-weight:600; }
-.toggle-ver--on  { background:linear-gradient(135deg,#1d4ed8,#7c3aed); color:#fff; }
-.toggle-ver--off { background:var(--bg-card); color:var(--text-dim); border:1px solid var(--border); }
-</style>
-{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-    <div class="page-header">
-        <div class="container">
-            <div class="page-header-inner">
-                <div>
-                    <p class="page-breadcrumb"><a href="/">Inicio</a> / Admin / Usuarios</p>
-                    <h1 class="page-title">Gestión de usuarios</h1>
-                </div>
-                <a href="/admin/configuracion" class="btn btn-outline">⚙ Configuración</a>
-            </div>
-        </div>
-    </div>
+<div class="admin-layout">
+    {% include "admin/_sidebar.html" %}
 
-    <div class="container" style="padding-top:1.5rem;padding-bottom:2rem">
+    <main class="admin-main">
+        <h1 class="admin-page-title">Usuarios</h1>
+        <p class="admin-page-sub">{{ users|length }} usuario{{ 's' if users|length != 1 }} registrados</p>
 
         {% if saved %}
         <div class="alert alert-success" style="margin-bottom:1rem">✓ Cambio guardado.</div>
         {% endif %}
 
-        <div class="settings-card">
-            <table class="user-table">
+        <form method="get" action="/admin/usuarios" class="admin-search-form">
+            <input type="search" name="q" value="{{ q }}" placeholder="Buscar por usuario o email..." class="admin-search-input">
+            <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+            {% if q %}<a href="/admin/usuarios" class="btn btn-outline btn-sm">Limpiar</a>{% endif %}
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Usuario</th>
                         <th>Email</th>
+                        <th>Rol</th>
+                        <th>Registro</th>
                         <th>Verificado</th>
                         <th>Admin</th>
-                        <th>Miembro desde</th>
-                        <th>Acción</th>
+                        <th>Eliminar</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for u in users %}
                     <tr>
+                        <td style="color:var(--text-dim);font-size:.75rem">{{ u.id }}</td>
                         <td>
-                            <strong>{{ u.full_name or u.username }}</strong>
+                            <strong style="color:var(--text-primary)">{{ u.full_name or u.username }}</strong>
                             <div style="font-size:.72rem;color:var(--text-dim)">@{{ u.username }}</div>
                         </td>
                         <td style="color:var(--text-dim);font-size:.8rem">{{ u.email }}</td>
-                        <td>
-                            {% if u.is_verified %}
-                            <span class="badge-verificado">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                Verificado
-                            </span>
-                            {% else %}
-                            <span class="badge-no">—</span>
-                            {% endif %}
+                        <td style="display:flex;gap:.3rem;flex-wrap:wrap;padding-top:.85rem">
+                            {% if u.is_admin %}<span class="badge-admin">Admin</span>{% endif %}
+                            {% if u.is_verified %}<span class="badge-ver">✓ Ver.</span>{% endif %}
+                            {% if not u.is_admin and not u.is_verified %}<span style="color:var(--text-dim);font-size:.72rem">—</span>{% endif %}
                         </td>
-                        <td style="font-size:.78rem;color:var(--text-dim)">{{ '✓ Sí' if u.is_admin else '—' }}</td>
-                        <td style="font-size:.78rem;color:var(--text-dim)">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td style="color:var(--text-dim);font-size:.75rem;white-space:nowrap">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
                         <td>
                             <form method="post" action="/admin/usuarios/{{ u.id }}/verificar" style="display:inline">
-                                <button type="submit" class="toggle-ver {{ 'toggle-ver--on' if u.is_verified else 'toggle-ver--off' }}">
-                                    {{ '✓ Quitar verificación' if u.is_verified else '+ Verificar' }}
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn-toggle-sm {{ 'btn-toggle-on' if u.is_verified else 'btn-toggle-off' }}">
+                                    {{ '✓ Quitar' if u.is_verified else '+ Verificar' }}
                                 </button>
                             </form>
+                        </td>
+                        <td>
+                            {% if u.id != user.id %}
+                            <form method="post" action="/admin/usuarios/{{ u.id }}/admin" style="display:inline">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn-toggle-sm {{ 'btn-toggle-on' if u.is_admin else 'btn-toggle-off' }}">
+                                    {{ 'Admin ✓' if u.is_admin else '+ Admin' }}
+                                </button>
+                            </form>
+                            {% else %}
+                            <span style="font-size:.72rem;color:var(--text-dim)">Vos</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.id != user.id %}
+                            <form method="post" action="/admin/usuarios/{{ u.id }}/eliminar"
+                                  onsubmit="return confirm('¿Eliminar al usuario @{{ u.username }} y todos sus datos?')" style="display:inline">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn-danger-sm">🗑</button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    </div>
+    </main>
 </div>
 {% endblock %}

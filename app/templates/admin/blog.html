@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Blog — Admin NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    {% include "admin/_sidebar.html" %}
+
+    <main class="admin-main">
+        <h1 class="admin-page-title">Blog</h1>
+        <p class="admin-page-sub">{{ total }} artículo{{ 's' if total != 1 }} publicados</p>
+
+        {% if saved %}
+        <div class="alert alert-success" style="margin-bottom:1rem">✓ Artículo eliminado.</div>
+        {% endif %}
+
+        <form method="get" action="/admin/blog" class="admin-search-form">
+            <input type="search" name="q" value="{{ q }}" placeholder="Buscar por título..." class="admin-search-input">
+            <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+            {% if q %}<a href="/admin/blog" class="btn btn-outline btn-sm">Limpiar</a>{% endif %}
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Título</th>
+                        <th>Autor</th>
+                        <th>Vistas</th>
+                        <th>Publicado</th>
+                        <th>Fecha</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in posts %}
+                    <tr>
+                        <td style="color:var(--text-dim);font-size:.75rem">{{ p.id }}</td>
+                        <td>
+                            <a href="/blog/{{ p.slug }}" target="_blank"
+                               style="color:var(--text-primary);font-weight:600;text-decoration:none;font-size:.82rem">
+                                {{ p.titulo }}
+                            </a>
+                            {% if p.extracto %}
+                            <div style="font-size:.7rem;color:var(--text-dim);margin-top:.15rem;
+                                        display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">
+                                {{ p.extracto }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:.8rem;color:var(--text-primary)">@{{ p.autor.username }}</td>
+                        <td style="font-size:.82rem;color:var(--text-dim);text-align:center">{{ p.vistas or 0 }}</td>
+                        <td>
+                            {% if p.publicado %}
+                            <span class="badge-status badge-activo">Publicado</span>
+                            {% else %}
+                            <span class="badge-status badge-cerrado">Borrador</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:.75rem;color:var(--text-dim);white-space:nowrap">{{ p.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <form method="post" action="/admin/blog/{{ p.id }}/eliminar"
+                                  onsubmit="return confirm('¿Eliminar el artículo «{{ p.titulo }}»?')" style="display:inline">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn-danger-sm">🗑 Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not posts %}
+                    <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-dim)">No hay artículos.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_paginas > 1 %}
+        <div class="pq-pagination" style="margin-top:1.5rem">
+            {% if pagina > 1 %}<a href="?q={{ q }}&pagina={{ pagina-1 }}" class="pag-btn">← Anterior</a>{% else %}<span class="pag-btn pag-disabled">← Anterior</span>{% endif %}
+            {% for p in range(1, total_paginas+1) %}
+                {% if p == pagina %}<span class="pag-btn pag-active">{{ p }}</span>
+                {% elif p == 1 or p == total_paginas or (p >= pagina-2 and p <= pagina+2) %}<a href="?q={{ q }}&pagina={{ p }}" class="pag-btn">{{ p }}</a>{% endif %}
+            {% endfor %}
+            {% if pagina < total_paginas %}<a href="?q={{ q }}&pagina={{ pagina+1 }}" class="pag-btn">Siguiente →</a>{% else %}<span class="pag-btn pag-disabled">Siguiente →</span>{% endif %}
+        </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
