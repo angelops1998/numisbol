@@ -499,13 +499,19 @@ setCurrency(document.getElementById('currencyInput')?.value || 'BOB');
     const priceInput = document.getElementById('price');
     const rateInput  = document.getElementById('usdRateInput');
     const equiv      = document.getElementById('usdEquiv');
+    const currInput  = document.getElementById('currencyInput');
     if (!priceInput || !rateInput || !equiv) return;
     function update() {
         const p = parseFloat(priceInput.value), r = parseFloat(rateInput.value);
-        equiv.textContent = (p > 0 && r > 0) ? `≈ Bs ${(p * r).toFixed(2)}` : '';
+        if (!(p > 0 && r > 0)) { equiv.textContent = ''; return; }
+        const cur = currInput ? currInput.value : 'BOB';
+        equiv.textContent = cur === 'USD'
+            ? `≈ Bs ${(p * r).toFixed(2)}`
+            : `≈ USD ${(p / r).toFixed(2)}`;
     }
     priceInput.addEventListener('input', update);
     rateInput.addEventListener('input', update);
+    if (currInput) currInput.addEventListener('change', update);
     update();
 })();
 
@@ -539,13 +545,19 @@ setCostCurrency(document.getElementById('costCurrencyInput')?.value || 'BOB');
     const costInput = document.getElementById('cost');
     const rateInput = document.getElementById('costRateInput');
     const equiv     = document.getElementById('costEquiv');
+    const currInput = document.getElementById('costCurrencyInput');
     if (!costInput || !rateInput || !equiv) return;
     function update() {
         const p = parseFloat(costInput.value), r = parseFloat(rateInput.value);
-        equiv.textContent = (p > 0 && r > 0) ? `≈ Bs ${(p * r).toFixed(2)}` : '';
+        if (!(p > 0 && r > 0)) { equiv.textContent = ''; return; }
+        const cur = currInput ? currInput.value : 'BOB';
+        equiv.textContent = cur === 'USD'
+            ? `≈ Bs ${(p * r).toFixed(2)}`
+            : `≈ USD ${(p / r).toFixed(2)}`;
     }
     costInput.addEventListener('input', update);
     rateInput.addEventListener('input', update);
+    if (currInput) currInput.addEventListener('change', update);
     update();
 })();
 
