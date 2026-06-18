@@ -48,7 +48,18 @@
       "mcp__Claude_in_Chrome__javascript_tool",
       "Bash(pkill -f uvicorn)",
       "Bash(python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload)",
-      "PowerShell(psql -U postgres -d numismatica -c \"SELECT id, username, email FROM users ORDER BY id;\" 2>&1)"
+      "PowerShell(psql -U postgres -d numismatica -c \"SELECT id, username, email FROM users ORDER BY id;\" 2>&1)",
+      "Bash(xargs grep -l \"csrf\")",
+      "Bash(awk '/^@router\\\\.\\(get|post\\)/{p=NR; line=$0} NR==p+1 && /async def/{print NR-1\": \"line\" \"$0}' app/routers/blog.py)",
+      "Bash(pip list *)",
+      "Bash(node planificacion3er.js)",
+      "PowerShell(Get-Command node -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command nodejs -ErrorAction SilentlyContinue)",
+      "PowerShell($env:PATH; Get-Item \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" -ErrorAction SilentlyContinue; Get-Item \"C:\\\\Program Files \\(x86\\)\\\\nodejs\\\\node.exe\" -ErrorAction SilentlyContinue; Get-ChildItem \"$env:APPDATA\\\\npm\\\\node.exe\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Users\\\\angel\\\\AppData\\\\Local\\\\Programs\" -ErrorAction SilentlyContinue | Select-Object Name)",
+      "Bash(mkdir -p \"C:\\\\consultorio\\\\app\\\\models\" \"C:\\\\consultorio\\\\app\\\\routers\" \"C:\\\\consultorio\\\\app\\\\static\\\\css\" \"C:\\\\consultorio\\\\app\\\\static\\\\js\" \"C:\\\\consultorio\\\\app\\\\templates\\\\auth\" \"C:\\\\consultorio\\\\app\\\\templates\\\\admin\" \"C:\\\\consultorio\\\\alembic\\\\versions\")",
+      "Bash(Copy-Item \"C:\\\\monedas\\\\app\\\\static\\\\js\\\\searchable-select.js\" \"C:\\\\consultorio\\\\app\\\\static\\\\js\\\\searchable-select.js\")",
+      "Bash(python -m alembic revision --autogenerate -m \"disponibilidad_ecografia\")",
+      "Bash(python -m alembic upgrade head)"
     ]
   }
 }
