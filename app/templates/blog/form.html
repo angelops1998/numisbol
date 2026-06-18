@@ -382,6 +382,8 @@ async function crearCategoria() {
 
     const fd = new FormData();
     fd.append('nombre', nombre);
+    const csrfToken = document.querySelector('input[name="csrf_token"]');
+    if (csrfToken) fd.append('csrf_token', csrfToken.value);
 
     try {
         const res  = await fetch('/blog/admin/categoria', { method: 'POST', body: fd });
