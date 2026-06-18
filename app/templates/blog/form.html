@@ -388,6 +388,7 @@ async function crearCategoria() {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: body,
+            credentials: 'same-origin',
         });
         const data = await res.json();
         if (res.ok && data.id) {
