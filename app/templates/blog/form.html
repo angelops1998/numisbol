@@ -380,13 +380,15 @@ async function crearCategoria() {
     const nombre = input.value.trim();
     if (!nombre) { msg.style.color='#F0A0A0'; msg.textContent='Escribí un nombre.'; return; }
 
-    const fd = new FormData();
-    fd.append('nombre', nombre);
-    const csrfToken = document.querySelector('input[name="csrf_token"]');
-    if (csrfToken) fd.append('csrf_token', csrfToken.value);
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+    const body = `nombre=${encodeURIComponent(nombre)}&csrf_token=${encodeURIComponent(csrfToken)}`;
 
     try {
-        const res  = await fetch('/blog/admin/categoria', { method: 'POST', body: fd });
+        const res  = await fetch('/blog/admin/categoria', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body,
+        });
         const data = await res.json();
         if (res.ok && data.id) {
             const list = document.getElementById('catList');
