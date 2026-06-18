@@ -45,9 +45,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
             try:
                 validate_csrf(request, form_token)
-            except HTTPException as e:
-                import logging
-                logging.warning(f"CSRF FAIL path={request.url.path} cookie={request.cookies.get('csrf_token','NONE')[:16]}... token={form_token[:16] if form_token else 'NONE'}...")
+            except HTTPException:
                 return _templates.TemplateResponse(
                     request, "403.html", {}, status_code=403
                 )
