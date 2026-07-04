@@ -408,6 +408,7 @@
     gap: 2.5rem;
     align-items: start;
 }
+.detail-layout > * { min-width: 0; }  /* evita que tablas anchas desborden el grid */
 .detail-images { display: flex; flex-direction: column; gap: .75rem; }
 .detail-img-main,
 .detail-img-secondary {
