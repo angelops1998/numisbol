@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Series — Mi Colección — NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/css/coleccion.css">{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/coleccion.css">
+<style>
+.serie-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; margin-bottom:1rem; overflow:hidden; }
+.serie-card summary { list-style:none; cursor:pointer; padding:1.1rem 1.5rem; }
+.serie-card summary::-webkit-details-marker { display:none; }
+.serie-card summary:hover { background:rgba(255,255,255,.02); }
+.serie-chevron { transition:transform .2s; color:var(--text-dim); flex-shrink:0; font-size:.8rem; }
+.serie-card[open] .serie-chevron { transform:rotate(180deg); }
+.serie-body { padding:0 1.5rem 1.25rem; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
@@ -9,7 +20,7 @@
             <div class="page-header-inner">
                 <div>
                     <h1 class="page-title">Series numismáticas</h1>
-                    <p class="page-subtitle">Tu progreso en cada serie del catálogo</p>
+                    <p class="page-subtitle">Tu progreso en cada serie del catálogo · tocá una serie para ver el detalle</p>
                 </div>
                 <a href="/coleccion" class="btn btn-outline">← Volver a mi colección</a>
             </div>
@@ -26,34 +37,34 @@
         {% endif %}
 
         {% for p in progreso %}
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem">
+        <details class="serie-card">
+            <summary>
+                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.35rem">
+                    <h2 style="font-size:1.05rem;color:var(--text-primary);margin:0;flex:1;min-width:200px">{{ p.serie.nombre }}</h2>
+                    <span style="font-size:.9rem;font-weight:700;color:{% if p.pct == 100 %}#4ade80{% else %}var(--accent){% endif %};white-space:nowrap">
+                        {{ p.tenidas }} / {{ p.total }}
+                        {% if p.pct == 100 and p.total > 0 %}· ¡Completa! 🏆{% else %}· {{ p.pct }}%{% endif %}
+                    </span>
+                    <span class="serie-chevron">▼</span>
+                </div>
+                {% if p.serie.descripcion %}
+                <p style="font-size:.82rem;color:var(--text-dim);margin:0 0 .6rem">{{ p.serie.descripcion }}</p>
+                {% endif %}
+                <div style="height:8px;background:var(--bg-2);border-radius:6px;overflow:hidden">
+                    <div style="height:100%;width:{{ p.pct }}%;border-radius:6px;background:{% if p.pct == 100 %}#4ade80{% else %}var(--accent){% endif %}"></div>
+                </div>
+            </summary>
 
-            <!-- Cabecera de la serie -->
-            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.35rem">
-                <h2 style="font-size:1.05rem;color:var(--text-primary);margin:0;flex:1;min-width:200px">{{ p.serie.nombre }}</h2>
-                <span style="font-size:.9rem;font-weight:700;color:{% if p.pct == 100 %}#4ade80{% else %}var(--accent){% endif %};white-space:nowrap">
-                    {{ p.tenidas }} / {{ p.total }}
-                    {% if p.pct == 100 and p.total > 0 %}· ¡Completa! 🏆{% else %}· {{ p.pct }}%{% endif %}
-                </span>
+            <div class="serie-body">
+                {% if p.serie.variantes %}
+                {% with serie = p.serie %}
+                {% include "coleccion/_serie_tabla.html" %}
+                {% endwith %}
+                {% else %}
+                <p style="font-size:.82rem;color:var(--text-dim);margin:0">Esta serie no tiene variantes todavía.</p>
+                {% endif %}
             </div>
-            {% if p.serie.descripcion %}
-            <p style="font-size:.82rem;color:var(--text-dim);margin:0 0 .75rem">{{ p.serie.descripcion }}</p>
-            {% endif %}
-
-            <!-- Barra de progreso -->
-            <div style="height:8px;background:var(--bg-2);border-radius:6px;overflow:hidden;margin-bottom:1rem">
-                <div style="height:100%;width:{{ p.pct }}%;border-radius:6px;background:{% if p.pct == 100 %}#4ade80{% else %}var(--accent){% endif %};transition:width .3s"></div>
-            </div>
-
-            {% if p.serie.variantes %}
-            {% with serie = p.serie %}
-            {% include "coleccion/_serie_tabla.html" %}
-            {% endwith %}
-            {% else %}
-            <p style="font-size:.82rem;color:var(--text-dim);margin:0">Esta serie no tiene variantes todavía.</p>
-            {% endif %}
-
-        </div>
+        </details>
         {% endfor %}
 
     </div>
