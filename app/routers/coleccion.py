@@ -696,6 +696,7 @@ async def api_search_coins(request: Request, q: str = "", id: int = 0, limit: in
 # ── Agregar ──────────────────────────────────────────────────
 def _form_ctx(db: Session, extra: dict) -> dict:
     """Contexto base para el formulario de moneda."""
+    series = db.query(Serie).filter(Serie.activo == True).order_by(Serie.nombre).all()
     return {
         "conditions": CONDITIONS,
         "assayer_groups": ASSAYER_GROUPS,
@@ -709,7 +710,14 @@ def _form_ctx(db: Session, extra: dict) -> dict:
         "mints_bolivia": MINTS_BOLIVIA,
         "mints_world": MINTS_WORLD,
         "custom_mints": get_custom_options(db, "mint"),
-        "series": db.query(Serie).filter(Serie.activo == True).order_by(Serie.nombre).all(),
+        "series": series,
+        "series_data": {
+            str(s.id): {
+                "nombre": s.nombre,
+                "variantes": [{"id": v.id, "label": v.etiqueta} for v in s.variantes],
+            }
+            for s in series
+        },
         **extra,
     }
 

@@ -282,22 +282,21 @@
                         </div>
 
                         {% if series %}
-                        <div class="form-group form-col-2" data-coin-only>
-                            <label>Serie del catálogo <small style="color:var(--text-dim);font-weight:400;">(solo monedas bolivianas, opcional)</small></label>
-                            <select name="variante_id" class="form-input">
+                        <div class="form-group" data-coin-only>
+                            <label>Serie del catálogo <small style="color:var(--text-dim);font-weight:400;">(opcional)</small></label>
+                            <select id="serieSelect">
                                 <option value="">— Sin serie —</option>
                                 {% for s in series %}
                                 {% if s.variantes %}
-                                <optgroup label="{{ s.nombre }}">
-                                    {% for v in s.variantes %}
-                                    <option value="{{ v.id }}"
-                                        {% if coin and coin.variante_id == v.id %}selected{% endif %}>
-                                        {{ v.etiqueta }}
-                                    </option>
-                                    {% endfor %}
-                                </optgroup>
+                                <option value="{{ s.id }}">{{ s.nombre }}</option>
                                 {% endif %}
                                 {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" data-coin-only>
+                            <label>Variante</label>
+                            <select id="varianteSelect" name="variante_id" disabled>
+                                <option value="">— Elegí una serie primero —</option>
                             </select>
                             <small>Vinculá esta moneda a una variante para seguir tu progreso en <strong>Mi Colección → Series</strong>.</small>
                         </div>
@@ -505,6 +504,47 @@
 <script src="/static/js/searchable-select.js"></script>
 <script>
 initSearchableSelects({ freeTextFields: ['mint', 'currency_unit'] });
+
+/* ── Serie → Variante encadenados ────────────────────── */
+(function () {
+    const serieSel    = document.getElementById('serieSelect');
+    const varianteSel = document.getElementById('varianteSelect');
+    if (!serieSel || !varianteSel) return;
+
+    const SERIES = {{ series_data | tojson }};
+    const varianteActual = {{ coin.variante_id if coin and coin.variante_id else 'null' }};
+
+    function cargarVariantes(serieId, seleccionar) {
+        varianteSel.innerHTML = '';
+        if (!serieId || !SERIES[serieId]) {
+            varianteSel.disabled = true;
+            varianteSel.add(new Option('— Elegí una serie primero —', ''));
+            return;
+        }
+        varianteSel.disabled = false;
+        varianteSel.add(new Option('— Sin especificar —', ''));
+        SERIES[serieId].variantes.forEach(function (v) {
+            const opt = new Option(v.label, v.id);
+            if (seleccionar && v.id === seleccionar) opt.selected = true;
+            varianteSel.add(opt);
+        });
+    }
+
+    serieSel.addEventListener('change', function () {
+        cargarVariantes(this.value, null);
+    });
+
+    // Preselección al editar: buscar a qué serie pertenece la variante
+    if (varianteActual) {
+        for (const sid in SERIES) {
+            if (SERIES[sid].variantes.some(v => v.id === varianteActual)) {
+                serieSel.value = sid;
+                cargarVariantes(sid, varianteActual);
+                break;
+            }
+        }
+    }
+})();
 
 // ── Limitar 2 decimales en todos los inputs numéricos ────────
 document.querySelectorAll('input[type=number]').forEach(function(el) {
