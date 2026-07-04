@@ -284,20 +284,32 @@
                         {% if series %}
                         <div class="form-group" data-coin-only>
                             <label>Serie del catálogo <small style="color:var(--text-dim);font-weight:400;">(opcional)</small></label>
-                            <select id="serieSelect">
-                                <option value="">— Sin serie —</option>
-                                {% for s in series %}
-                                {% if s.variantes %}
-                                <option value="{{ s.id }}">{{ s.nombre }}</option>
-                                {% endif %}
-                                {% endfor %}
-                            </select>
+                            <div class="searchable-select ss-dropup" data-name="serie_sel" id="serieSS">
+                                <div class="ss-display" tabindex="0">
+                                    <span class="ss-value placeholder">— Sin serie —</span>
+                                    <span class="ss-arrow">▾</span>
+                                </div>
+                                <div class="ss-dropdown">
+                                    <div class="ss-search-wrap">
+                                        <input type="text" class="ss-search" placeholder="Buscar serie...">
+                                    </div>
+                                    <ul class="ss-list">
+                                        <li class="ss-option ss-selected" data-value="">— Sin serie —</li>
+                                        {% for s in series %}
+                                        {% if s.variantes %}
+                                        <li class="ss-option" data-value="{{ s.id }}">{{ s.nombre }}</li>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <input type="hidden" value="">
+                            </div>
                         </div>
                         <div class="form-group" data-coin-only>
                             <label>Variante</label>
-                            <select id="varianteSelect" name="variante_id" disabled>
-                                <option value="">— Elegí una serie primero —</option>
-                            </select>
+                            <div id="varianteWrap"></div>
+                            <input type="hidden" name="variante_id" id="varianteHidden"
+                                value="{{ coin.variante_id if coin and coin.variante_id else '' }}">
                             <small>Vinculá esta moneda a una variante para seguir tu progreso en <strong>Mi Colección → Series</strong>.</small>
                         </div>
                         {% endif %}
@@ -505,44 +517,131 @@
 <script>
 initSearchableSelects({ freeTextFields: ['mint', 'currency_unit'] });
 
-/* ── Serie → Variante encadenados ────────────────────── */
+/* ── Serie → Variante encadenados (searchable-select) ── */
 (function () {
-    const serieSel    = document.getElementById('serieSelect');
-    const varianteSel = document.getElementById('varianteSelect');
-    if (!serieSel || !varianteSel) return;
+    const serieSS       = document.getElementById('serieSS');
+    const varianteWrap  = document.getElementById('varianteWrap');
+    const varianteHidden = document.getElementById('varianteHidden');
+    if (!serieSS || !varianteWrap || !varianteHidden) return;
 
     const SERIES = {{ series_data | tojson }};
     const varianteActual = {{ coin.variante_id if coin and coin.variante_id else 'null' }};
 
-    function cargarVariantes(serieId, seleccionar) {
-        varianteSel.innerHTML = '';
-        if (!serieId || !SERIES[serieId]) {
-            varianteSel.disabled = true;
-            varianteSel.add(new Option('— Elegí una serie primero —', ''));
-            return;
-        }
-        varianteSel.disabled = false;
-        varianteSel.add(new Option('— Sin especificar —', ''));
-        SERIES[serieId].variantes.forEach(function (v) {
-            const opt = new Option(v.label, v.id);
-            if (seleccionar && v.id === seleccionar) opt.selected = true;
-            varianteSel.add(opt);
-        });
+    function renderDeshabilitado() {
+        varianteWrap.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'ss-display';
+        div.style.opacity = '.55';
+        div.style.cursor = 'default';
+        div.innerHTML = '<span class="ss-value placeholder">— Elegí una serie primero —</span><span class="ss-arrow">▾</span>';
+        varianteWrap.appendChild(div);
     }
 
-    serieSel.addEventListener('change', function () {
-        cargarVariantes(this.value, null);
+    function buildVarianteSS(serieId, seleccionarId) {
+        varianteWrap.innerHTML = '';
+        if (!serieId || !SERIES[serieId]) { renderDeshabilitado(); return; }
+
+        const ss = document.createElement('div');
+        ss.className = 'searchable-select ss-dropup';
+        ss.dataset.name = 'variante_sel';
+
+        const display = document.createElement('div');
+        display.className = 'ss-display';
+        display.tabIndex = 0;
+        const valueEl = document.createElement('span');
+        valueEl.className = 'ss-value placeholder';
+        valueEl.textContent = '— Sin especificar —';
+        const arrow = document.createElement('span');
+        arrow.className = 'ss-arrow';
+        arrow.textContent = '▾';
+        display.appendChild(valueEl);
+        display.appendChild(arrow);
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'ss-dropdown';
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'ss-search-wrap';
+        const search = document.createElement('input');
+        search.type = 'text';
+        search.className = 'ss-search';
+        search.placeholder = 'Buscar variante...';
+        searchWrap.appendChild(search);
+
+        const list = document.createElement('ul');
+        list.className = 'ss-list';
+
+        const optNone = document.createElement('li');
+        optNone.className = 'ss-option';
+        optNone.dataset.value = '';
+        optNone.textContent = '— Sin especificar —';
+        if (!seleccionarId) optNone.classList.add('ss-selected');
+        list.appendChild(optNone);
+
+        let labelSel = null;
+        SERIES[serieId].variantes.forEach(function (v) {
+            const li = document.createElement('li');
+            li.className = 'ss-option';
+            li.dataset.value = String(v.id);
+            li.textContent = v.label;
+            if (seleccionarId && v.id === seleccionarId) {
+                li.classList.add('ss-selected');
+                labelSel = v.label;
+            }
+            list.appendChild(li);
+        });
+
+        dropdown.appendChild(searchWrap);
+        dropdown.appendChild(list);
+
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.value = seleccionarId ? String(seleccionarId) : '';
+
+        ss.appendChild(display);
+        ss.appendChild(dropdown);
+        ss.appendChild(hidden);
+        varianteWrap.appendChild(ss);
+
+        if (labelSel) {
+            valueEl.textContent = labelSel;
+            valueEl.classList.remove('placeholder');
+        }
+
+        // El componente propaga la selección al hidden interno; lo copiamos al que se envía
+        hidden.addEventListener('change', function () {
+            varianteHidden.value = this.value;
+        });
+
+        initSearchableSelects({ container: varianteWrap });
+    }
+
+    // Cambio de serie → reconstruir variantes y limpiar selección
+    const serieHidden = serieSS.querySelector('input[type=hidden]');
+    serieHidden.addEventListener('change', function () {
+        varianteHidden.value = '';
+        buildVarianteSS(this.value, null);
     });
 
     // Preselección al editar: buscar a qué serie pertenece la variante
+    let serieInicial = null;
     if (varianteActual) {
         for (const sid in SERIES) {
-            if (SERIES[sid].variantes.some(v => v.id === varianteActual)) {
-                serieSel.value = sid;
-                cargarVariantes(sid, varianteActual);
-                break;
-            }
+            if (SERIES[sid].variantes.some(v => v.id === varianteActual)) { serieInicial = sid; break; }
         }
+    }
+    if (serieInicial) {
+        serieHidden.value = serieInicial;
+        const opt = serieSS.querySelector('.ss-option[data-value="' + serieInicial + '"]');
+        if (opt) {
+            serieSS.querySelectorAll('.ss-option').forEach(o => o.classList.remove('ss-selected'));
+            opt.classList.add('ss-selected');
+            const v = serieSS.querySelector('.ss-value');
+            v.textContent = opt.textContent.trim();
+            v.classList.remove('placeholder');
+        }
+        buildVarianteSS(serieInicial, varianteActual);
+    } else {
+        renderDeshabilitado();
     }
 })();
 
