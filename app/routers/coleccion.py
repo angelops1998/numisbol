@@ -826,8 +826,26 @@ async def detalle(coin_id: int, request: Request, db: Session = Depends(get_db))
     coin = db.query(Coin).filter(Coin.id == coin_id, Coin.user_id == user.id).first()
     if not coin:
         raise HTTPException(status_code=404, detail="Moneda no encontrada")
+
+    # Progreso de la serie a la que pertenece esta moneda
+    serie_info = None
+    if coin.variante:
+        serie = coin.variante.serie
+        rows = (db.query(Coin.variante_id, Coin.id)
+                .filter(Coin.user_id == user.id, Coin.variante_id != None)
+                .all())
+        tengo = {}
+        for vid, cid in rows:
+            tengo.setdefault(vid, cid)
+        total = len(serie.variantes)
+        tenidas = sum(1 for v in serie.variantes if v.id in tengo)
+        serie_info = {
+            "serie": serie, "tengo": tengo, "total": total, "tenidas": tenidas,
+            "pct": round(tenidas * 100 / total) if total else 0,
+        }
+
     return templates.TemplateResponse(request, "coleccion/detalle.html", {
-        "user": user, "coin": coin,
+        "user": user, "coin": coin, "serie_info": serie_info,
     })
 
 
