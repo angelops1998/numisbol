@@ -413,7 +413,7 @@ async def coleccion(
     request: Request,
     q: str = "",
     categoria: str = "",
-    pais: str = "",
+    pais: str = "Bolivia",
     material: str = "",
     anio_desde: str = "",
     anio_hasta: str = "",
