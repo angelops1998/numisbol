@@ -140,25 +140,9 @@
                     <div style="height:7px;background:var(--bg-2);border-radius:6px;overflow:hidden;margin-bottom:1rem">
                         <div style="height:100%;width:{{ serie_info.pct }}%;border-radius:6px;background:{% if serie_info.pct == 100 %}#4ade80{% else %}var(--accent){% endif %}"></div>
                     </div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.45rem">
-                        {% for v in serie_info.serie.variantes %}
-                        {% set la_tengo = v.id in serie_info.tengo %}
-                        {% set es_esta = coin.variante_id == v.id %}
-                        <div style="display:flex;align-items:center;gap:.5rem;padding:.45rem .65rem;border-radius:8px;
-                                    background:{% if la_tengo %}rgba(74,222,128,.08){% else %}var(--bg-2){% endif %};
-                                    border:1px solid {% if es_esta %}var(--accent){% elif la_tengo %}rgba(74,222,128,.35){% else %}var(--border){% endif %}">
-                            <span style="font-size:.9rem">{% if la_tengo %}✅{% else %}⬜{% endif %}</span>
-                            {% if la_tengo and not es_esta %}
-                            <a href="/coleccion/{{ serie_info.tengo[v.id] }}"
-                               style="font-size:.8rem;font-weight:600;color:var(--text-primary);text-decoration:none">{{ v.etiqueta }}</a>
-                            {% else %}
-                            <span style="font-size:.8rem;font-weight:600;color:{% if la_tengo %}var(--text-primary){% else %}var(--text-dim){% endif %}">
-                                {{ v.etiqueta }}{% if es_esta %} ← esta{% endif %}
-                            </span>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
+                    {% with serie = serie_info.serie, tengo = serie_info.tengo, current_id = coin.variante_id %}
+                    {% include "coleccion/_serie_tabla.html" %}
+                    {% endwith %}
                     <a href="/coleccion/series" style="display:inline-block;margin-top:.85rem;font-size:.8rem;color:var(--accent);text-decoration:none">Ver todas las series →</a>
                 </div>
                 {% endif %}

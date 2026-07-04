@@ -1,0 +1,41 @@
+{# Tabla de variantes de una serie.
+   Espera: serie, tengo (dict variante_id → coin_id), current_id (opcional) #}
+<div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.86rem">
+        <thead>
+            <tr style="border-bottom:1px solid var(--border)">
+                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Tengo</th>
+                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Fecha</th>
+                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Ensayador</th>
+                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Ceca</th>
+                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Tirada</th>
+                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Nota</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in serie.variantes %}
+            {% set la_tengo = v.id in tengo %}
+            {% set es_esta = current_id is defined and current_id == v.id %}
+            <tr style="border-bottom:1px solid var(--border);
+                       {% if es_esta %}background:rgba(124,58,237,.12);
+                       {% elif la_tengo %}background:rgba(74,222,128,.06);{% endif %}">
+                <td style="padding:.55rem .6rem;white-space:nowrap">
+                    {% if la_tengo %}✅{% else %}⬜{% endif %}
+                    {% if es_esta %}<span style="font-size:.7rem;color:#a78bfa;font-weight:700">← esta</span>{% endif %}
+                </td>
+                <td style="padding:.55rem .6rem;font-weight:700;color:#f2f2f8;white-space:nowrap">
+                    {% if la_tengo and not es_esta %}
+                    <a href="/coleccion/{{ tengo[v.id] }}" style="color:#f2f2f8;text-decoration:underline dotted">{{ v.anio or '—' }}</a>
+                    {% else %}
+                    {{ v.anio or '—' }}
+                    {% endif %}
+                </td>
+                <td style="padding:.55rem .6rem;color:#d6d6e2">{{ v.ensayador or '—' }}</td>
+                <td style="padding:.55rem .6rem;color:#d6d6e2;white-space:nowrap">{{ v.ceca or '—' }}</td>
+                <td style="padding:.55rem .6rem;color:#d6d6e2;white-space:nowrap">{{ v.mintage or '—' }}</td>
+                <td style="padding:.55rem .6rem;color:#d6d6e2">{{ v.nota or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
