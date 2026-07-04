@@ -188,6 +188,30 @@
 .btn-toggle-on  { background: linear-gradient(135deg,#1d4ed8,#7c3aed); color:#fff; border-color:transparent; }
 .btn-toggle-off { background: var(--bg-card); color: var(--text-dim); }
 
+/* ── Selects (main.css solo estila inputs) ──────────────────── */
+.admin-main select {
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: .75rem 1rem;
+    color: var(--text-primary);
+    font-size: var(--font-base);
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+    cursor: pointer;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+.admin-main select:focus {
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 3px rgba(144,144,184,.12);
+}
+.admin-main select option,
+.admin-main select optgroup {
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .admin-layout { grid-template-columns: 1fr; }
