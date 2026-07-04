@@ -40,13 +40,27 @@
                     <label class="form-label" style="font-size:.75rem">Año</label>
                     <input type="number" name="anio" class="form-input" placeholder="1884" min="1500" max="2100">
                 </div>
-                <div class="form-group" style="margin:0;width:120px">
+                <div class="form-group" style="margin:0;flex:1;min-width:220px">
                     <label class="form-label" style="font-size:.75rem">Ensayador</label>
-                    <input type="text" name="ensayador" class="form-input" placeholder="FE">
+                    <select name="ensayador" class="form-input">
+                        <option value="">— Sin especificar —</option>
+                        {% for group_name, group_items in assayer_groups %}
+                        <optgroup label="{{ group_name }}">
+                            {% for a in group_items %}
+                            <option value="{{ a }}">{{ a }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="form-group" style="margin:0;width:130px">
+                <div class="form-group" style="margin:0;width:160px">
                     <label class="form-label" style="font-size:.75rem">Ceca</label>
-                    <input type="text" name="ceca" class="form-input" placeholder="Potosí">
+                    <select name="ceca" class="form-input">
+                        <option value="">— Sin especificar —</option>
+                        {% for m in mints_bolivia %}
+                        <option value="{{ m }}">{{ m }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="form-group" style="margin:0;width:130px">
                     <label class="form-label" style="font-size:.75rem">Mintage</label>

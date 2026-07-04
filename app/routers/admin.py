@@ -295,8 +295,11 @@ async def admin_serie_detalle(sid: int, request: Request, db: Session = Depends(
     serie = db.query(Serie).filter(Serie.id == sid).first()
     if not serie:
         raise HTTPException(status_code=404)
+    from .coleccion import ASSAYER_GROUPS, MINTS_BOLIVIA
     return templates.TemplateResponse(request, "admin/serie_detalle.html", {
         "user": user, "serie": serie,
+        "assayer_groups": ASSAYER_GROUPS,
+        "mints_bolivia": MINTS_BOLIVIA,
         "saved": request.query_params.get("saved"),
     })
 
