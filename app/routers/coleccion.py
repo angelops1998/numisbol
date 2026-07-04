@@ -413,7 +413,7 @@ async def coleccion(
     request: Request,
     q: str = "",
     categoria: str = "",
-    condicion: str = "",
+    pais: str = "",
     material: str = "",
     anio_desde: str = "",
     anio_hasta: str = "",
@@ -440,8 +440,8 @@ async def coleccion(
 
     if categoria:
         query = query.filter(Coin.category == categoria)
-    if condicion:
-        query = query.filter(Coin.condition == condicion)
+    if pais:
+        query = query.filter(Coin.country == pais)
     if material:
         query = query.filter(Coin.material == material)
     if anio_desde.isdigit():
@@ -460,7 +460,7 @@ async def coleccion(
     else:
         query = query.order_by(Coin.created_at.desc())
 
-    has_filters = any([q, categoria, condicion, material, anio_desde.isdigit(), anio_hasta.isdigit()])
+    has_filters = any([q, categoria, pais, material, anio_desde.isdigit(), anio_hasta.isdigit()])
     total_col = db.query(func.count(Coin.id)).filter(Coin.user_id == user.id).scalar()
     total_filtrado = query.count() if has_filters else total_col
     pagina = max(1, pagina)
@@ -469,12 +469,11 @@ async def coleccion(
     coins = query.offset((pagina - 1) * PER_PAGE).limit(PER_PAGE).all()
 
     filters = {
-        "q": q, "categoria": categoria, "condicion": condicion,
+        "q": q, "categoria": categoria, "pais": pais,
         "material": material, "anio_desde": anio_desde,
         "anio_hasta": anio_hasta, "orden": orden,
     }
 
-    flat_conditions = [c for _, items in CONDITIONS for c in items]
     flat_categories = [c for _, items in CATEGORY_GROUPS for c in items]
 
     return templates.TemplateResponse(request, "coleccion/lista.html", {
@@ -485,7 +484,7 @@ async def coleccion(
         "pagina": pagina,
         "total_paginas": total_paginas,
         "filters": filters,
-        "conditions": flat_conditions,
+        "countries": COUNTRIES,
         "categories": flat_categories,
         "materials": MATERIALS,
     })

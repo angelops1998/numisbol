@@ -31,7 +31,7 @@
         <button class="filters-toggle-btn" id="filtersToggle" aria-expanded="false">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/></svg>
             Filtros
-            {% if filters.q or filters.categoria or filters.condicion or filters.material or filters.anio_desde or filters.anio_hasta %}
+            {% if filters.q or filters.categoria or filters.pais or filters.material or filters.anio_desde or filters.anio_hasta %}
             <span class="filters-active-dot"></span>
             {% endif %}
         </button>
@@ -82,25 +82,23 @@
                     </div>
 
                     <div class="filter-group">
-                        <label class="filter-label">Estado de conservación</label>
-                        <div class="searchable-select" data-name="condicion">
-                            <input type="hidden" name="condicion" value="{{ filters.condicion }}">
+                        <label class="filter-label">País</label>
+                        <div class="searchable-select" data-name="pais">
+                            <input type="hidden" name="pais" value="{{ filters.pais }}">
                             <div class="ss-display" tabindex="0">
-                                <span class="ss-value {% if not filters.condicion %}placeholder{% endif %}">
-                                    {{ filters.condicion.split(' → ')[0] if filters.condicion else 'Todos' }}
+                                <span class="ss-value {% if not filters.pais %}placeholder{% endif %}">
+                                    {{ filters.pais if filters.pais else 'Todos' }}
                                 </span>
                                 <span class="ss-arrow">▾</span>
                             </div>
                             <div class="ss-dropdown">
                                 <div class="ss-search-wrap">
-                                    <input type="text" class="ss-search" placeholder="Buscar estado...">
+                                    <input type="text" class="ss-search" placeholder="Buscar país...">
                                 </div>
                                 <ul class="ss-list">
-                                    <li class="ss-option {% if not filters.condicion %}ss-selected{% endif %}" data-value="">Todos</li>
-                                    {% for cond in conditions %}
-                                    <li class="ss-option {% if filters.condicion == cond %}ss-selected{% endif %}" data-value="{{ cond }}" data-label="{{ cond.split(' → ')[0] }}">
-                                        {{ cond.split(' → ')[0] }}
-                                    </li>
+                                    <li class="ss-option {% if not filters.pais %}ss-selected{% endif %}" data-value="">Todos</li>
+                                    {% for c in countries %}
+                                    <li class="ss-option {% if filters.pais == c %}ss-selected{% endif %}" data-value="{{ c }}">{{ c }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>
@@ -210,7 +208,7 @@
                 </div>
 
                 {% if total_paginas > 1 %}
-                {% set base = '/coleccion?' ~ ('q=' ~ filters.q ~ '&' if filters.q) ~ ('categoria=' ~ filters.categoria ~ '&' if filters.categoria) ~ ('condicion=' ~ filters.condicion ~ '&' if filters.condicion) ~ ('material=' ~ filters.material ~ '&' if filters.material) ~ ('anio_desde=' ~ filters.anio_desde ~ '&' if filters.anio_desde) ~ ('anio_hasta=' ~ filters.anio_hasta ~ '&' if filters.anio_hasta) ~ ('orden=' ~ filters.orden ~ '&' if filters.orden) %}
+                {% set base = '/coleccion?' ~ ('q=' ~ filters.q ~ '&' if filters.q) ~ ('categoria=' ~ filters.categoria ~ '&' if filters.categoria) ~ ('pais=' ~ filters.pais ~ '&' if filters.pais) ~ ('material=' ~ filters.material ~ '&' if filters.material) ~ ('anio_desde=' ~ filters.anio_desde ~ '&' if filters.anio_desde) ~ ('anio_hasta=' ~ filters.anio_hasta ~ '&' if filters.anio_hasta) ~ ('orden=' ~ filters.orden ~ '&' if filters.orden) %}
                 <div class="pagination">
                     {% if pagina > 1 %}
                     <a href="{{ base }}pagina={{ pagina - 1 }}" class="pag-btn">← Anterior</a>
@@ -239,7 +237,7 @@
                 {% else %}
                 <div class="empty-state">
                     <div class="empty-icon">🔍</div>
-                    {% if filters.q or filters.categoria or filters.condicion or filters.material %}
+                    {% if filters.q or filters.categoria or filters.pais or filters.material %}
                         <h3>Sin resultados</h3>
                         <p>No se encontraron monedas con esos filtros.<br>Intentá con otros criterios.</p>
                         <a href="/coleccion" class="btn btn-outline">Limpiar filtros</a>
