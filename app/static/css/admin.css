@@ -13,12 +13,14 @@
 .admin-sidebar {
     background: var(--bg-card);
     border-right: 1px solid var(--border);
-    padding: 1.5rem 0;
+    padding: 1rem 0;
     position: sticky;
     top: 60px;
     height: calc(100vh - 60px);
     overflow-y: auto;
+    scrollbar-width: none;          /* Firefox */
 }
+.admin-sidebar::-webkit-scrollbar { display: none; }  /* Chrome/Safari */
 .admin-sidebar-title {
     font-size: .65rem;
     font-weight: 700;
@@ -31,7 +33,7 @@
     display: flex;
     align-items: center;
     gap: .65rem;
-    padding: .65rem 1.25rem;
+    padding: .5rem 1.25rem;
     font-size: .85rem;
     font-weight: 500;
     color: var(--text-dim);
@@ -49,7 +51,7 @@
     border-left-color: #7c3aed;
 }
 .admin-nav-link .nav-icon { font-size: 1rem; width: 1.1rem; text-align: center; flex-shrink: 0; }
-.admin-nav-sep { height: 1px; background: var(--border); margin: .75rem 1.25rem; }
+.admin-nav-sep { height: 1px; background: var(--border); margin: .55rem 1.25rem; }
 
 /* ── Main content ───────────────────────────────────────────── */
 .admin-main {
