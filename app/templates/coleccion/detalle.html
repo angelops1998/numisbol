@@ -84,6 +84,16 @@
                     {{ field("Material", coin.material) }}
                     {{ field("Categoría", coin.category) }}
                     {{ field("Cantidad", coin.quantity if coin.quantity and coin.quantity > 1 else None) }}
+                    {% if coin.variante %}
+                    <div class="detail-field">
+                        <span class="detail-field-label">Serie</span>
+                        <span class="detail-field-value">
+                            <a href="/coleccion/series" style="color:var(--accent);text-decoration:none">
+                                {{ coin.variante.serie.nombre }} — {{ coin.variante.etiqueta }}
+                            </a>
+                        </span>
+                    </div>
+                    {% endif %}
 
                     {% set cur_sym = 'US$' if coin.value_currency == 'USD' else 'Bs' %}
                     {% if coin.estimated_value %}

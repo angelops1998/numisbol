@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 from ..database import get_db
 from ..models.coin import Coin, CustomOption
+from ..models.serie import Serie, SerieVariante
 from ..models.setting import AppSetting
 from ..auth import get_current_user, get_current_user_optional
 
@@ -637,6 +638,35 @@ async def paises(request: Request, db: Session = Depends(get_db)):
     })
 
 
+# ── Series: progreso de la colección ─────────────────────────
+@router.get("/series", response_class=HTMLResponse)
+async def series_progreso(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+
+    series = db.query(Serie).filter(Serie.activo == True).order_by(Serie.nombre).all()
+
+    # Variantes que el usuario posee: {variante_id: coin_id}
+    rows = (db.query(Coin.variante_id, Coin.id)
+            .filter(Coin.user_id == user.id, Coin.variante_id != None)
+            .all())
+    tengo = {}
+    for vid, cid in rows:
+        tengo.setdefault(vid, cid)
+
+    progreso = []
+    for s in series:
+        total = len(s.variantes)
+        tenidas = sum(1 for v in s.variantes if v.id in tengo)
+        progreso.append({
+            "serie": s, "total": total, "tenidas": tenidas,
+            "pct": round(tenidas * 100 / total) if total else 0,
+        })
+
+    return templates.TemplateResponse(request, "coleccion/series.html", {
+        "user": user, "progreso": progreso, "tengo": tengo,
+    })
+
+
 # ── API: búsqueda de monedas ─────────────────────────────────
 @router.get("/api/search")
 async def api_search_coins(request: Request, q: str = "", id: int = 0, limit: int = 15, db: Session = Depends(get_db)):
@@ -680,6 +710,7 @@ def _form_ctx(db: Session, extra: dict) -> dict:
         "mints_bolivia": MINTS_BOLIVIA,
         "mints_world": MINTS_WORLD,
         "custom_mints": get_custom_options(db, "mint"),
+        "series": db.query(Serie).filter(Serie.activo == True).order_by(Serie.nombre).all(),
         **extra,
     }
 
@@ -715,6 +746,7 @@ async def agregar(
     quantity: str = Form("1"),
     description: str = Form(""),
     is_public: str = Form(""),
+    variante_id: str = Form(""),
     image: UploadFile = File(None),
     image_back: UploadFile = File(None),
     db: Session = Depends(get_db),
@@ -753,6 +785,9 @@ async def agregar(
 
     es_billete = tipo == "billete"
     pc = purchase_currency if purchase_currency in ("BOB", "USD") else "BOB"
+    vid = int(variante_id) if variante_id.strip().isdigit() else None
+    if vid and not db.query(SerieVariante.id).filter(SerieVariante.id == vid).first():
+        vid = None
     coin = Coin(
         user_id          = user.id,
         tipo             = "billete" if es_billete else "moneda",
@@ -774,6 +809,7 @@ async def agregar(
         quantity         = max(1, to_int(quantity) or 1),
         description      = description.strip() or None,
         is_public        = bool(is_public),
+        variante_id      = None if es_billete else vid,
         image_url        = save_upload(image),
         image_back_url   = save_upload(image_back),
     )
@@ -832,6 +868,7 @@ async def editar(
     quantity: str = Form("1"),
     description: str = Form(""),
     is_public: str = Form(""),
+    variante_id: str = Form(""),
     image: UploadFile = File(None),
     image_back: UploadFile = File(None),
     db: Session = Depends(get_db),
@@ -870,6 +907,11 @@ async def editar(
     coin.quantity       = max(1, to_int(quantity) or 1)
     coin.description    = description.strip() or None
     coin.is_public      = bool(is_public)
+
+    vid = int(variante_id) if variante_id.strip().isdigit() else None
+    if vid and not db.query(SerieVariante.id).filter(SerieVariante.id == vid).first():
+        vid = None
+    coin.variante_id    = None if es_billete else vid
 
     new_img  = save_upload(image)
     new_back = save_upload(image_back)

@@ -9,6 +9,7 @@ from ..models.user import User
 from ..models.listing import Listing
 from ..models.coin import Coin
 from ..models.pregunta import Pregunta, Respuesta
+from ..models.serie import Serie, SerieVariante
 from ..auth import get_current_user
 
 
@@ -249,6 +250,123 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
         "usuario_sel": usuario_sel, "uid": uid, "q": q,
         "total": total, "pagina": pagina, "total_paginas": total_paginas,
     })
+
+
+# ── Series ─────────────────────────────────────────────────────────────────────
+
+@router.get("/series", response_class=HTMLResponse)
+async def admin_series(request: Request, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    series = db.query(Serie).order_by(Serie.nombre).all()
+    conteos = dict(
+        db.query(SerieVariante.serie_id, func.count(SerieVariante.id))
+        .group_by(SerieVariante.serie_id).all()
+    )
+    return templates.TemplateResponse(request, "admin/series.html", {
+        "user": user, "series": series, "conteos": conteos,
+        "saved": request.query_params.get("saved"),
+        "error": request.query_params.get("error"),
+    })
+
+
+@router.post("/series")
+async def admin_crear_serie(
+    request: Request,
+    nombre: str = Form(""),
+    descripcion: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    nombre = nombre.strip()
+    if not nombre:
+        return RedirectResponse(url="/admin/series?error=nombre", status_code=302)
+    if db.query(Serie).filter(func.lower(Serie.nombre) == nombre.lower()).first():
+        return RedirectResponse(url="/admin/series?error=duplicado", status_code=302)
+    serie = Serie(nombre=nombre, descripcion=descripcion.strip() or None)
+    db.add(serie)
+    db.commit()
+    db.refresh(serie)
+    return RedirectResponse(url=f"/admin/series/{serie.id}?saved=1", status_code=302)
+
+
+@router.get("/series/{sid}", response_class=HTMLResponse)
+async def admin_serie_detalle(sid: int, request: Request, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    serie = db.query(Serie).filter(Serie.id == sid).first()
+    if not serie:
+        raise HTTPException(status_code=404)
+    return templates.TemplateResponse(request, "admin/serie_detalle.html", {
+        "user": user, "serie": serie,
+        "saved": request.query_params.get("saved"),
+    })
+
+
+@router.post("/series/{sid}")
+async def admin_editar_serie(
+    sid: int,
+    request: Request,
+    nombre: str = Form(""),
+    descripcion: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    serie = db.query(Serie).filter(Serie.id == sid).first()
+    if not serie:
+        raise HTTPException(status_code=404)
+    if nombre.strip():
+        serie.nombre = nombre.strip()
+    serie.descripcion = descripcion.strip() or None
+    db.commit()
+    return RedirectResponse(url=f"/admin/series/{sid}?saved=1", status_code=302)
+
+
+@router.post("/series/{sid}/eliminar")
+async def admin_eliminar_serie(sid: int, request: Request, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    serie = db.query(Serie).filter(Serie.id == sid).first()
+    if serie:
+        db.delete(serie)
+        db.commit()
+    return RedirectResponse(url="/admin/series?saved=1", status_code=302)
+
+
+@router.post("/series/{sid}/variantes")
+async def admin_crear_variante(
+    sid: int,
+    request: Request,
+    anio: str = Form(""),
+    ensayador: str = Form(""),
+    ceca: str = Form(""),
+    mintage: str = Form(""),
+    nota: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    serie = db.query(Serie).filter(Serie.id == sid).first()
+    if not serie:
+        raise HTTPException(status_code=404)
+    v = SerieVariante(
+        serie_id  = sid,
+        anio      = int(anio) if anio.strip().isdigit() else None,
+        ensayador = ensayador.strip() or None,
+        ceca      = ceca.strip() or None,
+        mintage   = mintage.strip() or None,
+        nota      = nota.strip() or None,
+    )
+    db.add(v)
+    db.commit()
+    return RedirectResponse(url=f"/admin/series/{sid}?saved=1", status_code=302)
+
+
+@router.post("/series/variantes/{vid}/eliminar")
+async def admin_eliminar_variante(vid: int, request: Request, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    v = db.query(SerieVariante).filter(SerieVariante.id == vid).first()
+    sid = v.serie_id if v else 0
+    if v:
+        db.delete(v)
+        db.commit()
+    return RedirectResponse(url=f"/admin/series/{sid}?saved=1", status_code=302)
 
 
 # ── Configuración ──────────────────────────────────────────────────────────────

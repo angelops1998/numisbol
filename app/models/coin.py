@@ -43,6 +43,9 @@ class Coin(Base):
     # Tipo de ítem
     tipo             = Column(String(20), nullable=False, default="moneda", server_default="moneda")
 
+    # Serie (catálogo de variantes, solo monedas bolivianas)
+    variante_id      = Column(Integer, ForeignKey("serie_variantes.id", ondelete="SET NULL"), nullable=True, index=True)
+
     # Visibilidad
     is_public        = Column(Boolean, default=False, nullable=False, server_default="false")
 
@@ -51,7 +54,8 @@ class Coin(Base):
     updated_at       = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relación
-    owner = relationship("User", backref="coins")
+    owner    = relationship("User", backref="coins")
+    variante = relationship("SerieVariante", backref="coins")
 
 
 class CustomOption(Base):

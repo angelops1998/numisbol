@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Series — Admin NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    {% include "admin/_sidebar.html" %}
+
+    <main class="admin-main">
+        <h1 class="admin-page-title">Series numismáticas</h1>
+        <p class="admin-page-sub">Catálogo de series y sus variantes (año · ensayador · ceca)</p>
+
+        {% if saved %}
+        <div class="alert alert-success" style="margin-bottom:1.25rem">✓ Cambios guardados.</div>
+        {% endif %}
+        {% if error == 'nombre' %}
+        <div class="alert alert-error" style="margin-bottom:1.25rem">⚠ El nombre de la serie es obligatorio.</div>
+        {% elif error == 'duplicado' %}
+        <div class="alert alert-error" style="margin-bottom:1.25rem">⚠ Ya existe una serie con ese nombre.</div>
+        {% endif %}
+
+        <!-- Crear serie -->
+        <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
+            <form method="post" action="/admin/series" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+                {{ csrf_input(request) }}
+                <div class="form-group" style="margin:0;flex:1;min-width:220px">
+                    <label class="form-label" style="font-size:.75rem">Nombre de la serie *</label>
+                    <input type="text" name="nombre" class="form-input" required
+                           placeholder="Ej: 20 centavos de plata 1884-1909">
+                </div>
+                <div class="form-group" style="margin:0;flex:2;min-width:220px">
+                    <label class="form-label" style="font-size:.75rem">Descripción (opcional)</label>
+                    <input type="text" name="descripcion" class="form-input"
+                           placeholder="Ej: Diseño de patrones de 1884">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:.05rem">+ Crear serie</button>
+            </form>
+        </div>
+
+        {% if series %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Serie</th>
+                        <th>Descripción</th>
+                        <th>Variantes</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in series %}
+                    <tr>
+                        <td>
+                            <a href="/admin/series/{{ s.id }}"
+                               style="color:var(--text-primary);font-weight:600;font-size:.86rem;text-decoration:none">
+                                {{ s.nombre }}
+                            </a>
+                        </td>
+                        <td style="font-size:.8rem;color:var(--text-dim)">{{ s.descripcion or '—' }}</td>
+                        <td style="font-size:.85rem;font-weight:600;color:var(--text-primary)">
+                            {{ conteos.get(s.id, 0) }}
+                        </td>
+                        <td style="text-align:right;white-space:nowrap">
+                            <a href="/admin/series/{{ s.id }}" class="btn btn-outline btn-sm">Gestionar</a>
+                            <form method="post" action="/admin/series/{{ s.id }}/eliminar" style="display:inline"
+                                  onsubmit="return confirm('¿Eliminar la serie «{{ s.nombre }}» y todas sus variantes? Las monedas vinculadas no se eliminan.')">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn btn-outline btn-sm" style="color:#f87171;border-color:rgba(248,113,113,.4)">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <p>Todavía no hay series. Creá la primera con el formulario de arriba.</p>
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+{% endblock %}

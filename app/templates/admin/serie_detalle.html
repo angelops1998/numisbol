@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ serie.nombre }} — Admin NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin.css">{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    {% include "admin/_sidebar.html" %}
+
+    <main class="admin-main">
+        <p style="margin-bottom:.5rem"><a href="/admin/series" style="color:var(--text-dim);font-size:.82rem;text-decoration:none">← Volver a series</a></p>
+        <h1 class="admin-page-title">{{ serie.nombre }}</h1>
+        <p class="admin-page-sub">{{ serie.variantes|length }} variante{{ 's' if serie.variantes|length != 1 }}</p>
+
+        {% if saved %}
+        <div class="alert alert-success" style="margin-bottom:1.25rem">✓ Cambios guardados.</div>
+        {% endif %}
+
+        <!-- Editar serie -->
+        <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
+            <form method="post" action="/admin/series/{{ serie.id }}" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+                {{ csrf_input(request) }}
+                <div class="form-group" style="margin:0;flex:1;min-width:220px">
+                    <label class="form-label" style="font-size:.75rem">Nombre</label>
+                    <input type="text" name="nombre" class="form-input" value="{{ serie.nombre }}" required>
+                </div>
+                <div class="form-group" style="margin:0;flex:2;min-width:220px">
+                    <label class="form-label" style="font-size:.75rem">Descripción</label>
+                    <input type="text" name="descripcion" class="form-input" value="{{ serie.descripcion or '' }}">
+                </div>
+                <button type="submit" class="btn btn-outline btn-sm" style="margin-bottom:.05rem">Guardar</button>
+            </form>
+        </div>
+
+        <!-- Agregar variante -->
+        <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
+            <h3 style="font-size:.9rem;color:var(--text-primary);margin:0 0 .85rem">Agregar variante</h3>
+            <form method="post" action="/admin/series/{{ serie.id }}/variantes" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+                {{ csrf_input(request) }}
+                <div class="form-group" style="margin:0;width:90px">
+                    <label class="form-label" style="font-size:.75rem">Año</label>
+                    <input type="number" name="anio" class="form-input" placeholder="1884" min="1500" max="2100">
+                </div>
+                <div class="form-group" style="margin:0;width:120px">
+                    <label class="form-label" style="font-size:.75rem">Ensayador</label>
+                    <input type="text" name="ensayador" class="form-input" placeholder="FE">
+                </div>
+                <div class="form-group" style="margin:0;width:130px">
+                    <label class="form-label" style="font-size:.75rem">Ceca</label>
+                    <input type="text" name="ceca" class="form-input" placeholder="Potosí">
+                </div>
+                <div class="form-group" style="margin:0;width:130px">
+                    <label class="form-label" style="font-size:.75rem">Mintage</label>
+                    <input type="text" name="mintage" class="form-input" placeholder="1.200.000">
+                </div>
+                <div class="form-group" style="margin:0;flex:1;min-width:160px">
+                    <label class="form-label" style="font-size:.75rem">Nota (opcional)</label>
+                    <input type="text" name="nota" class="form-input" placeholder="Ej: sobrefecha 4/3">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:.05rem">+ Agregar</button>
+            </form>
+        </div>
+
+        {% if serie.variantes %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Año</th>
+                        <th>Ensayador</th>
+                        <th>Ceca</th>
+                        <th>Mintage</th>
+                        <th>Nota</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in serie.variantes %}
+                    <tr>
+                        <td style="font-weight:600;color:var(--text-primary);font-size:.86rem">{{ v.anio or '—' }}</td>
+                        <td style="font-size:.84rem;color:var(--text-dim)">{{ v.ensayador or '—' }}</td>
+                        <td style="font-size:.84rem;color:var(--text-dim)">{{ v.ceca or '—' }}</td>
+                        <td style="font-size:.84rem;color:var(--text-dim)">{{ v.mintage or '—' }}</td>
+                        <td style="font-size:.8rem;color:var(--text-dim)">{{ v.nota or '—' }}</td>
+                        <td style="text-align:right">
+                            <form method="post" action="/admin/series/variantes/{{ v.id }}/eliminar" style="display:inline"
+                                  onsubmit="return confirm('¿Eliminar la variante {{ v.etiqueta }}?')">
+                                {{ csrf_input(request) }}
+                                <button type="submit" class="btn btn-outline btn-sm" style="color:#f87171;border-color:rgba(248,113,113,.4)">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🪙</div>
+            <p>Esta serie no tiene variantes todavía. Agregá la primera con el formulario de arriba.</p>
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+{% endblock %}
