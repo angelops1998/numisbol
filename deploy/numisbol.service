@@ -1,0 +1,14 @@
+# /etc/systemd/system/numisbol.service
+[Unit]
+Description=NumisBol FastAPI app
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/var/www/numisbol
+Environment="PATH=/var/www/numisbol/venv/bin"
+ExecStart=/var/www/numisbol/venv/bin/gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
