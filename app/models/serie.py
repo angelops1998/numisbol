@@ -30,7 +30,7 @@ class SerieVariante(Base):
     ensayador  = Column(String(100), nullable=True)
     ceca       = Column(String(100), nullable=True)
     mintage    = Column(String(50), nullable=True)   # texto: "1.200.000", "desconocido"
-    nota       = Column(String(300), nullable=True)  # ej: "sobrefecha 4/3"
+    nota       = Column(Text, nullable=True)          # ej: "sobrefecha 4/3" (texto libre, sin límite)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     serie = relationship("Serie", back_populates="variantes")

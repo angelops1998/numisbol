@@ -296,9 +296,11 @@ async def admin_serie_detalle(sid: int, request: Request, db: Session = Depends(
     if not serie:
         raise HTTPException(status_code=404)
     from .coleccion import ASSAYER_GROUPS, MINTS_BOLIVIA
+    assayer_values = [a for _, items in ASSAYER_GROUPS for a in items]
     return templates.TemplateResponse(request, "admin/serie_detalle.html", {
         "user": user, "serie": serie,
         "assayer_groups": ASSAYER_GROUPS,
+        "assayer_values": assayer_values,
         "mints_bolivia": MINTS_BOLIVIA,
         "saved": request.query_params.get("saved"),
     })
@@ -359,6 +361,30 @@ async def admin_crear_variante(
     db.add(v)
     db.commit()
     return RedirectResponse(url=f"/admin/series/{sid}?saved=1", status_code=302)
+
+
+@router.post("/series/variantes/{vid}")
+async def admin_editar_variante(
+    vid: int,
+    request: Request,
+    anio: str = Form(""),
+    ensayador: str = Form(""),
+    ceca: str = Form(""),
+    mintage: str = Form(""),
+    nota: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    v = db.query(SerieVariante).filter(SerieVariante.id == vid).first()
+    if not v:
+        raise HTTPException(status_code=404)
+    v.anio      = int(anio) if anio.strip().isdigit() else None
+    v.ensayador = ensayador.strip() or None
+    v.ceca      = ceca.strip() or None
+    v.mintage   = mintage.strip() or None
+    v.nota      = nota.strip() or None
+    db.commit()
+    return RedirectResponse(url=f"/admin/series/{v.serie_id}?saved=1", status_code=302)
 
 
 @router.post("/series/variantes/{vid}/eliminar")

@@ -21,7 +21,7 @@
 
         <!-- Crear serie -->
         <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
-            <form method="post" action="/admin/series" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+            <form method="post" action="/admin/series" style="display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap">
                 {{ csrf_input(request) }}
                 <div class="form-group" style="margin:0;flex:1;min-width:220px">
                     <label class="form-label" style="font-size:.75rem">Nombre de la serie *</label>
@@ -30,10 +30,11 @@
                 </div>
                 <div class="form-group" style="margin:0;flex:2;min-width:220px">
                     <label class="form-label" style="font-size:.75rem">Descripción (opcional)</label>
-                    <input type="text" name="descripcion" class="form-input"
-                           placeholder="Ej: Diseño de patrones de 1884">
+                    <textarea name="descripcion" class="form-input" rows="3"
+                              style="resize:vertical;min-height:2.4rem"
+                              placeholder="Ej: Diseño de patrones de 1884"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:.05rem">+ Crear serie</button>
+                <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-end;margin-bottom:.05rem">+ Crear serie</button>
             </form>
         </div>
 
