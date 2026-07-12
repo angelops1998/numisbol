@@ -4,7 +4,7 @@ from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, case
 from ..database import get_db
 from ..models.coin import Coin, CustomOption
 from ..models.serie import Serie, SerieVariante
@@ -642,7 +642,12 @@ async def paises(request: Request, db: Session = Depends(get_db)):
 async def series_progreso(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
 
-    series = db.query(Serie).filter(Serie.activo == True).order_by(Serie.nombre).all()
+    orden_destacado = case(
+        (Serie.nombre.ilike("%Reales Bolivianos 1825%"), 0),
+        else_=1,
+    )
+    series = (db.query(Serie).filter(Serie.activo == True)
+              .order_by(orden_destacado, Serie.nombre).all())
 
     # Variantes que el usuario posee: {variante_id: coin_id}
     rows = (db.query(Coin.variante_id, Coin.id)
