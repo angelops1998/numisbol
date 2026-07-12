@@ -188,6 +188,30 @@
 .btn-toggle-on  { background: linear-gradient(135deg,#1d4ed8,#7c3aed); color:#fff; border-color:transparent; }
 .btn-toggle-off { background: var(--bg-card); color: var(--text-dim); }
 
+/* ── Campos sueltos fuera de .form-group (ej: tabla de variantes editables) ── */
+.admin-table input.form-input,
+.admin-table textarea.form-input,
+.admin-table select.form-input {
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: var(--font-base);
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+    line-height: 1.5;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+.admin-table input.form-input:focus,
+.admin-table textarea.form-input:focus,
+.admin-table select.form-input:focus {
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 3px rgba(144,144,184,.12);
+}
+.admin-table input.form-input::placeholder,
+.admin-table textarea.form-input::placeholder { color: var(--text-dim); }
+
 /* ── Selects (main.css solo estila inputs) ──────────────────── */
 .admin-main select {
     background: var(--bg-input);

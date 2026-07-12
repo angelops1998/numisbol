@@ -17,18 +17,17 @@
 
         <!-- Editar serie -->
         <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
-            <form method="post" action="/admin/series/{{ serie.id }}" style="display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap">
+            <form method="post" action="/admin/series/{{ serie.id }}" style="display:flex;flex-direction:column;gap:.9rem">
                 {{ csrf_input(request) }}
-                <div class="form-group" style="margin:0;flex:1;min-width:220px">
+                <div class="form-group" style="margin:0;max-width:480px">
                     <label class="form-label" style="font-size:.75rem">Nombre</label>
                     <input type="text" name="nombre" class="form-input" value="{{ serie.nombre }}" required>
                 </div>
-                <div class="form-group" style="margin:0;flex:2;min-width:220px">
+                <div class="form-group" style="margin:0">
                     <label class="form-label" style="font-size:.75rem">Descripción</label>
-                    <textarea name="descripcion" class="form-input" rows="4"
-                              style="resize:vertical;min-height:2.4rem">{{ serie.descripcion or '' }}</textarea>
+                    <textarea name="descripcion" class="form-input" rows="6">{{ serie.descripcion or '' }}</textarea>
                 </div>
-                <button type="submit" class="btn btn-outline btn-sm" style="align-self:flex-end;margin-bottom:.05rem">Guardar</button>
+                <button type="submit" class="btn btn-outline btn-sm" style="align-self:flex-start">Guardar</button>
             </form>
         </div>
 
