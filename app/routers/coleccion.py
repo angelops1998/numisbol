@@ -645,7 +645,8 @@ async def series_progreso(request: Request, db: Session = Depends(get_db)):
     orden_destacado = case(
         (Serie.nombre.ilike("%Reales Bolivianos 1825%"), 0),
         (Serie.nombre.ilike("%8 Soles 1827%1840%"), 1),
-        else_=2,
+        (Serie.nombre.ilike("%4 Soles 1827%1829%"), 2),
+        else_=3,
     )
     series = (db.query(Serie).filter(Serie.activo == True)
               .order_by(orden_destacado, Serie.nombre).all())
