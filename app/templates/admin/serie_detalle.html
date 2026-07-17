@@ -27,6 +27,11 @@
                     <label class="form-label" style="font-size:.75rem">Descripción</label>
                     <textarea name="descripcion" class="form-input" rows="6">{{ serie.descripcion or '' }}</textarea>
                 </div>
+                <div class="form-group" style="margin:0;max-width:160px">
+                    <label class="form-label" style="font-size:.75rem">Orden</label>
+                    <input type="number" name="orden" class="form-input" value="{{ serie.orden }}">
+                    <p style="font-size:.72rem;color:var(--text-dim);margin:.35rem 0 0">Menor número = aparece antes en /coleccion/series. Por defecto 100.</p>
+                </div>
                 <button type="submit" class="btn btn-outline btn-sm" style="align-self:flex-start">Guardar</button>
             </form>
         </div>

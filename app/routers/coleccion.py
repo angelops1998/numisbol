@@ -4,7 +4,7 @@ from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func, case
+from sqlalchemy import or_, func
 from ..database import get_db
 from ..models.coin import Coin, CustomOption
 from ..models.serie import Serie, SerieVariante
@@ -642,14 +642,8 @@ async def paises(request: Request, db: Session = Depends(get_db)):
 async def series_progreso(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
 
-    orden_destacado = case(
-        (Serie.nombre.ilike("%Reales Bolivianos 1825%"), 0),
-        (Serie.nombre.ilike("%8 Soles 1827%1840%"), 1),
-        (Serie.nombre.ilike("%4 Soles 1827%1829%"), 2),
-        else_=3,
-    )
     series = (db.query(Serie).filter(Serie.activo == True)
-              .order_by(orden_destacado, Serie.nombre).all())
+              .order_by(Serie.orden, Serie.nombre).all())
 
     # Variantes que el usuario posee: {variante_id: coin_id}
     rows = (db.query(Coin.variante_id, Coin.id)
@@ -703,7 +697,7 @@ async def api_search_coins(request: Request, q: str = "", id: int = 0, limit: in
 # ── Agregar ──────────────────────────────────────────────────
 def _form_ctx(db: Session, extra: dict) -> dict:
     """Contexto base para el formulario de moneda."""
-    series = db.query(Serie).filter(Serie.activo == True).order_by(Serie.nombre).all()
+    series = db.query(Serie).filter(Serie.activo == True).order_by(Serie.orden, Serie.nombre).all()
     return {
         "conditions": CONDITIONS,
         "assayer_groups": ASSAYER_GROUPS,

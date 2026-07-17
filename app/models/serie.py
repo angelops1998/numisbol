@@ -10,6 +10,7 @@ class Serie(Base):
     id          = Column(Integer, primary_key=True, index=True)
     nombre      = Column(String(200), nullable=False, unique=True)
     descripcion = Column(Text, nullable=True)
+    orden       = Column(Integer, nullable=False, default=100, server_default="100")
     activo      = Column(Boolean, default=True, nullable=False, server_default="true")
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
 

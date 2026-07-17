@@ -257,7 +257,7 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
 @router.get("/series", response_class=HTMLResponse)
 async def admin_series(request: Request, db: Session = Depends(get_db)):
     user = require_admin(request, db)
-    series = db.query(Serie).order_by(Serie.nombre).all()
+    series = db.query(Serie).order_by(Serie.orden, Serie.nombre).all()
     conteos = dict(
         db.query(SerieVariante.serie_id, func.count(SerieVariante.id))
         .group_by(SerieVariante.serie_id).all()
@@ -312,6 +312,7 @@ async def admin_editar_serie(
     request: Request,
     nombre: str = Form(""),
     descripcion: str = Form(""),
+    orden: int = Form(100),
     db: Session = Depends(get_db),
 ):
     require_admin(request, db)
@@ -321,8 +322,25 @@ async def admin_editar_serie(
     if nombre.strip():
         serie.nombre = nombre.strip()
     serie.descripcion = descripcion.strip() or None
+    serie.orden = orden
     db.commit()
     return RedirectResponse(url=f"/admin/series/{sid}?saved=1", status_code=302)
+
+
+@router.post("/series/{sid}/orden")
+async def admin_reordenar_serie(
+    sid: int,
+    request: Request,
+    orden: int = Form(100),
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    serie = db.query(Serie).filter(Serie.id == sid).first()
+    if not serie:
+        raise HTTPException(status_code=404)
+    serie.orden = orden
+    db.commit()
+    return RedirectResponse(url="/admin/series?saved=1", status_code=302)
 
 
 @router.post("/series/{sid}/eliminar")
