@@ -100,14 +100,22 @@
     const norm = s => (s || '').normalize('NFD').replace(TILDES, '').toLowerCase();
 
     // Parte el texto en palabras. "8 Soles 1827-1840" → ["8","soles","1827","1840"].
-    const palabras = s => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
+    // La barra y el punto NO cortan, para que "1/2 SOL" sea ["1/2","sol"] y "1.69g"
+    // sea una sola palabra: si se partieran, el "1" suelto que queda hace que
+    // "1 sol" encuentre media sol y cualquier nota que mencione un peso.
+    // Sí se limpian en los bordes, así "plata." y "1825." quedan sanos.
+    const palabras = s => norm(s)
+        .split(/[^a-z0-9/.]+/)
+        .map(w => w.replace(/^[/.]+|[/.]+$/g, ''))
+        .filter(w => /[a-z0-9]/.test(w));
 
-    // El texto coincide por principio de palabra ("poto" encuentra "Potosí"),
-    // pero los números tienen que calzar enteros: si no, el "4" de "4 soles"
-    // encuentra "1840" y el "1" de "1 sol" encuentra "1827".
+    // El texto coincide por principio de palabra, en cualquier dirección: "poto"
+    // encuentra "Potosí", y "soles" encuentra "2 SOL 1830" (el catálogo mezcla
+    // singular y plural). Los números, en cambio, tienen que calzar enteros: si no,
+    // el "4" de "4 soles" encuentra "1840" y el "1" de "1 sol" encuentra "1827".
     const coincide = (token, ws) => /^[0-9]+$/.test(token)
         ? ws.includes(token)
-        : ws.some(w => w.startsWith(token));
+        : ws.some(w => w.startsWith(token) || (w.length >= 3 && token.startsWith(w)));
 
     // Índice construido una sola vez.
     const cards = [...document.querySelectorAll('.serie-card')].map(card => ({
