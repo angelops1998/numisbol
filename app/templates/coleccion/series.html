@@ -53,7 +53,7 @@
         </div>
 
         {% for p in progreso %}
-        <details class="serie-card" data-serie="{{ p.serie.nombre }} {{ p.serie.descripcion or '' }}">
+        <details class="serie-card" data-serie="{{ p.serie.nombre }}">
             <summary>
                 <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.35rem">
                     <h2 style="font-size:1.05rem;color:var(--text-primary);margin:0;flex:1;min-width:200px">{{ p.serie.nombre }}</h2>
@@ -99,18 +99,28 @@
     const TILDES = new RegExp('[\\u0300-\\u036f]', 'g');
     const norm = s => (s || '').normalize('NFD').replace(TILDES, '').toLowerCase();
 
+    // Parte el texto en palabras. "8 Soles 1827-1840" → ["8","soles","1827","1840"].
+    const palabras = s => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
+
+    // El texto coincide por principio de palabra ("poto" encuentra "Potosí"),
+    // pero los números tienen que calzar enteros: si no, el "4" de "4 soles"
+    // encuentra "1840" y el "1" de "1 sol" encuentra "1827".
+    const coincide = (token, ws) => /^[0-9]+$/.test(token)
+        ? ws.includes(token)
+        : ws.some(w => w.startsWith(token));
+
     // Índice construido una sola vez.
     const cards = [...document.querySelectorAll('.serie-card')].map(card => ({
         el:    card,
         hits:  card.querySelector('.serie-hits'),
-        texto: norm(card.dataset.serie),
+        ws:    palabras(card.dataset.serie),
         filas: [...card.querySelectorAll('tbody tr')].map(tr => ({
-            el: tr, texto: norm(tr.dataset.vsearch),
+            el: tr, ws: palabras(tr.dataset.vsearch),
         })),
     }));
 
     function filtrar() {
-        const tokens = norm(input.value).split(/\s+/).filter(Boolean);
+        const tokens = palabras(input.value);
         let visibles = 0;
 
         for (const c of cards) {
@@ -123,8 +133,8 @@
                 continue;
             }
 
-            // ¿La serie coincide por nombre o descripción?
-            if (tokens.every(t => c.texto.includes(t))) {
+            // ¿Coincide el nombre de la serie?
+            if (tokens.every(t => coincide(t, c.ws))) {
                 c.el.hidden = false;
                 c.hits.hidden = true;
                 c.filas.forEach(f => f.el.hidden = false);
@@ -132,9 +142,9 @@
                 continue;
             }
 
-            // Si no, buscamos en las variantes (combinando con el texto de la serie).
+            // Si no, buscamos en las variantes (combinando con el nombre de la serie).
             const coinciden = c.filas.filter(
-                f => tokens.every(t => c.texto.includes(t) || f.texto.includes(t))
+                f => tokens.every(t => coincide(t, c.ws) || coincide(t, f.ws))
             );
             c.filas.forEach(f => f.el.hidden = !coinciden.includes(f));
 

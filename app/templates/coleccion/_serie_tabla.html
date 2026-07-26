@@ -16,7 +16,9 @@
             {% for v in serie.variantes %}
             {% set la_tengo = v.id in tengo %}
             {% set es_esta = current_id is defined and current_id == v.id %}
-            <tr data-vsearch="{{ v.anio or '' }} {{ v.ensayador or '' }} {{ v.ceca or '' }} {{ v.mintage or '' }} {{ v.nota or '' }}"
+            {# La tirada queda fuera del buscador a propósito: "1.200.000" se parte
+               en 1/200/000 y esos números sueltos ensucian las búsquedas. #}
+            <tr data-vsearch="{{ v.anio or '' }} {{ v.ensayador or '' }} {{ v.ceca or '' }} {{ v.nota or '' }}"
                 style="border-bottom:1px solid var(--border);
                        {% if es_esta %}background:rgba(124,58,237,.12);
                        {% elif la_tengo %}background:rgba(74,222,128,.06);{% endif %}">
