@@ -10,6 +10,11 @@
 .serie-chevron { transition:transform .2s; color:var(--text-dim); flex-shrink:0; font-size:.8rem; }
 .serie-card[open] .serie-chevron { transform:rotate(180deg); }
 .serie-body { padding:0 1.5rem 1.25rem; }
+.serie-toolbar { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:1.25rem; }
+.serie-toolbar .filter-input { flex:1; min-width:200px; }
+.serie-count { font-size:.82rem; color:var(--text-dim); white-space:nowrap; }
+.serie-hits { font-size:.75rem; font-weight:700; color:var(--accent); white-space:nowrap; }
+.serie-card[hidden], .serie-card tr[hidden] { display:none; }
 </style>
 {% endblock %}
 
@@ -34,10 +39,21 @@
             <div style="font-size:2.5rem;margin-bottom:.75rem">📚</div>
             <p>Todavía no hay series en el catálogo.</p>
         </div>
+        {% else %}
+        <div class="serie-toolbar">
+            <input type="search" id="serieSearch" class="filter-input" autocomplete="off"
+                   placeholder="Buscar serie, año, ensayador, ceca o nota…">
+            <span class="serie-count" id="serieCount">{{ progreso|length }} serie{{ 's' if progreso|length != 1 }}</span>
+        </div>
         {% endif %}
 
+        <div id="serieNoResults" hidden style="text-align:center;padding:3rem 1rem;color:var(--text-dim)">
+            <div style="font-size:2.5rem;margin-bottom:.75rem">🔍</div>
+            <p>Ninguna serie coincide con tu búsqueda.</p>
+        </div>
+
         {% for p in progreso %}
-        <details class="serie-card">
+        <details class="serie-card" data-serie="{{ p.serie.nombre }} {{ p.serie.descripcion or '' }}">
             <summary>
                 <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.35rem">
                     <h2 style="font-size:1.05rem;color:var(--text-primary);margin:0;flex:1;min-width:200px">{{ p.serie.nombre }}</h2>
@@ -45,6 +61,7 @@
                         {{ p.tenidas }} / {{ p.total }}
                         {% if p.pct == 100 and p.total > 0 %}· ¡Completa! 🏆{% else %}· {{ p.pct }}%{% endif %}
                     </span>
+                    <span class="serie-hits" hidden></span>
                     <span class="serie-chevron">▼</span>
                 </div>
                 {% if p.serie.descripcion %}
@@ -69,4 +86,77 @@
 
     </div>
 </div>
+
+<script>
+(function () {
+    const input = document.getElementById('serieSearch');
+    if (!input) return;
+
+    const countEl   = document.getElementById('serieCount');
+    const noResults = document.getElementById('serieNoResults');
+
+    // Normaliza: minúsculas y sin tildes, para que "Potosi" encuentre "Potosí".
+    const TILDES = new RegExp('[\\u0300-\\u036f]', 'g');
+    const norm = s => (s || '').normalize('NFD').replace(TILDES, '').toLowerCase();
+
+    // Índice construido una sola vez.
+    const cards = [...document.querySelectorAll('.serie-card')].map(card => ({
+        el:    card,
+        hits:  card.querySelector('.serie-hits'),
+        texto: norm(card.dataset.serie),
+        filas: [...card.querySelectorAll('tbody tr')].map(tr => ({
+            el: tr, texto: norm(tr.dataset.vsearch),
+        })),
+    }));
+
+    function filtrar() {
+        const tokens = norm(input.value).split(/\s+/).filter(Boolean);
+        let visibles = 0;
+
+        for (const c of cards) {
+            if (!tokens.length) {
+                c.el.hidden = false;
+                c.el.open = false;
+                c.hits.hidden = true;
+                c.filas.forEach(f => f.el.hidden = false);
+                visibles++;
+                continue;
+            }
+
+            // ¿La serie coincide por nombre o descripción?
+            if (tokens.every(t => c.texto.includes(t))) {
+                c.el.hidden = false;
+                c.hits.hidden = true;
+                c.filas.forEach(f => f.el.hidden = false);
+                visibles++;
+                continue;
+            }
+
+            // Si no, buscamos en las variantes (combinando con el texto de la serie).
+            const coinciden = c.filas.filter(
+                f => tokens.every(t => c.texto.includes(t) || f.texto.includes(t))
+            );
+            c.filas.forEach(f => f.el.hidden = !coinciden.includes(f));
+
+            if (coinciden.length) {
+                c.el.hidden = false;
+                c.el.open = true;
+                c.hits.textContent = coinciden.length + ' variante' + (coinciden.length !== 1 ? 's' : '');
+                c.hits.hidden = false;
+                visibles++;
+            } else {
+                c.el.hidden = true;
+                c.el.open = false;
+                c.hits.hidden = true;
+            }
+        }
+
+        countEl.textContent = visibles + ' serie' + (visibles !== 1 ? 's' : '');
+        noResults.hidden = visibles > 0;
+    }
+
+    input.addEventListener('input', filtrar);
+    input.addEventListener('search', filtrar);   // click en la "x" del type=search
+})();
+</script>
 {% endblock %}
