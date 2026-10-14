@@ -138,7 +138,7 @@
     <div class="serie-detalle" data-serie-id="{{ p.serie.id }}">
         {% if p.serie.variantes %}
         {% with serie = p.serie %}
-        {% include "coleccion/_serie_tabla.html" %}
+        {% include "coleccion/_serie_variantes.html" %}
         {% endwith %}
         {% else %}
         <p class="serie-panel-vacio">Esta serie no tiene variantes cargadas todavía.</p>
@@ -177,7 +177,12 @@
     </p>
 
     <div class="serie-panel-body" id="seriePanelBody"></div>
-    <p class="serie-panel-desc" id="seriePanelDesc" hidden></p>
+    <div class="serie-panel-desc" id="seriePanelDesc" hidden>
+        <button type="button" class="serie-panel-desc-btn" id="seriePanelDescBtn" aria-expanded="false">
+            Sobre esta serie <span class="serie-panel-desc-flecha" aria-hidden="true">▾</span>
+        </button>
+        <p class="serie-panel-desc-txt" id="seriePanelDescTxt"></p>
+    </div>
     <p class="serie-panel-vacio" id="seriePanelSinFilas" hidden></p>
 </aside>
 
@@ -199,6 +204,8 @@
     const fondo      = document.getElementById('seriePanelFondo');
     const pTitulo    = document.getElementById('seriePanelTitulo');
     const pDesc      = document.getElementById('seriePanelDesc');
+    const pDescTxt   = document.getElementById('seriePanelDescTxt');
+    const pDescBtn   = document.getElementById('seriePanelDescBtn');
     const pBarra     = document.getElementById('seriePanelBarra');
     const pFraccion  = document.getElementById('seriePanelFraccion');
     const pBody      = document.getElementById('seriePanelBody');
@@ -242,7 +249,7 @@
             id, card, det,
             hits:   card.querySelector('.serie-hits'),
             ws:     palabras(card.dataset.serie),
-            filas:  det ? [...det.querySelectorAll('tbody tr')].map(tr => ({
+            filas:  det ? [...det.querySelectorAll('.vficha')].map(tr => ({
                         el: tr, ws: palabras(tr.dataset.vsearch),
                     })) : [],
             visible: true,
@@ -313,6 +320,14 @@
     }
 
     // ── Panel ────────────────────────────────────────────────
+    // Usamos un desplegable propio y no <details>: un details cerrado esconde
+    // todo su contenido, así que no se podría mostrar el adelanto de dos líneas.
+    function plegarDesc(abrir) {
+        pDesc.classList.toggle('abierta', !!abrir);
+        pDescBtn.setAttribute('aria-expanded', String(!!abrir));
+        pDescBtn.querySelector('.serie-panel-desc-flecha').textContent = abrir ? '▴' : '▾';
+    }
+
     function aplicarFilas() {
         if (!abierta) return;
         const soloFaltan = pFaltan.checked;
@@ -356,8 +371,9 @@
 
         pTitulo.textContent = it.card.dataset.nombre;
         const desc = it.card.querySelector('.serie-tarjeta-desc');
-        pDesc.textContent = desc ? desc.textContent.trim() : '';
+        pDescTxt.textContent = desc ? desc.textContent.trim() : '';
         pDesc.hidden = !desc;
+        plegarDesc();              // cada serie arranca con la descripción plegada
 
         const pct = +it.card.dataset.pct;
         pBarra.firstElementChild.style.width = pct + '%';
@@ -445,6 +461,7 @@
     fondo.addEventListener('click', cerrar);
     pFaltan.addEventListener('change', aplicarFilas);
     pVerTodas.addEventListener('click', () => { input.value = ''; filtrar(); });
+    pDescBtn.addEventListener('click', () => plegarDesc(!pDesc.classList.contains('abierta')));
     pPrev.addEventListener('click', () => { const v = vecinas(); if (v.prev) abrir(v.prev, v.prev.card); });
     pNext.addEventListener('click', () => { const v = vecinas(); if (v.next) abrir(v.next, v.next.card); });
 

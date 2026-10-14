@@ -1744,15 +1744,48 @@
 
 /* La descripción va dentro del cuerpo que scrollea: son párrafos largos y en
    el encabezado fijo se comían media ventana antes de llegar a la tabla. */
+/* Plegada por defecto: hay series con un párrafo de diez renglones y abierto
+   te empuja las variantes fuera de la pantalla. */
 .serie-panel-desc {
-    font-size: var(--font-sm);
-    color: var(--text-muted);
-    line-height: 1.65;
-    max-width: 78ch;
-    margin: 0;
-    padding: 1.2rem 0 .4rem;
+    margin-top: 1.1rem;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: .85rem 1rem;
 }
 .serie-panel-desc[hidden] { display: none; }
+.serie-panel-desc-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: #9B8BD0;
+    transition: color var(--transition);
+}
+.serie-panel-desc-btn:hover { color: #C4B5FD; }
+.serie-panel-desc-flecha { margin-left: auto; font-size: var(--font-sm); }
+.serie-panel-desc-txt {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 78ch;
+    margin-top: .7rem;
+}
+.serie-panel-desc:not(.abierta) .serie-panel-desc-txt {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: .5rem;
+}
 
 .serie-panel-aviso {
     display: flex;
@@ -1776,89 +1809,176 @@
 }
 body.serie-panel-abierto { overflow: hidden; }
 
-/* ── Tabla de variantes ───────────────────────────────────── */
-.vtabla-wrap { overflow-x: auto; }
-.vtabla {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--font-sm);
-    margin-top: .9rem;
+/* ── Fichas de variantes ──────────────────────────────────── */
+/* La paleta base del sitio es plata sobre carbón y en fichas chicas queda todo
+   gris sobre gris. Acá el color marca estado: verde lo que ya tengo, violeta
+   la moneda que estoy mirando, ámbar las notas de rareza. Son los mismos tonos
+   que la app ya usa en el panel de admin y en la ficha de moneda. */
+.vgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: .85rem;
+    align-items: stretch;          /* fichas parejas en cada fila */
+    margin-top: 1.2rem;
 }
-.vtabla th {
-    text-align: left;
-    padding: .5rem .7rem;
-    color: var(--text-dim);
-    font-size: var(--font-xs);
+.vficha {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: .9rem 1rem 1rem;
+    transition: border-color var(--transition), transform var(--transition), background var(--transition);
+}
+.vficha:hover {
+    border-color: var(--border-light);
+    transform: translateY(-2px);
+}
+.vficha[hidden] { display: none; }
+
+/* Ya la tengo. */
+.vficha--tengo {
+    background: linear-gradient(160deg, rgba(74,222,128,.10), rgba(74,222,128,.03) 60%, transparent);
+    border-color: rgba(74,222,128,.45);
+}
+.vficha--tengo:hover { border-color: rgba(74,222,128,.7); }
+
+/* La moneda que estoy viendo (ficha de moneda). */
+.vficha--actual {
+    background: linear-gradient(160deg, rgba(167,139,250,.14), rgba(167,139,250,.04) 60%, transparent);
+    border-color: rgba(167,139,250,.55);
+}
+
+.vficha-top {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: .65rem;
+}
+.vficha-anio {
+    flex: 1;
+    font-size: 1.45rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-card);
+    color: var(--text-primary);
+    letter-spacing: -.5px;
+    line-height: 1.1;
 }
-.vtabla td {
-    padding: .7rem .7rem;
-    border-bottom: 1px solid rgba(255,255,255,.045);
-    color: var(--text-body);
-    vertical-align: top;
+.vficha-anio a {
+    color: #4ADE80;
+    text-decoration: none;
+    border-bottom: 2px dotted rgba(74,222,128,.5);
 }
-.vtabla tbody tr:last-child td { border-bottom: 0; }
+.vficha-anio a:hover { color: #86EFAC; border-bottom-color: #86EFAC; }
 
-/* El encabezado queda pegado solo dentro del modal, que es el que scrollea: en
-   la ficha de una moneda la tabla va en el flujo normal y se metería bajo la
-   barra de navegación. El wrap pierde su overflow propio, porque si no se
-   vuelve él el contenedor de scroll y el encabezado se va para arriba. */
-.serie-panel-body .vtabla-wrap { overflow: visible; }
-.serie-panel-body .vtabla th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-.vtabla tbody tr { transition: background var(--transition); }
-.vtabla tbody tr:hover { background: rgba(255,255,255,.035); }
-.vtabla tr[hidden] { display: none; }
-
-/* Las que ya tengo se marcan con un filo verde, no con un bloque de color:
-   son muchas filas seguidas y el fondo pintado ensucia la lectura. */
-.vtabla tr.v-tenida td:first-child { box-shadow: inset 3px 0 0 var(--success-text); }
-.vtabla tr.v-tenida { background: rgba(125,212,168,.045); }
-.vtabla tr.v-actual { background: rgba(232,232,255,.09); }
-.vtabla tr.v-actual td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
-
-.vtabla .v-tengo  { white-space: nowrap; width: 1%; }
-.vtabla .v-anio   { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
-.vtabla .v-ceca,
-.vtabla .v-tirada { white-space: nowrap; color: var(--text-muted); }
-.vtabla .v-ensayador { color: var(--text-muted); }
-.vtabla .v-nota   { line-height: 1.5; }
-
-.v-marca {
+.vficha-marca {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: none;            /* en el celular la celda es flex y si no se deforma */
-    align-self: flex-start;
-    width: 20px;
-    height: 20px;
+    flex: none;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    font-size: .72rem;
+    font-size: .8rem;
     font-weight: 700;
 }
-.v-marca--si {
-    background: var(--success-text);
-    color: #11261C;
+.vficha-marca--si {
+    background: #4ADE80;
+    color: #0B2518;
+    box-shadow: 0 0 0 3px rgba(74,222,128,.15);
 }
-.v-marca--no {
+.vficha-marca--actual {
+    background: #A78BFA;
+    color: #1E1333;
+    font-size: .6rem;
+    box-shadow: 0 0 0 3px rgba(167,139,250,.18);
+}
+.vficha-marca--no {
     background: transparent;
-    border: 1.5px dashed var(--border-light);
+    border: 2px dashed var(--border-light);
 }
-.v-esta {
+
+.vficha-datos { display: flex; flex-direction: column; gap: .3rem; }
+.vficha-dato {
+    display: flex;
+    align-items: baseline;
+    gap: .55rem;
     font-size: var(--font-xs);
-    color: var(--accent);
-    font-weight: 700;
-    margin-left: .35rem;
+    line-height: 1.45;
 }
-.vtabla a { color: var(--text-primary); text-decoration: underline dotted; }
-.vtabla a:hover { text-decoration-style: solid; }
+.vficha-label {
+    flex: 0 0 4.7rem;
+    color: #9B8BD0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.vficha-valor {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-body);
+    font-size: var(--font-sm);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .35rem;
+}
+.vficha-cod {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: #C4B5FD;
+    background: rgba(167,139,250,.14);
+    border: 1px solid rgba(167,139,250,.3);
+    border-radius: 5px;
+    padding: .05rem .4rem;
+    letter-spacing: .02em;
+}
+.vficha-ens {
+    color: var(--text-muted);
+    font-size: var(--font-xs);
+    line-height: 1.4;
+}
+
+.vficha-nota {
+    margin: .7rem 0 0;
+    margin-top: auto;              /* la nota se apoya abajo de la ficha */
+    padding-top: .6rem;
+    border-top: 1px solid var(--border);
+    font-size: var(--font-xs);
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+.vficha-nota--rara {
+    color: #FBBF24;
+    font-weight: 600;
+    font-size: var(--font-sm);
+}
+.vficha-esta {
+    margin: .6rem 0 0;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: #C4B5FD;
+}
+
+/* El verde apagado del resto de la página se alinea con el de las fichas. */
+.serie-estado--completa {
+    background: rgba(74,222,128,.14);
+    color: #4ADE80;
+    border-color: rgba(74,222,128,.4);
+}
+.serie-tarjeta--completa { border-left-color: #4ADE80; }
+.serie-tarjeta--completa:hover { border-left-color: #86EFAC; }
+.serie-barra--completa span { background: #4ADE80; }
+.serie-panel-barra--completa span { background: #4ADE80; }
+.serie-panel--completa .serie-panel-head {
+    background: linear-gradient(180deg, rgba(74,222,128,.12), transparent);
+}
+.serie-panel--completa .serie-panel-chip {
+    color: #4ADE80;
+    border-color: rgba(74,222,128,.4);
+    background: rgba(74,222,128,.12);
+}
 
 /* ── Vacíos ───────────────────────────────────────────────── */
 .series-vacio {
@@ -1920,46 +2040,8 @@ body.serie-panel-abierto { overflow: hidden; }
     .serie-panel-body { padding-left: 1.1rem; padding-right: 1.1rem; }
     .serie-panel-nav { margin-left: 0; }
 
-    /* El filo verde del borde se pierde con las fichas apiladas: va el borde entero. */
-    .vtabla tr.v-tenida { border-color: rgba(125,212,168,.4); }
-    .vtabla tr.v-tenida td:first-child,
-    .vtabla tr.v-actual td:first-child { box-shadow: none; }
-
-    /* La tabla se convierte en fichas apiladas: nada de scroll horizontal. */
-    .vtabla, .vtabla tbody, .vtabla tr, .vtabla td { display: block; width: 100%; }
-    .vtabla thead { display: none; }
-    .vtabla tr {
-        display: grid;                       /* "tengo" y año arriba, en una línea */
-        grid-template-columns: auto 1fr;
-        column-gap: .6rem;
-        align-items: baseline;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        margin-bottom: .6rem;
-        padding: .6rem .75rem;
-    }
-    .vtabla td { grid-column: 1 / -1; }
-    .vtabla .v-tengo { grid-column: 1; }
-    .vtabla .v-anio  { grid-column: 2; }
-    .vtabla .v-tengo::before,
-    .vtabla .v-anio::before { display: none; }
-    .vtabla td {
-        border: 0;
-        padding: .18rem 0;
-        display: flex;
-        gap: .6rem;
-    }
-    .vtabla td::before {
-        content: attr(data-label);
-        flex: 0 0 5.5rem;
-        color: var(--text-muted);
-        font-size: var(--font-xs);
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        font-weight: 600;
-        padding-top: .15rem;
-    }
-    .vtabla .v-anio { font-size: var(--font-base); }
+    /* En el celular, una ficha por renglón. */
+    .vgrid { grid-template-columns: 1fr; }
 }
 
 /* Tarjetas de la misma fila con el mismo alto: la barra y el pie se van abajo. */

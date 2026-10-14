@@ -1,0 +1,87 @@
+{# Variantes de una serie, en grilla de fichas.
+   Espera: serie, tengo (dict variante_id → coin_id), current_id (opcional)
+   Estilos en coleccion.css (sección "Fichas de variantes").
+
+   Los campos vacíos en TODAS las variantes no se dibujan: hay series sin
+   ensayador o sin tirada y un renglón entero de "—" es ruido. Los que tienen
+   dato en alguna sí se dibujan en todas, para que las fichas queden parejas. #}
+{% set col = namespace(ensayador=false, ceca=false, mintage=false) %}
+{% for v in serie.variantes %}
+    {% if v.ensayador %}{% set col.ensayador = true %}{% endif %}
+    {% if v.ceca      %}{% set col.ceca      = true %}{% endif %}
+    {% if v.mintage   %}{% set col.mintage   = true %}{% endif %}
+{% endfor %}
+
+<div class="vgrid">
+    {% for v in serie.variantes %}
+    {% set la_tengo = v.id in tengo %}
+    {% set es_esta = current_id is defined and current_id == v.id %}
+
+    {# "JM — Juan Palomo y Sierra; Diego Miguel López" → chip "JM" + nombre aparte.
+       Si no hay guión largo, o lo de adelante es demasiado largo para ser un
+       código, se muestra el texto entero y listo. #}
+    {% set partes = v.ensayador.split('—', 1) if v.ensayador and '—' in v.ensayador else none %}
+    {% set ens_codigo = partes[0].strip() if partes and partes[0].strip()|length <= 8 else '' %}
+    {% set ens_texto  = partes[1].strip() if ens_codigo else (v.ensayador or '') %}
+
+    {# Las notas cortas del tipo "Muy rara" se destacan; las largas, que son
+       descripciones de la pieza, van en texto normal para no gritar. #}
+    {% set nota_corta = v.nota and v.nota|length <= 26 %}
+    {% set es_rara = nota_corta and ('rar' in v.nota|lower or 'escas' in v.nota|lower) %}
+
+    {# La tirada queda fuera del buscador a propósito: "1.200.000" se parte
+       en 1/200/000 y esos números sueltos ensucian las búsquedas. #}
+    <article class="vficha{% if es_esta %} vficha--actual{% elif la_tengo %} vficha--tengo{% endif %}"
+             data-vsearch="{{ v.anio or '' }} {{ v.ensayador or '' }} {{ v.ceca or '' }} {{ v.nota or '' }}"
+             data-tengo="{{ 1 if la_tengo else 0 }}">
+
+        <div class="vficha-top">
+            <span class="vficha-anio">
+                {% if la_tengo and not es_esta %}
+                <a href="/coleccion/{{ tengo[v.id] }}">{{ v.anio or '—' }}</a>
+                {% else %}
+                {{ v.anio or '—' }}
+                {% endif %}
+            </span>
+            {% if es_esta %}
+            <span class="vficha-marca vficha-marca--actual" title="Esta moneda">●</span>
+            {% elif la_tengo %}
+            <span class="vficha-marca vficha-marca--si" title="La tengo">✓</span>
+            {% else %}
+            <span class="vficha-marca vficha-marca--no" title="Me falta"></span>
+            {% endif %}
+        </div>
+
+        <div class="vficha-datos">
+            {% if col.ensayador %}
+            <div class="vficha-dato">
+                <span class="vficha-label">Ensayador</span>
+                <span class="vficha-valor">
+                    {% if ens_codigo %}<b class="vficha-cod">{{ ens_codigo }}</b>{% endif %}
+                    {% if ens_texto %}<span class="vficha-ens">{{ ens_texto }}</span>
+                    {% elif not ens_codigo %}—{% endif %}
+                </span>
+            </div>
+            {% endif %}
+            {% if col.ceca %}
+            <div class="vficha-dato">
+                <span class="vficha-label">Ceca</span>
+                <span class="vficha-valor">{{ v.ceca or '—' }}</span>
+            </div>
+            {% endif %}
+            {% if col.mintage %}
+            <div class="vficha-dato">
+                <span class="vficha-label">Tirada</span>
+                <span class="vficha-valor">{{ v.mintage or '—' }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if v.nota %}
+        <p class="vficha-nota{% if es_rara %} vficha-nota--rara{% endif %}">{{ v.nota }}</p>
+        {% endif %}
+
+        {% if es_esta %}<p class="vficha-esta">Esta es la moneda que estás viendo</p>{% endif %}
+    </article>
+    {% endfor %}
+</div>

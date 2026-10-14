@@ -141,7 +141,7 @@
                         <div style="height:100%;width:{{ serie_info.pct }}%;border-radius:6px;background:{% if serie_info.pct == 100 %}#4ade80{% else %}var(--accent){% endif %}"></div>
                     </div>
                     {% with serie = serie_info.serie, tengo = serie_info.tengo, current_id = coin.variante_id %}
-                    {% include "coleccion/_serie_tabla.html" %}
+                    {% include "coleccion/_serie_variantes.html" %}
                     {% endwith %}
                 </div>
                 {% endif %}
