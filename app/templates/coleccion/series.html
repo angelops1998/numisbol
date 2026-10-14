@@ -155,22 +155,21 @@
             <h2 class="serie-panel-titulo" id="seriePanelTitulo"></h2>
             <button type="button" class="serie-panel-cerrar" id="seriePanelCerrar" aria-label="Cerrar">✕</button>
         </div>
-        <div class="serie-panel-progreso">
-            <div class="serie-barra" id="seriePanelBarra"><span></span></div>
-            <span class="serie-fraccion" id="seriePanelFraccion"></span>
-        </div>
-    </header>
 
-    <div class="serie-panel-tools">
-        <label class="serie-toggle">
-            <input type="checkbox" id="seriePanelFaltan">
-            Mostrar solo las que me faltan
-        </label>
-        <div class="serie-panel-nav">
-            <button type="button" class="btn btn-outline btn-sm" id="seriePanelPrev" aria-label="Serie anterior">←</button>
-            <button type="button" class="btn btn-outline btn-sm" id="seriePanelNext" aria-label="Serie siguiente">→</button>
+        <div class="serie-panel-meta">
+            <span class="serie-panel-chip" id="seriePanelFraccion"></span>
+            <label class="serie-toggle">
+                <input type="checkbox" id="seriePanelFaltan">
+                Solo las que me faltan
+            </label>
+            <div class="serie-panel-nav">
+                <button type="button" class="serie-panel-flecha" id="seriePanelPrev" aria-label="Serie anterior">←</button>
+                <button type="button" class="serie-panel-flecha" id="seriePanelNext" aria-label="Serie siguiente">→</button>
+            </div>
         </div>
-    </div>
+
+        <div class="serie-panel-barra" id="seriePanelBarra"><span></span></div>
+    </header>
 
     <p class="serie-panel-aviso" id="seriePanelAviso" hidden>
         <span id="seriePanelAvisoTexto"></span>
@@ -326,7 +325,9 @@
             if (!pasaBusqueda) ocultasPorBusqueda++;
         }
         const total = abierta.filas.length;
+        const pct = +abierta.card.dataset.pct;
         pFraccion.textContent = abierta.card.querySelector('.serie-fraccion').textContent.trim()
+            + (total ? ' · ' + (pct === 100 ? '¡completa! 🏆' : pct + '%') : '')
             + (mostradas && mostradas !== total ? ' · mostrando ' + mostradas : '');
 
         // Si la búsqueda escondió variantes, lo decimos: si no, parece que la serie
@@ -360,7 +361,8 @@
 
         const pct = +it.card.dataset.pct;
         pBarra.firstElementChild.style.width = pct + '%';
-        pBarra.classList.toggle('serie-barra--completa', pct === 100);
+        pBarra.classList.toggle('serie-panel-barra--completa', pct === 100);
+        panel.classList.toggle('serie-panel--completa', pct === 100);
 
         pBody.innerHTML = '';
         pBody.appendChild(pDesc);

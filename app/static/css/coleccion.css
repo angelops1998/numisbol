@@ -1572,7 +1572,8 @@
 .serie-panel-fondo {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.65);
+    background: rgba(8,8,12,.72);
+    backdrop-filter: blur(3px);
     z-index: 200;
     opacity: 0;
     pointer-events: none;
@@ -1589,8 +1590,8 @@
     flex-direction: column;
     background: var(--bg-card);
     border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    border-radius: 14px;
+    box-shadow: 0 24px 70px rgba(0,0,0,.75);
     overflow: hidden;              /* para que el radio recorte el encabezado */
     z-index: 201;
     opacity: 0;
@@ -1601,78 +1602,178 @@
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
 }
+
+/* ── Encabezado: una sola banda ───────────────────────────── */
 .serie-panel-head {
-    padding: 1.25rem 1.5rem 1rem;
-    border-bottom: 1px solid var(--border);
+    position: relative;
+    padding: 1.4rem 1.6rem 0;
+    background: linear-gradient(180deg, rgba(232,232,255,.045), transparent);
     flex-shrink: 0;
+}
+.serie-panel--completa .serie-panel-head {
+    background: linear-gradient(180deg, rgba(125,212,168,.09), transparent);
 }
 .serie-panel-head-top {
     display: flex;
     align-items: flex-start;
     gap: 1rem;
-    margin-bottom: .5rem;
+    margin-bottom: .9rem;
 }
 .serie-panel-titulo {
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
     font-weight: 700;
     color: var(--text-primary);
-    line-height: 1.25;
+    letter-spacing: -.4px;
+    line-height: 1.2;
     margin: 0;
     flex: 1;
 }
 .serie-panel-cerrar {
-    background: var(--bg-input);
-    border: 1px solid var(--border-light);
+    background: transparent;
+    border: 1px solid var(--border);
     color: var(--text-muted);
-    border-radius: var(--radius);
-    width: 36px;
-    height: 36px;
-    font-size: 1.2rem;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
     line-height: 1;
     cursor: pointer;
     flex-shrink: 0;
+    transition: all var(--transition);
 }
-.serie-panel-cerrar:hover { color: var(--text-primary); border-color: var(--accent-dim); }
-/* La descripción va dentro del cuerpo que scrollea: son párrafos largos y en
-   el encabezado fijo se comían media ventana antes de llegar a la tabla. */
-.serie-panel-desc {
-    font-size: var(--font-sm);
-    color: var(--text-body);
-    line-height: 1.55;
-    margin: 0;
-    padding: 1rem 0 .25rem;
+.serie-panel-cerrar:hover {
+    color: var(--text-primary);
+    border-color: var(--border-light);
+    background: var(--bg-input);
 }
-.serie-panel-desc[hidden] { display: none; }
-.serie-panel-progreso {
+
+/* Fracción + toggle + flechas, todo en el mismo renglón. */
+.serie-panel-meta {
     display: flex;
     align-items: center;
-    gap: .75rem;
-    font-size: var(--font-sm);
-}
-.serie-panel-progreso .serie-barra { flex: 1; }
-.serie-panel-tools {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .75rem;
+    gap: 1rem;
     flex-wrap: wrap;
-    padding: .8rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
+    padding-bottom: 1.1rem;
+}
+.serie-panel-chip {
+    font-size: var(--font-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: 999px;
+    padding: .3rem .85rem;
+    white-space: nowrap;
+}
+.serie-panel--completa .serie-panel-chip {
+    color: var(--success-text);
+    border-color: rgba(125,212,168,.35);
+    background: rgba(125,212,168,.1);
 }
 .serie-toggle {
     display: inline-flex;
     align-items: center;
     gap: .5rem;
     font-size: var(--font-sm);
-    color: var(--text-body);
+    color: var(--text-muted);
     cursor: pointer;
     user-select: none;
+    transition: color var(--transition);
 }
-.serie-toggle input { width: 17px; height: 17px; accent-color: var(--accent-dim); cursor: pointer; }
-.serie-panel-nav { display: flex; gap: .4rem; }
-.serie-panel-body { flex: 1; overflow-y: auto; padding: 0 1.5rem 2rem; }
-.serie-panel-vacio { padding: 2rem 0; color: var(--text-muted); font-size: var(--font-sm); }
+.serie-toggle:hover { color: var(--text-body); }
+.serie-toggle input {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--accent-dim);
+    cursor: pointer;
+}
+.serie-panel-nav {
+    display: flex;
+    gap: .4rem;
+    margin-left: auto;
+}
+.serie-panel-flecha {
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: var(--font-sm);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.serie-panel-flecha:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--border-light);
+    background: var(--bg-input);
+}
+.serie-panel-flecha:disabled { opacity: .3; cursor: default; }
+
+/* El progreso es el subrayado del encabezado, no una barra suelta. */
+.serie-panel-barra {
+    height: 3px;
+    background: var(--bg-2);
+    margin: 0 -1.6rem;
+}
+.serie-panel-barra span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transition: width .3s ease;
+}
+.serie-panel-barra--completa span { background: var(--success-text); }
+
+/* ── Cuerpo ───────────────────────────────────────────────── */
+.serie-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 1.6rem 1.6rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-light) transparent;
+}
+.serie-panel-body::-webkit-scrollbar { width: 11px; }
+.serie-panel-body::-webkit-scrollbar-track { background: transparent; }
+.serie-panel-body::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 999px;
+    border: 3px solid var(--bg-card);
+}
+.serie-panel-body::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* La descripción va dentro del cuerpo que scrollea: son párrafos largos y en
+   el encabezado fijo se comían media ventana antes de llegar a la tabla. */
+.serie-panel-desc {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    line-height: 1.65;
+    max-width: 78ch;
+    margin: 0;
+    padding: 1.2rem 0 .4rem;
+}
+.serie-panel-desc[hidden] { display: none; }
+
+.serie-panel-aviso {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: .7rem 1.6rem;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--border);
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.serie-panel-aviso[hidden] { display: none; }
+.serie-panel-vacio {
+    padding: 2.5rem 0;
+    color: var(--text-muted);
+    font-size: var(--font-sm);
+    text-align: center;
+}
 body.serie-panel-abierto { overflow: hidden; }
 
 /* ── Tabla de variantes ───────────────────────────────────── */
@@ -1681,53 +1782,83 @@ body.serie-panel-abierto { overflow: hidden; }
     width: 100%;
     border-collapse: collapse;
     font-size: var(--font-sm);
+    margin-top: .9rem;
 }
 .vtabla th {
     text-align: left;
-    padding: .6rem .6rem;
-    color: var(--text-muted);
+    padding: .5rem .7rem;
+    color: var(--text-dim);
     font-size: var(--font-xs);
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .05em;
+    letter-spacing: .08em;
     border-bottom: 1px solid var(--border);
     background: var(--bg-card);
 }
-/* Solo dentro del modal, que es el que scrollea: en la ficha de una moneda la
-   tabla va en el flujo normal y un encabezado pegajoso se metería bajo la barra.
-   El wrap pierde su overflow propio, porque si no se vuelve él el contenedor
-   de scroll y el encabezado se va para arriba en vez de quedarse pegado. */
+.vtabla td {
+    padding: .7rem .7rem;
+    border-bottom: 1px solid rgba(255,255,255,.045);
+    color: var(--text-body);
+    vertical-align: top;
+}
+.vtabla tbody tr:last-child td { border-bottom: 0; }
+
+/* El encabezado queda pegado solo dentro del modal, que es el que scrollea: en
+   la ficha de una moneda la tabla va en el flujo normal y se metería bajo la
+   barra de navegación. El wrap pierde su overflow propio, porque si no se
+   vuelve él el contenedor de scroll y el encabezado se va para arriba. */
 .serie-panel-body .vtabla-wrap { overflow: visible; }
 .serie-panel-body .vtabla th {
     position: sticky;
     top: 0;
     z-index: 1;
 }
-.vtabla td {
-    padding: .6rem .6rem;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-body);
-    vertical-align: top;
-}
+.vtabla tbody tr { transition: background var(--transition); }
+.vtabla tbody tr:hover { background: rgba(255,255,255,.035); }
 .vtabla tr[hidden] { display: none; }
-.vtabla .v-tengo    { white-space: nowrap; }
-.vtabla .v-anio     { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+
+/* Las que ya tengo se marcan con un filo verde, no con un bloque de color:
+   son muchas filas seguidas y el fondo pintado ensucia la lectura. */
+.vtabla tr.v-tenida td:first-child { box-shadow: inset 3px 0 0 var(--success-text); }
+.vtabla tr.v-tenida { background: rgba(125,212,168,.045); }
+.vtabla tr.v-actual { background: rgba(232,232,255,.09); }
+.vtabla tr.v-actual td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+.vtabla .v-tengo  { white-space: nowrap; width: 1%; }
+.vtabla .v-anio   { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
 .vtabla .v-ceca,
-.vtabla .v-tirada   { white-space: nowrap; }
-.vtabla tr.v-tenida  { background: rgba(125,212,168,.07); }
-.vtabla tr.v-actual  { background: rgba(232,232,255,.10); }
+.vtabla .v-tirada { white-space: nowrap; color: var(--text-muted); }
+.vtabla .v-ensayador { color: var(--text-muted); }
+.vtabla .v-nota   { line-height: 1.5; }
+
 .v-marca {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px; height: 22px;
+    flex: none;            /* en el celular la celda es flex y si no se deforma */
+    align-self: flex-start;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    font-size: .8rem;
+    font-size: .72rem;
     font-weight: 700;
 }
-.v-marca--si { background: rgba(125,212,168,.18); color: var(--success-text); border: 1px solid rgba(125,212,168,.35); }
-.v-marca--no { background: var(--bg-2); color: var(--text-dim); border: 1px solid var(--border-light); }
-.v-esta { font-size: var(--font-xs); color: var(--accent); font-weight: 700; margin-left: .3rem; }
+.v-marca--si {
+    background: var(--success-text);
+    color: #11261C;
+}
+.v-marca--no {
+    background: transparent;
+    border: 1.5px dashed var(--border-light);
+}
+.v-esta {
+    font-size: var(--font-xs);
+    color: var(--accent);
+    font-weight: 700;
+    margin-left: .35rem;
+}
 .vtabla a { color: var(--text-primary); text-decoration: underline dotted; }
+.vtabla a:hover { text-decoration-style: solid; }
 
 /* ── Vacíos ───────────────────────────────────────────────── */
 .series-vacio {
@@ -1782,8 +1913,17 @@ body.serie-panel-abierto { overflow: hidden; }
         transform: translate(0, 0) scale(1);
     }
     .serie-panel.abierto { transform: translate(0, 0) scale(1); }
-    .serie-panel-head, .serie-panel-tools { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .serie-panel-titulo { font-size: var(--font-xl); }
+    .serie-panel-head { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .serie-panel-barra { margin-left: -1.1rem; margin-right: -1.1rem; }
+    .serie-panel-aviso { padding-left: 1.1rem; padding-right: 1.1rem; }
     .serie-panel-body { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .serie-panel-nav { margin-left: 0; }
+
+    /* El filo verde del borde se pierde con las fichas apiladas: va el borde entero. */
+    .vtabla tr.v-tenida { border-color: rgba(125,212,168,.4); }
+    .vtabla tr.v-tenida td:first-child,
+    .vtabla tr.v-actual td:first-child { box-shadow: none; }
 
     /* La tabla se convierte en fichas apiladas: nada de scroll horizontal. */
     .vtabla, .vtabla tbody, .vtabla tr, .vtabla td { display: block; width: 100%; }
@@ -1829,21 +1969,3 @@ body.serie-panel-abierto { overflow: hidden; }
 /* Chrome ya dibuja su propia "x" en los type=search: usamos solo la nuestra,
    que además existe en Firefox. */
 .series-search .filter-input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
-
-.serie-panel-aviso {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    flex-wrap: wrap;
-    margin: 0;
-    padding: .7rem 1.5rem;
-    background: var(--bg-2);
-    border-bottom: 1px solid var(--border);
-    font-size: var(--font-sm);
-    color: var(--text-muted);
-    flex-shrink: 0;
-}
-.serie-panel-aviso[hidden] { display: none; }
-@media (max-width: 620px) {
-    .serie-panel-aviso { padding-left: 1.1rem; padding-right: 1.1rem; }
-}

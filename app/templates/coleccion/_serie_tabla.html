@@ -1,16 +1,26 @@
 {# Tabla de variantes de una serie.
    Espera: serie, tengo (dict variante_id → coin_id), current_id (opcional)
-   Estilos en coleccion.css (sección "Tabla de variantes"). #}
+   Estilos en coleccion.css (sección "Tabla de variantes").
+
+   Las columnas que están vacías en TODAS las variantes no se dibujan: hay
+   series sin ensayador o sin tirada y una columna entera de "—" es ruido. #}
+{% set col = namespace(ensayador=false, ceca=false, mintage=false, nota=false) %}
+{% for v in serie.variantes %}
+    {% if v.ensayador %}{% set col.ensayador = true %}{% endif %}
+    {% if v.ceca      %}{% set col.ceca      = true %}{% endif %}
+    {% if v.mintage   %}{% set col.mintage   = true %}{% endif %}
+    {% if v.nota      %}{% set col.nota      = true %}{% endif %}
+{% endfor %}
 <div class="vtabla-wrap">
     <table class="vtabla">
         <thead>
             <tr>
-                <th>Tengo</th>
+                <th class="v-tengo"><span class="visually-hidden">¿La tengo?</span></th>
                 <th>Fecha</th>
-                <th>Ensayador</th>
-                <th>Ceca</th>
-                <th>Tirada</th>
-                <th>Nota</th>
+                {% if col.ensayador %}<th>Ensayador</th>{% endif %}
+                {% if col.ceca      %}<th>Ceca</th>{% endif %}
+                {% if col.mintage   %}<th>Tirada</th>{% endif %}
+                {% if col.nota      %}<th>Nota</th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -26,9 +36,9 @@
                     {% if la_tengo %}
                     <span class="v-marca v-marca--si" title="La tengo">✓</span>
                     {% else %}
-                    <span class="v-marca v-marca--no" title="Me falta">·</span>
+                    <span class="v-marca v-marca--no" title="Me falta"></span>
                     {% endif %}
-                    {% if es_esta %}<span class="v-esta">← esta</span>{% endif %}
+                    {% if es_esta %}<span class="v-esta">esta</span>{% endif %}
                 </td>
                 <td class="v-anio" data-label="Fecha">
                     {% if la_tengo and not es_esta %}
@@ -37,10 +47,10 @@
                     {{ v.anio or '—' }}
                     {% endif %}
                 </td>
-                <td class="v-ensayador" data-label="Ensayador">{{ v.ensayador or '—' }}</td>
-                <td class="v-ceca"      data-label="Ceca">{{ v.ceca or '—' }}</td>
-                <td class="v-tirada"    data-label="Tirada">{{ v.mintage or '—' }}</td>
-                <td class="v-nota"      data-label="Nota">{{ v.nota or '—' }}</td>
+                {% if col.ensayador %}<td class="v-ensayador" data-label="Ensayador">{{ v.ensayador or '—' }}</td>{% endif %}
+                {% if col.ceca      %}<td class="v-ceca"      data-label="Ceca">{{ v.ceca or '—' }}</td>{% endif %}
+                {% if col.mintage   %}<td class="v-tirada"    data-label="Tirada">{{ v.mintage or '—' }}</td>{% endif %}
+                {% if col.nota      %}<td class="v-nota"      data-label="Nota">{{ v.nota or '—' }}</td>{% endif %}
             </tr>
             {% endfor %}
         </tbody>
