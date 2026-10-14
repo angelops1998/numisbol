@@ -155,7 +155,6 @@
             <h2 class="serie-panel-titulo" id="seriePanelTitulo"></h2>
             <button type="button" class="serie-panel-cerrar" id="seriePanelCerrar" aria-label="Cerrar">✕</button>
         </div>
-        <p class="serie-panel-desc" id="seriePanelDesc" hidden></p>
         <div class="serie-panel-progreso">
             <div class="serie-barra" id="seriePanelBarra"><span></span></div>
             <span class="serie-fraccion" id="seriePanelFraccion"></span>
@@ -179,6 +178,7 @@
     </p>
 
     <div class="serie-panel-body" id="seriePanelBody"></div>
+    <p class="serie-panel-desc" id="seriePanelDesc" hidden></p>
     <p class="serie-panel-vacio" id="seriePanelSinFilas" hidden></p>
 </aside>
 
@@ -363,6 +363,7 @@
         pBarra.classList.toggle('serie-barra--completa', pct === 100);
 
         pBody.innerHTML = '';
+        pBody.appendChild(pDesc);
         if (it.det) pBody.appendChild(it.det);
         pBody.appendChild(pSinFilas);
         pBody.scrollTop = 0;
@@ -372,6 +373,7 @@
         requestAnimationFrame(() => {
             panel.classList.add('abierto');
             fondo.classList.add('abierto');
+            pBody.scrollTop = 0;   // Chrome restaura el scroll al recargar: lo pisamos
         });
         document.body.classList.add('serie-panel-abierto');
         pCerrar.focus();

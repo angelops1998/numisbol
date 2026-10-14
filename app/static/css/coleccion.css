@@ -1568,7 +1568,7 @@
 }
 .serie-tarjeta[hidden] { display: none; }
 
-/* ── Panel lateral de detalle ─────────────────────────────── */
+/* ── Modal de detalle ─────────────────────────────────────── */
 .serie-panel-fondo {
     position: fixed;
     inset: 0;
@@ -1581,20 +1581,26 @@
 .serie-panel-fondo.abierto { opacity: 1; pointer-events: auto; }
 .serie-panel {
     position: fixed;
-    top: 0;
-    right: 0;
-    height: 100%;
-    width: min(680px, 100%);
+    top: 50%;
+    left: 50%;
+    width: min(980px, calc(100vw - 3rem));
+    max-height: min(86vh, 900px);
     display: flex;
     flex-direction: column;
     background: var(--bg-card);
-    border-left: 1px solid var(--border);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
+    overflow: hidden;              /* para que el radio recorte el encabezado */
     z-index: 201;
-    transform: translateX(100%);
-    transition: transform .25s ease;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.97);
+    transition: opacity .18s ease, transform .18s ease;
 }
-.serie-panel.abierto { transform: translateX(0); }
+.serie-panel.abierto {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
 .serie-panel-head {
     padding: 1.25rem 1.5rem 1rem;
     border-bottom: 1px solid var(--border);
@@ -1627,12 +1633,16 @@
     flex-shrink: 0;
 }
 .serie-panel-cerrar:hover { color: var(--text-primary); border-color: var(--accent-dim); }
+/* La descripción va dentro del cuerpo que scrollea: son párrafos largos y en
+   el encabezado fijo se comían media ventana antes de llegar a la tabla. */
 .serie-panel-desc {
     font-size: var(--font-sm);
     color: var(--text-body);
     line-height: 1.55;
-    margin: 0 0 .75rem;
+    margin: 0;
+    padding: 1rem 0 .25rem;
 }
+.serie-panel-desc[hidden] { display: none; }
 .serie-panel-progreso {
     display: flex;
     align-items: center;
@@ -1682,8 +1692,11 @@ body.serie-panel-abierto { overflow: hidden; }
     border-bottom: 1px solid var(--border);
     background: var(--bg-card);
 }
-/* Solo dentro del panel, que es el que scrollea: en la ficha de una moneda la
-   tabla va en el flujo normal y un encabezado pegajoso se metería bajo la barra. */
+/* Solo dentro del modal, que es el que scrollea: en la ficha de una moneda la
+   tabla va en el flujo normal y un encabezado pegajoso se metería bajo la barra.
+   El wrap pierde su overflow propio, porque si no se vuelve él el contenedor
+   de scroll y el encabezado se va para arriba en vez de quedarse pegado. */
+.serie-panel-body .vtabla-wrap { overflow: visible; }
 .serie-panel-body .vtabla th {
     position: sticky;
     top: 0;
@@ -1757,7 +1770,18 @@ body.serie-panel-abierto { overflow: hidden; }
     .series-search { min-width: 0; }
     .series-sort { width: auto; min-width: 0; flex: 0 1 38%; }
 
-    .serie-panel { width: 100%; }
+    /* En el celular ocupa toda la pantalla: no sobra lugar para un modal. */
+    .serie-panel {
+        top: 0;
+        left: 0;
+        width: 100%;
+        max-height: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: 0;
+        transform: translate(0, 0) scale(1);
+    }
+    .serie-panel.abierto { transform: translate(0, 0) scale(1); }
     .serie-panel-head, .serie-panel-tools { padding-left: 1.1rem; padding-right: 1.1rem; }
     .serie-panel-body { padding-left: 1.1rem; padding-right: 1.1rem; }
 
