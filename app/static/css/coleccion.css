@@ -1338,3 +1338,488 @@
     white-space: nowrap;
     flex-shrink: 0;
 }
+
+/* ============================================================
+   Series — /coleccion/series
+   Grilla de tarjetas + buscador con filtros + panel de detalle.
+   ============================================================ */
+
+/* ── Resumen general ──────────────────────────────────────── */
+.series-resumen {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.series-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.15rem;
+}
+.series-stat-label {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-weight: 600;
+}
+.series-stat-value {
+    font-size: var(--font-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.25;
+}
+.series-stat-value small {
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* ── Barra de herramientas ────────────────────────────────── */
+.series-toolbar {
+    position: sticky;
+    top: 68px;
+    z-index: 30;
+    background: var(--bg);
+    padding: .85rem 0 1rem;
+    margin-bottom: .5rem;
+    border-bottom: 1px solid var(--border);
+}
+.series-toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+.series-search {
+    position: relative;
+    flex: 1;
+    min-width: 240px;
+}
+.series-search .filter-input {
+    padding: .7rem 2.6rem .7rem 2.5rem;
+    font-size: var(--font-base);
+}
+.series-search-icon {
+    position: absolute;
+    left: .85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    pointer-events: none;
+    font-size: var(--font-sm);
+}
+.series-search-clear {
+    position: absolute;
+    right: .5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: 0;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: .3rem .45rem;
+    border-radius: var(--radius);
+}
+.series-search-clear:hover { color: var(--text-primary); background: var(--bg-input); }
+.series-sort {
+    width: auto;
+    min-width: 190px;
+    cursor: pointer;
+}
+
+/* Filtros por estado */
+.series-chips { display: flex; gap: .4rem; flex-wrap: wrap; }
+.series-chip {
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+    border-radius: 999px;
+    padding: .4rem .9rem;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+.series-chip:hover { color: var(--text-primary); border-color: var(--accent-dim); }
+.series-chip[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #1A1A1F;
+}
+.series-chip-count { opacity: .7; font-weight: 700; }
+
+.series-meta {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    margin: .9rem 0 1.1rem;
+}
+
+/* ── Grilla de series ─────────────────────────────────────── */
+.series-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+.serie-tarjeta {
+    position: relative;
+    display: flex;
+    color: inherit;
+    text-decoration: none;
+    flex-direction: column;
+    gap: .55rem;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 1.05rem 1.2rem 1.1rem;
+    cursor: pointer;
+    transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+.serie-tarjeta:hover,
+.serie-tarjeta:focus-visible {
+    color: inherit;
+    border-color: var(--border-light);
+    border-left-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    outline: none;
+}
+.serie-tarjeta:focus-visible { border-color: var(--accent-dim); }
+.serie-tarjeta--completa { border-left-color: var(--success-text); }
+.serie-tarjeta--completa:hover { border-left-color: var(--success-text); }
+.serie-tarjeta--empezada { border-left-color: var(--accent-dim); }
+
+.serie-tarjeta-top {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+}
+.serie-tarjeta-nombre {
+    font-size: var(--font-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin: 0;
+    flex: 1;
+}
+.serie-estado {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+.serie-estado--completa { background: rgba(125,212,168,.12); color: var(--success-text); border-color: rgba(125,212,168,.3); }
+.serie-estado--empezada { background: rgba(232,232,255,.08); color: var(--accent-dim); border-color: rgba(232,232,255,.2); }
+.serie-estado--vacia    { background: var(--bg-2); color: var(--text-dim); border-color: var(--border); }
+
+.serie-tarjeta-desc {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.serie-barra {
+    height: 8px;
+    background: var(--bg-2);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.serie-barra span {
+    display: block;
+    height: 100%;
+    border-radius: 6px;
+    background: var(--accent);
+}
+.serie-barra--completa span { background: var(--success-text); }
+.serie-tarjeta-pie {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .6rem;
+    font-size: var(--font-sm);
+}
+.serie-fraccion { font-weight: 700; color: var(--text-primary); }
+.serie-fraccion small { font-weight: 600; color: var(--text-muted); }
+.serie-faltan { color: var(--text-muted); }
+.serie-hits {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: #1A1A1F;
+    background: var(--accent);
+    border-radius: 999px;
+    padding: .15rem .55rem;
+    align-self: flex-start;
+}
+.serie-tarjeta[hidden] { display: none; }
+
+/* ── Panel lateral de detalle ─────────────────────────────── */
+.serie-panel-fondo {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+.serie-panel-fondo.abierto { opacity: 1; pointer-events: auto; }
+.serie-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: min(680px, 100%);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    z-index: 201;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+}
+.serie-panel.abierto { transform: translateX(0); }
+.serie-panel-head {
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.serie-panel-head-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: .5rem;
+}
+.serie-panel-titulo {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.25;
+    margin: 0;
+    flex: 1;
+}
+.serie-panel-cerrar {
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+    border-radius: var(--radius);
+    width: 36px;
+    height: 36px;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.serie-panel-cerrar:hover { color: var(--text-primary); border-color: var(--accent-dim); }
+.serie-panel-desc {
+    font-size: var(--font-sm);
+    color: var(--text-body);
+    line-height: 1.55;
+    margin: 0 0 .75rem;
+}
+.serie-panel-progreso {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    font-size: var(--font-sm);
+}
+.serie-panel-progreso .serie-barra { flex: 1; }
+.serie-panel-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+    padding: .8rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.serie-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: var(--font-sm);
+    color: var(--text-body);
+    cursor: pointer;
+    user-select: none;
+}
+.serie-toggle input { width: 17px; height: 17px; accent-color: var(--accent-dim); cursor: pointer; }
+.serie-panel-nav { display: flex; gap: .4rem; }
+.serie-panel-body { flex: 1; overflow-y: auto; padding: 0 1.5rem 2rem; }
+.serie-panel-vacio { padding: 2rem 0; color: var(--text-muted); font-size: var(--font-sm); }
+body.serie-panel-abierto { overflow: hidden; }
+
+/* ── Tabla de variantes ───────────────────────────────────── */
+.vtabla-wrap { overflow-x: auto; }
+.vtabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-sm);
+}
+.vtabla th {
+    text-align: left;
+    padding: .6rem .6rem;
+    color: var(--text-muted);
+    font-size: var(--font-xs);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+}
+/* Solo dentro del panel, que es el que scrollea: en la ficha de una moneda la
+   tabla va en el flujo normal y un encabezado pegajoso se metería bajo la barra. */
+.serie-panel-body .vtabla th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.vtabla td {
+    padding: .6rem .6rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-body);
+    vertical-align: top;
+}
+.vtabla tr[hidden] { display: none; }
+.vtabla .v-tengo    { white-space: nowrap; }
+.vtabla .v-anio     { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+.vtabla .v-ceca,
+.vtabla .v-tirada   { white-space: nowrap; }
+.vtabla tr.v-tenida  { background: rgba(125,212,168,.07); }
+.vtabla tr.v-actual  { background: rgba(232,232,255,.10); }
+.v-marca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    font-size: .8rem;
+    font-weight: 700;
+}
+.v-marca--si { background: rgba(125,212,168,.18); color: var(--success-text); border: 1px solid rgba(125,212,168,.35); }
+.v-marca--no { background: var(--bg-2); color: var(--text-dim); border: 1px solid var(--border-light); }
+.v-esta { font-size: var(--font-xs); color: var(--accent); font-weight: 700; margin-left: .3rem; }
+.vtabla a { color: var(--text-primary); text-decoration: underline dotted; }
+
+/* ── Vacíos ───────────────────────────────────────────────── */
+.series-vacio {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+.series-vacio-icono { font-size: 2.5rem; margin-bottom: .75rem; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .series-grid { grid-template-columns: 1fr; }
+    .series-chips { overflow-x: auto; padding-bottom: .2rem; }
+}
+@media (max-width: 620px) {
+    /* El resumen se vuelve una fichita de tres renglones: en el celular lo
+       importante es llegar rápido al buscador, no a las estadísticas. */
+    .series-resumen {
+        display: block;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        margin-bottom: 1.1rem;
+    }
+    .series-stat {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .75rem;
+        border: 0;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        padding: .55rem .9rem;
+    }
+    .series-stat:last-child { border-bottom: 0; }
+    .series-stat-value { font-size: var(--font-lg); }
+    .series-stat .serie-barra { display: none; }
+
+    /* Buscador y orden en el mismo renglón. */
+    .series-search { min-width: 0; }
+    .series-sort { width: auto; min-width: 0; flex: 0 1 38%; }
+
+    .serie-panel { width: 100%; }
+    .serie-panel-head, .serie-panel-tools { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .serie-panel-body { padding-left: 1.1rem; padding-right: 1.1rem; }
+
+    /* La tabla se convierte en fichas apiladas: nada de scroll horizontal. */
+    .vtabla, .vtabla tbody, .vtabla tr, .vtabla td { display: block; width: 100%; }
+    .vtabla thead { display: none; }
+    .vtabla tr {
+        display: grid;                       /* "tengo" y año arriba, en una línea */
+        grid-template-columns: auto 1fr;
+        column-gap: .6rem;
+        align-items: baseline;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        margin-bottom: .6rem;
+        padding: .6rem .75rem;
+    }
+    .vtabla td { grid-column: 1 / -1; }
+    .vtabla .v-tengo { grid-column: 1; }
+    .vtabla .v-anio  { grid-column: 2; }
+    .vtabla .v-tengo::before,
+    .vtabla .v-anio::before { display: none; }
+    .vtabla td {
+        border: 0;
+        padding: .18rem 0;
+        display: flex;
+        gap: .6rem;
+    }
+    .vtabla td::before {
+        content: attr(data-label);
+        flex: 0 0 5.5rem;
+        color: var(--text-muted);
+        font-size: var(--font-xs);
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        font-weight: 600;
+        padding-top: .15rem;
+    }
+    .vtabla .v-anio { font-size: var(--font-base); }
+}
+
+/* Tarjetas de la misma fila con el mismo alto: la barra y el pie se van abajo. */
+.series-grid { align-items: stretch; }
+.serie-tarjeta .serie-barra { margin-top: auto; }
+
+/* Chrome ya dibuja su propia "x" en los type=search: usamos solo la nuestra,
+   que además existe en Firefox. */
+.series-search .filter-input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+
+.serie-panel-aviso {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: .7rem 1.5rem;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--border);
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.serie-panel-aviso[hidden] { display: none; }
+@media (max-width: 620px) {
+    .serie-panel-aviso { padding-left: 1.1rem; padding-right: 1.1rem; }
+}

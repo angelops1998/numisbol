@@ -662,8 +662,21 @@ async def series_progreso(request: Request, db: Session = Depends(get_db)):
             "pct": round(tenidas * 100 / total) if total else 0,
         })
 
+    # Resumen general que se muestra arriba de la grilla.
+    total_variantes = sum(p["total"] for p in progreso)
+    total_tenidas   = sum(p["tenidas"] for p in progreso)
+    resumen = {
+        "series":          len(progreso),
+        "completas":       sum(1 for p in progreso if p["total"] and p["pct"] == 100),
+        "empezadas":       sum(1 for p in progreso if 0 < p["tenidas"] < p["total"]),
+        "sin_empezar":     sum(1 for p in progreso if p["tenidas"] == 0),
+        "variantes":       total_variantes,
+        "variantes_tengo": total_tenidas,
+        "pct": round(total_tenidas * 100 / total_variantes) if total_variantes else 0,
+    }
+
     return templates.TemplateResponse(request, "coleccion/series.html", {
-        "user": user, "progreso": progreso, "tengo": tengo,
+        "user": user, "progreso": progreso, "tengo": tengo, "resumen": resumen,
     })
 
 

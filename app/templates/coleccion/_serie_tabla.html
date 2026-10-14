@@ -1,15 +1,16 @@
 {# Tabla de variantes de una serie.
-   Espera: serie, tengo (dict variante_id → coin_id), current_id (opcional) #}
-<div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:.86rem">
+   Espera: serie, tengo (dict variante_id → coin_id), current_id (opcional)
+   Estilos en coleccion.css (sección "Tabla de variantes"). #}
+<div class="vtabla-wrap">
+    <table class="vtabla">
         <thead>
-            <tr style="border-bottom:1px solid var(--border)">
-                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Tengo</th>
-                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Fecha</th>
-                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Ensayador</th>
-                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Ceca</th>
-                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Tirada</th>
-                <th style="text-align:left;padding:.55rem .6rem;color:#e7e7f0;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">Nota</th>
+            <tr>
+                <th>Tengo</th>
+                <th>Fecha</th>
+                <th>Ensayador</th>
+                <th>Ceca</th>
+                <th>Tirada</th>
+                <th>Nota</th>
             </tr>
         </thead>
         <tbody>
@@ -19,24 +20,27 @@
             {# La tirada queda fuera del buscador a propósito: "1.200.000" se parte
                en 1/200/000 y esos números sueltos ensucian las búsquedas. #}
             <tr data-vsearch="{{ v.anio or '' }} {{ v.ensayador or '' }} {{ v.ceca or '' }} {{ v.nota or '' }}"
-                style="border-bottom:1px solid var(--border);
-                       {% if es_esta %}background:rgba(124,58,237,.12);
-                       {% elif la_tengo %}background:rgba(74,222,128,.06);{% endif %}">
-                <td style="padding:.55rem .6rem;white-space:nowrap">
-                    {% if la_tengo %}✅{% else %}⬜{% endif %}
-                    {% if es_esta %}<span style="font-size:.7rem;color:#a78bfa;font-weight:700">← esta</span>{% endif %}
+                data-tengo="{{ 1 if la_tengo else 0 }}"
+                class="{% if es_esta %}v-actual{% elif la_tengo %}v-tenida{% endif %}">
+                <td class="v-tengo" data-label="Tengo">
+                    {% if la_tengo %}
+                    <span class="v-marca v-marca--si" title="La tengo">✓</span>
+                    {% else %}
+                    <span class="v-marca v-marca--no" title="Me falta">·</span>
+                    {% endif %}
+                    {% if es_esta %}<span class="v-esta">← esta</span>{% endif %}
                 </td>
-                <td style="padding:.55rem .6rem;font-weight:700;color:#f2f2f8;white-space:nowrap">
+                <td class="v-anio" data-label="Fecha">
                     {% if la_tengo and not es_esta %}
-                    <a href="/coleccion/{{ tengo[v.id] }}" style="color:#f2f2f8;text-decoration:underline dotted">{{ v.anio or '—' }}</a>
+                    <a href="/coleccion/{{ tengo[v.id] }}">{{ v.anio or '—' }}</a>
                     {% else %}
                     {{ v.anio or '—' }}
                     {% endif %}
                 </td>
-                <td style="padding:.55rem .6rem;color:#d6d6e2">{{ v.ensayador or '—' }}</td>
-                <td style="padding:.55rem .6rem;color:#d6d6e2;white-space:nowrap">{{ v.ceca or '—' }}</td>
-                <td style="padding:.55rem .6rem;color:#d6d6e2;white-space:nowrap">{{ v.mintage or '—' }}</td>
-                <td style="padding:.55rem .6rem;color:#d6d6e2">{{ v.nota or '—' }}</td>
+                <td class="v-ensayador" data-label="Ensayador">{{ v.ensayador or '—' }}</td>
+                <td class="v-ceca"      data-label="Ceca">{{ v.ceca or '—' }}</td>
+                <td class="v-tirada"    data-label="Tirada">{{ v.mintage or '—' }}</td>
+                <td class="v-nota"      data-label="Nota">{{ v.nota or '—' }}</td>
             </tr>
             {% endfor %}
         </tbody>

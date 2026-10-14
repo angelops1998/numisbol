@@ -2,20 +2,6 @@
 {% block title %}Series — Mi Colección — NumisBol{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="/static/css/coleccion.css">
-<style>
-.serie-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; margin-bottom:1rem; overflow:hidden; }
-.serie-card summary { list-style:none; cursor:pointer; padding:1.1rem 1.5rem; }
-.serie-card summary::-webkit-details-marker { display:none; }
-.serie-card summary:hover { background:rgba(255,255,255,.02); }
-.serie-chevron { transition:transform .2s; color:var(--text-dim); flex-shrink:0; font-size:.8rem; }
-.serie-card[open] .serie-chevron { transform:rotate(180deg); }
-.serie-body { padding:0 1.5rem 1.25rem; }
-.serie-toolbar { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:1.25rem; }
-.serie-toolbar .filter-input { flex:1; min-width:200px; }
-.serie-count { font-size:.82rem; color:var(--text-dim); white-space:nowrap; }
-.serie-hits { font-size:.75rem; font-weight:700; color:var(--accent); white-space:nowrap; }
-.serie-card[hidden], .serie-card tr[hidden] { display:none; }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -24,8 +10,9 @@
         <div class="container">
             <div class="page-header-inner">
                 <div>
+                    <p class="page-breadcrumb"><a href="/coleccion">Mi Colección</a> / Series</p>
                     <h1 class="page-title">Series numismáticas</h1>
-                    <p class="page-subtitle">Tu progreso en cada serie del catálogo · tocá una serie para ver el detalle</p>
+                    <p class="page-subtitle">Buscá una serie y tocála para ver todas sus variantes y cuáles te faltan.</p>
                 </div>
                 <a href="/coleccion" class="btn btn-outline">← Volver a mi colección</a>
             </div>
@@ -35,66 +22,197 @@
     <div class="container">
 
         {% if not progreso %}
-        <div class="empty-state" style="text-align:center;padding:3rem 1rem;color:var(--text-dim)">
-            <div style="font-size:2.5rem;margin-bottom:.75rem">📚</div>
+        <div class="series-vacio">
+            <div class="series-vacio-icono">📚</div>
             <p>Todavía no hay series en el catálogo.</p>
         </div>
         {% else %}
-        <div class="serie-toolbar">
-            <input type="search" id="serieSearch" class="filter-input" autocomplete="off"
-                   placeholder="Buscar serie, año, ensayador, ceca o nota…">
-            <span class="serie-count" id="serieCount">{{ progreso|length }} serie{{ 's' if progreso|length != 1 }}</span>
+
+        <!-- ── Resumen ─────────────────────────────────────── -->
+        <div class="series-resumen">
+            <div class="series-stat">
+                <div class="series-stat-label">Series completas</div>
+                <div class="series-stat-value">{{ resumen.completas }} <small>de {{ resumen.series }}</small></div>
+            </div>
+            <div class="series-stat">
+                <div class="series-stat-label">Variantes conseguidas</div>
+                <div class="series-stat-value">{{ resumen.variantes_tengo }} <small>de {{ resumen.variantes }}</small></div>
+            </div>
+            <div class="series-stat">
+                <div class="series-stat-label">Avance total</div>
+                <div class="series-stat-value">{{ resumen.pct }}%</div>
+                <div class="serie-barra" style="margin-top:.4rem"><span style="width:{{ resumen.pct }}%"></span></div>
+            </div>
+        </div>
+
+        <!-- ── Buscador y filtros ──────────────────────────── -->
+        <div class="series-toolbar">
+            <div class="series-toolbar-row">
+                <div class="series-search">
+                    <span class="series-search-icon">🔍</span>
+                    <label for="serieSearch" class="visually-hidden">Buscar serie</label>
+                    <input type="search" id="serieSearch" class="filter-input" autocomplete="off"
+                           placeholder="Buscar serie, año, ensayador, ceca o nota…">
+                    <button type="button" class="series-search-clear" id="serieSearchClear" hidden
+                            aria-label="Limpiar búsqueda">✕</button>
+                </div>
+
+                <label for="serieSort" class="visually-hidden">Ordenar series</label>
+                <select id="serieSort" class="filter-select series-sort">
+                    <option value="catalogo">Orden del catálogo</option>
+                    <option value="az">Nombre (A–Z)</option>
+                    <option value="progreso">Más avanzadas primero</option>
+                    <option value="faltan">Más me faltan primero</option>
+                </select>
+            </div>
+
+            <div class="series-chips" role="group" aria-label="Filtrar por estado" style="margin-top:.7rem">
+                <button type="button" class="series-chip" data-estado="todas" aria-pressed="true">
+                    Todas <span class="series-chip-count">{{ resumen.series }}</span>
+                </button>
+                <button type="button" class="series-chip" data-estado="empezada" aria-pressed="false">
+                    En progreso <span class="series-chip-count">{{ resumen.empezadas }}</span>
+                </button>
+                <button type="button" class="series-chip" data-estado="completa" aria-pressed="false">
+                    Completas <span class="series-chip-count">{{ resumen.completas }}</span>
+                </button>
+                <button type="button" class="series-chip" data-estado="vacia" aria-pressed="false">
+                    Sin empezar <span class="series-chip-count">{{ resumen.sin_empezar }}</span>
+                </button>
+            </div>
+        </div>
+
+        <p class="series-meta" id="serieCount">{{ resumen.series }} serie{{ 's' if resumen.series != 1 }}</p>
+
+        <!-- ── Grilla ──────────────────────────────────────── -->
+        <div class="series-grid" id="serieGrid">
+            {% for p in progreso %}
+            {% set estado = 'completa' if p.total and p.pct == 100 else ('vacia' if p.tenidas == 0 else 'empezada') %}
+            <a href="#serie-{{ p.serie.id }}"
+                    class="serie-tarjeta serie-tarjeta--{{ estado }}"
+                    data-serie-id="{{ p.serie.id }}"
+                    data-serie="{{ p.serie.nombre }}"
+                    data-estado="{{ estado }}"
+                    data-pct="{{ p.pct }}"
+                    data-faltan="{{ p.total - p.tenidas }}"
+                    data-orden="{{ loop.index0 }}"
+                    data-nombre="{{ p.serie.nombre }}">
+                <div class="serie-tarjeta-top">
+                    <h2 class="serie-tarjeta-nombre">{{ p.serie.nombre }}</h2>
+                    <span class="serie-estado serie-estado--{{ estado }}">
+                        {% if estado == 'completa' %}Completa 🏆{% elif estado == 'vacia' %}Sin empezar{% else %}{{ p.pct }}%{% endif %}
+                    </span>
+                </div>
+
+                {% if p.serie.descripcion %}
+                <p class="serie-tarjeta-desc">{{ p.serie.descripcion }}</p>
+                {% endif %}
+
+                <div class="serie-barra {% if estado == 'completa' %}serie-barra--completa{% endif %}">
+                    <span style="width:{{ p.pct }}%"></span>
+                </div>
+
+                <div class="serie-tarjeta-pie">
+                    <span class="serie-fraccion">{{ p.tenidas }} / {{ p.total }} <small>variantes</small></span>
+                    {% if p.total - p.tenidas > 0 %}
+                    <span class="serie-faltan">te faltan {{ p.total - p.tenidas }}</span>
+                    {% endif %}
+                </div>
+                <span class="serie-hits" hidden></span>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="series-vacio" id="serieNoResults" hidden>
+            <div class="series-vacio-icono">🔍</div>
+            <p>Ninguna serie coincide con tu búsqueda.</p>
+            <p><button type="button" class="btn btn-outline btn-sm" id="serieResetBtn">Limpiar filtros</button></p>
         </div>
         {% endif %}
-
-        <div id="serieNoResults" hidden style="text-align:center;padding:3rem 1rem;color:var(--text-dim)">
-            <div style="font-size:2.5rem;margin-bottom:.75rem">🔍</div>
-            <p>Ninguna serie coincide con tu búsqueda.</p>
-        </div>
-
-        {% for p in progreso %}
-        <details class="serie-card" data-serie="{{ p.serie.nombre }}">
-            <summary>
-                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.35rem">
-                    <h2 style="font-size:1.05rem;color:var(--text-primary);margin:0;flex:1;min-width:200px">{{ p.serie.nombre }}</h2>
-                    <span style="font-size:.9rem;font-weight:700;color:{% if p.pct == 100 %}#4ade80{% else %}var(--accent){% endif %};white-space:nowrap">
-                        {{ p.tenidas }} / {{ p.total }}
-                        {% if p.pct == 100 and p.total > 0 %}· ¡Completa! 🏆{% else %}· {{ p.pct }}%{% endif %}
-                    </span>
-                    <span class="serie-hits" hidden></span>
-                    <span class="serie-chevron">▼</span>
-                </div>
-                {% if p.serie.descripcion %}
-                <p style="font-size:.92rem;color:rgba(255,255,255,.82);line-height:1.55;margin:0 0 .6rem">{{ p.serie.descripcion }}</p>
-                {% endif %}
-                <div style="height:8px;background:var(--bg-2);border-radius:6px;overflow:hidden">
-                    <div style="height:100%;width:{{ p.pct }}%;border-radius:6px;background:{% if p.pct == 100 %}#4ade80{% else %}var(--accent){% endif %}"></div>
-                </div>
-            </summary>
-
-            <div class="serie-body">
-                {% if p.serie.variantes %}
-                {% with serie = p.serie %}
-                {% include "coleccion/_serie_tabla.html" %}
-                {% endwith %}
-                {% else %}
-                <p style="font-size:.82rem;color:var(--text-dim);margin:0">Esta serie no tiene variantes todavía.</p>
-                {% endif %}
-            </div>
-        </details>
-        {% endfor %}
-
     </div>
 </div>
 
+<!-- ── Detalles (se mueven al panel al abrir una serie) ────── -->
+<div id="serieDetalles" hidden>
+    {% for p in progreso %}
+    <div class="serie-detalle" data-serie-id="{{ p.serie.id }}">
+        {% if p.serie.variantes %}
+        {% with serie = p.serie %}
+        {% include "coleccion/_serie_tabla.html" %}
+        {% endwith %}
+        {% else %}
+        <p class="serie-panel-vacio">Esta serie no tiene variantes cargadas todavía.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ── Panel lateral ──────────────────────────────────────── -->
+<div class="serie-panel-fondo" id="seriePanelFondo" hidden></div>
+<aside class="serie-panel" id="seriePanel" role="dialog" aria-modal="true" aria-labelledby="seriePanelTitulo" hidden>
+    <header class="serie-panel-head">
+        <div class="serie-panel-head-top">
+            <h2 class="serie-panel-titulo" id="seriePanelTitulo"></h2>
+            <button type="button" class="serie-panel-cerrar" id="seriePanelCerrar" aria-label="Cerrar">✕</button>
+        </div>
+        <p class="serie-panel-desc" id="seriePanelDesc" hidden></p>
+        <div class="serie-panel-progreso">
+            <div class="serie-barra" id="seriePanelBarra"><span></span></div>
+            <span class="serie-fraccion" id="seriePanelFraccion"></span>
+        </div>
+    </header>
+
+    <div class="serie-panel-tools">
+        <label class="serie-toggle">
+            <input type="checkbox" id="seriePanelFaltan">
+            Mostrar solo las que me faltan
+        </label>
+        <div class="serie-panel-nav">
+            <button type="button" class="btn btn-outline btn-sm" id="seriePanelPrev" aria-label="Serie anterior">←</button>
+            <button type="button" class="btn btn-outline btn-sm" id="seriePanelNext" aria-label="Serie siguiente">→</button>
+        </div>
+    </div>
+
+    <p class="serie-panel-aviso" id="seriePanelAviso" hidden>
+        <span id="seriePanelAvisoTexto"></span>
+        <button type="button" class="btn btn-outline btn-sm" id="seriePanelVerTodas">Ver todas</button>
+    </p>
+
+    <div class="serie-panel-body" id="seriePanelBody"></div>
+    <p class="serie-panel-vacio" id="seriePanelSinFilas" hidden></p>
+</aside>
+
 <script>
 (function () {
-    const input = document.getElementById('serieSearch');
-    if (!input) return;
+    const grid = document.getElementById('serieGrid');
+    if (!grid) return;
 
+    const input     = document.getElementById('serieSearch');
+    const clearBtn  = document.getElementById('serieSearchClear');
+    const sortSel   = document.getElementById('serieSort');
+    const chips     = [...document.querySelectorAll('.series-chip')];
     const countEl   = document.getElementById('serieCount');
     const noResults = document.getElementById('serieNoResults');
+    const resetBtn  = document.getElementById('serieResetBtn');
+    const detalles  = document.getElementById('serieDetalles');
 
+    const panel      = document.getElementById('seriePanel');
+    const fondo      = document.getElementById('seriePanelFondo');
+    const pTitulo    = document.getElementById('seriePanelTitulo');
+    const pDesc      = document.getElementById('seriePanelDesc');
+    const pBarra     = document.getElementById('seriePanelBarra');
+    const pFraccion  = document.getElementById('seriePanelFraccion');
+    const pBody      = document.getElementById('seriePanelBody');
+    const pCerrar    = document.getElementById('seriePanelCerrar');
+    const pFaltan    = document.getElementById('seriePanelFaltan');
+    const pPrev      = document.getElementById('seriePanelPrev');
+    const pNext      = document.getElementById('seriePanelNext');
+    const pAviso     = document.getElementById('seriePanelAviso');
+    const pAvisoTxt  = document.getElementById('seriePanelAvisoTexto');
+    const pVerTodas  = document.getElementById('seriePanelVerTodas');
+    const pSinFilas  = document.getElementById('seriePanelSinFilas');
+
+    // ── Búsqueda ─────────────────────────────────────────────
     // Normaliza: minúsculas y sin tildes, para que "Potosi" encuentre "Potosí".
     const TILDES = new RegExp('[\\u0300-\\u036f]', 'g');
     const norm = s => (s || '').normalize('NFD').replace(TILDES, '').toLowerCase();
@@ -117,64 +235,245 @@
         ? ws.includes(token)
         : ws.some(w => w.startsWith(token) || (w.length >= 3 && token.startsWith(w)));
 
-    // Índice construido una sola vez.
-    const cards = [...document.querySelectorAll('.serie-card')].map(card => ({
-        el:    card,
-        hits:  card.querySelector('.serie-hits'),
-        ws:    palabras(card.dataset.serie),
-        filas: [...card.querySelectorAll('tbody tr')].map(tr => ({
-            el: tr, ws: palabras(tr.dataset.vsearch),
-        })),
-    }));
+    // ── Índice (una sola vez) ────────────────────────────────
+    const items = [...grid.querySelectorAll('.serie-tarjeta')].map(card => {
+        const id  = card.dataset.serieId;
+        const det = detalles.querySelector('.serie-detalle[data-serie-id="' + id + '"]');
+        return {
+            id, card, det,
+            hits:   card.querySelector('.serie-hits'),
+            ws:     palabras(card.dataset.serie),
+            filas:  det ? [...det.querySelectorAll('tbody tr')].map(tr => ({
+                        el: tr, ws: palabras(tr.dataset.vsearch),
+                    })) : [],
+            visible: true,
+        };
+    });
+    const porId = new Map(items.map(i => [i.id, i]));
 
+    let estado = 'todas';
+    let abierta = null;        // item abierto en el panel
+    let ultimoFoco = null;
+
+    // ── Filtro + orden ───────────────────────────────────────
     function filtrar() {
         const tokens = palabras(input.value);
         let visibles = 0;
 
-        for (const c of cards) {
+        for (const it of items) {
+            // 1) Texto.
+            let pasaTexto = true, nHits = 0;
+
             if (!tokens.length) {
-                c.el.hidden = false;
-                c.el.open = false;
-                c.hits.hidden = true;
-                c.filas.forEach(f => f.el.hidden = false);
-                visibles++;
-                continue;
-            }
-
-            // ¿Coincide el nombre de la serie?
-            if (tokens.every(t => coincide(t, c.ws))) {
-                c.el.hidden = false;
-                c.hits.hidden = true;
-                c.filas.forEach(f => f.el.hidden = false);
-                visibles++;
-                continue;
-            }
-
-            // Si no, buscamos en las variantes (combinando con el nombre de la serie).
-            const coinciden = c.filas.filter(
-                f => tokens.every(t => coincide(t, c.ws) || coincide(t, f.ws))
-            );
-            c.filas.forEach(f => f.el.hidden = !coinciden.includes(f));
-
-            if (coinciden.length) {
-                c.el.hidden = false;
-                c.el.open = true;
-                c.hits.textContent = coinciden.length + ' variante' + (coinciden.length !== 1 ? 's' : '');
-                c.hits.hidden = false;
-                visibles++;
+                it.filas.forEach(f => f.el.dataset.match = '1');
+            } else if (tokens.every(t => coincide(t, it.ws))) {
+                // Coincide el nombre de la serie: se muestran todas sus variantes.
+                it.filas.forEach(f => f.el.dataset.match = '1');
             } else {
-                c.el.hidden = true;
-                c.el.open = false;
-                c.hits.hidden = true;
+                // Si no, buscamos en las variantes (combinando con el nombre de la serie).
+                for (const f of it.filas) {
+                    const ok = tokens.every(t => coincide(t, it.ws) || coincide(t, f.ws));
+                    f.el.dataset.match = ok ? '1' : '0';
+                    if (ok) nHits++;
+                }
+                pasaTexto = nHits > 0;
+            }
+
+            // 2) Estado.
+            const pasaEstado = estado === 'todas' || it.card.dataset.estado === estado;
+
+            it.visible = pasaTexto && pasaEstado;
+            it.card.hidden = !it.visible;
+            if (it.visible) visibles++;
+
+            if (nHits) {
+                it.hits.textContent = nHits + ' variante' + (nHits !== 1 ? 's' : '') + ' coincide' + (nHits !== 1 ? 'n' : '');
+                it.hits.hidden = false;
+            } else {
+                it.hits.hidden = true;
             }
         }
 
-        countEl.textContent = visibles + ' serie' + (visibles !== 1 ? 's' : '');
+        clearBtn.hidden = !input.value;
+        countEl.textContent = visibles + ' serie' + (visibles !== 1 ? 's' : '')
+            + (tokens.length || estado !== 'todas' ? ' de ' + items.length : '');
         noResults.hidden = visibles > 0;
+        if (abierta) aplicarFilas();
     }
+
+    function ordenar() {
+        const modo = sortSel.value;
+        const orden = [...items].sort((a, b) => {
+            const A = a.card.dataset, B = b.card.dataset;
+            if (modo === 'az')       return A.nombre.localeCompare(B.nombre, 'es');
+            if (modo === 'progreso') return (+B.pct) - (+A.pct) || A.nombre.localeCompare(B.nombre, 'es');
+            if (modo === 'faltan')   return (+B.faltan) - (+A.faltan) || A.nombre.localeCompare(B.nombre, 'es');
+            return (+A.orden) - (+B.orden);
+        });
+        orden.forEach(it => grid.appendChild(it.card));
+    }
+
+    // ── Panel ────────────────────────────────────────────────
+    function aplicarFilas() {
+        if (!abierta) return;
+        const soloFaltan = pFaltan.checked;
+        let mostradas = 0, ocultasPorBusqueda = 0;
+        for (const f of abierta.filas) {
+            const pasaBusqueda = f.el.dataset.match !== '0';
+            const ok = pasaBusqueda && (!soloFaltan || f.el.dataset.tengo === '0');
+            f.el.hidden = !ok;
+            if (ok) mostradas++;
+            if (!pasaBusqueda) ocultasPorBusqueda++;
+        }
+        const total = abierta.filas.length;
+        pFraccion.textContent = abierta.card.querySelector('.serie-fraccion').textContent.trim()
+            + (mostradas && mostradas !== total ? ' · mostrando ' + mostradas : '');
+
+        // Si la búsqueda escondió variantes, lo decimos: si no, parece que la serie
+        // tuviera menos monedas de las que tiene.
+        pAviso.hidden = !ocultasPorBusqueda;
+        if (ocultasPorBusqueda) {
+            pAvisoTxt.textContent = 'Filtrado por «' + input.value.trim() + '»: '
+                + (total - ocultasPorBusqueda) + ' de ' + total + ' variantes.';
+        }
+
+        // Tabla vacía: decimos por qué, que si no parece que la serie no tuviera nada.
+        pSinFilas.hidden = mostradas > 0 || !total;
+        if (!pSinFilas.hidden) {
+            pSinFilas.textContent = soloFaltan && !ocultasPorBusqueda
+                ? '¡Ya tenés todas las variantes de esta serie! 🏆'
+                : 'Ninguna variante coincide con lo que estás filtrando.';
+        }
+    }
+
+    function abrir(it, foco) {
+        if (!it) return;
+        if (abierta && abierta.det) detalles.appendChild(abierta.det);
+
+        abierta = it;
+        ultimoFoco = foco || it.card;
+
+        pTitulo.textContent = it.card.dataset.nombre;
+        const desc = it.card.querySelector('.serie-tarjeta-desc');
+        pDesc.textContent = desc ? desc.textContent.trim() : '';
+        pDesc.hidden = !desc;
+
+        const pct = +it.card.dataset.pct;
+        pBarra.firstElementChild.style.width = pct + '%';
+        pBarra.classList.toggle('serie-barra--completa', pct === 100);
+
+        pBody.innerHTML = '';
+        if (it.det) pBody.appendChild(it.det);
+        pBody.appendChild(pSinFilas);
+        pBody.scrollTop = 0;
+        aplicarFilas();
+
+        panel.hidden = false; fondo.hidden = false;
+        requestAnimationFrame(() => {
+            panel.classList.add('abierto');
+            fondo.classList.add('abierto');
+        });
+        document.body.classList.add('serie-panel-abierto');
+        pCerrar.focus();
+
+        history.replaceState(null, '', '#serie-' + it.id);
+        actualizarNav();
+    }
+
+    function cerrar() {
+        if (!abierta) return;
+        panel.classList.remove('abierto');
+        fondo.classList.remove('abierto');
+        document.body.classList.remove('serie-panel-abierto');
+        const volver = ultimoFoco;
+        setTimeout(() => {
+            if (panel.classList.contains('abierto')) return;   // se reabrió mientras tanto
+            panel.hidden = true; fondo.hidden = true;
+            if (abierta && abierta.det) detalles.appendChild(abierta.det);
+            abierta = null;
+        }, 250);
+        history.replaceState(null, '', location.pathname + location.search);
+        if (volver && document.contains(volver)) volver.focus();
+    }
+
+    function vecinas() {
+        const vis = [...grid.querySelectorAll('.serie-tarjeta:not([hidden])')];
+        const i = abierta ? vis.indexOf(abierta.card) : -1;
+        return {
+            prev: i > 0 ? porId.get(vis[i - 1].dataset.serieId) : null,
+            next: i >= 0 && i < vis.length - 1 ? porId.get(vis[i + 1].dataset.serieId) : null,
+        };
+    }
+    function actualizarNav() {
+        const v = vecinas();
+        pPrev.disabled = !v.prev;
+        pNext.disabled = !v.next;
+    }
+
+    // ── Eventos ──────────────────────────────────────────────
+    grid.addEventListener('click', e => {
+        const card = e.target.closest('.serie-tarjeta');
+        if (!card) return;
+        e.preventDefault();
+        abrir(porId.get(card.dataset.serieId), card);
+    });
 
     input.addEventListener('input', filtrar);
     input.addEventListener('search', filtrar);   // click en la "x" del type=search
+    clearBtn.addEventListener('click', () => { input.value = ''; filtrar(); input.focus(); });
+    sortSel.addEventListener('change', () => { ordenar(); actualizarNav(); });
+
+    chips.forEach(chip => chip.addEventListener('click', () => {
+        estado = chip.dataset.estado;
+        chips.forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
+        filtrar();
+    }));
+
+    if (resetBtn) resetBtn.addEventListener('click', () => {
+        input.value = '';
+        estado = 'todas';
+        chips.forEach(c => c.setAttribute('aria-pressed', String(c.dataset.estado === 'todas')));
+        filtrar();
+        input.focus();
+    });
+
+    pCerrar.addEventListener('click', cerrar);
+    fondo.addEventListener('click', cerrar);
+    pFaltan.addEventListener('change', aplicarFilas);
+    pVerTodas.addEventListener('click', () => { input.value = ''; filtrar(); });
+    pPrev.addEventListener('click', () => { const v = vecinas(); if (v.prev) abrir(v.prev, v.prev.card); });
+    pNext.addEventListener('click', () => { const v = vecinas(); if (v.next) abrir(v.next, v.next.card); });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && abierta) { cerrar(); return; }
+        if (e.key === 'Escape' && document.activeElement === input && input.value) {
+            input.value = ''; filtrar(); return;
+        }
+        // "/" enfoca el buscador, salvo que ya estemos escribiendo en un campo.
+        const esCampo = /^(input|textarea|select)$/i.test(document.activeElement.tagName);
+        if (e.key === '/' && !esCampo && !abierta) { e.preventDefault(); input.focus(); }
+        if (abierta && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !esCampo) {
+            const v = vecinas();
+            const d = e.key === 'ArrowLeft' ? v.prev : v.next;
+            if (d) { e.preventDefault(); abrir(d, d.card); }
+        }
+    });
+
+    // El panel es modal: el tabulador no debe escaparse a la página de atrás.
+    panel.addEventListener('keydown', e => {
+        if (e.key !== 'Tab') return;
+        const foco = panel.querySelectorAll('button:not([disabled]), input, a[href]');
+        if (!foco.length) return;
+        const primero = foco[0], ultimo = foco[foco.length - 1];
+        if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+        else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+    });
+
+    // ── Arranque ─────────────────────────────────────────────
+    filtrar();
+    ordenar();
+    const m = location.hash.match(/^#serie-(\d+)$/);
+    if (m && porId.has(m[1])) abrir(porId.get(m[1]));
 })();
 </script>
 {% endblock %}
