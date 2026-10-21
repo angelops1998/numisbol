@@ -8,7 +8,7 @@
 
     <main class="admin-main">
         <h1 class="admin-page-title">Colecciones</h1>
-        <p class="admin-page-sub">Explorá el inventario de cualquier coleccionista</p>
+        <p class="admin-page-sub">Quién tiene monedas guardadas, cuántas, y el inventario de cada uno</p>
 
         <!-- Selector de usuario -->
         <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
@@ -16,7 +16,7 @@
                 <div class="form-group" style="margin:0;flex:1;min-width:200px">
                     <label class="form-label" style="font-size:.75rem">Coleccionista</label>
                     <select name="uid" class="form-input" onchange="this.form.submit()">
-                        <option value="0">— Seleccionar usuario —</option>
+                        <option value="0">— Todos (resumen) —</option>
                         {% for u in users %}
                         <option value="{{ u.id }}" {% if u.id == uid %}selected{% endif %}>
                             @{{ u.username }}{% if u.is_verified %} ✓{% endif %} — {{ u.full_name or u.email }}
@@ -24,13 +24,18 @@
                         {% endfor %}
                     </select>
                 </div>
-                {% if uid %}
                 <div class="form-group" style="margin:0;flex:1;min-width:180px">
-                    <label class="form-label" style="font-size:.75rem">Buscar moneda</label>
-                    <input type="search" name="q" value="{{ q }}" placeholder="Nombre..." class="form-input admin-search-input" style="max-width:100%">
+                    <label class="form-label" style="font-size:.75rem">{{ 'Buscar moneda' if uid else 'Buscar usuario' }}</label>
+                    <input type="search" name="q" value="{{ q }}"
+                           placeholder="{{ 'Nombre...' if uid else 'Usuario, email o nombre...' }}"
+                           class="form-input admin-search-input" style="max-width:100%">
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:.05rem">Buscar</button>
-                <a href="/admin/coleccion?uid={{ uid }}" class="btn btn-outline btn-sm" style="margin-bottom:.05rem">Limpiar</a>
+                {% if q or uid %}
+                <a href="/admin/coleccion{{ '?uid=' ~ uid if uid }}" class="btn btn-outline btn-sm" style="margin-bottom:.05rem">Limpiar</a>
+                {% endif %}
+                {% if uid %}
+                <a href="/admin/coleccion" class="btn btn-outline btn-sm" style="margin-bottom:.05rem">← Ver todos</a>
                 {% endif %}
             </form>
         </div>
@@ -127,11 +132,68 @@
         </div>
         {% endif %}
 
-        {% elif uid == 0 %}
+        {% else %}
+
+        <!-- Resumen por usuario -->
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.25rem;font-size:.82rem;color:var(--text-dim)">
+            <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.usuarios_con }}</strong> usuario{{ 's' if resumen_total.usuarios_con != 1 }} con inventario</span>
+            <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.items }}</strong> ítem{{ 's' if resumen_total.items != 1 }} registrado{{ 's' if resumen_total.items != 1 }}</span>
+            <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.piezas }}</strong> pieza{{ 's' if resumen_total.piezas != 1 }} (con cantidades)</span>
+        </div>
+
+        {% if resumen %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Ítems</th>
+                        <th>Piezas</th>
+                        <th>Monedas</th>
+                        <th>Billetes</th>
+                        <th>Públicas</th>
+                        <th>Última alta</th>
+                        <th>Inventario</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in resumen %}
+                    <tr{% if not r.items %} style="opacity:.55"{% endif %}>
+                        <td>
+                            <strong style="color:var(--text-primary)">{{ r.full_name or r.username }}</strong>
+                            <div style="font-size:.72rem;color:var(--text-dim)">
+                                @{{ r.username }}
+                                {% if r.is_verified %}<span class="badge-ver" style="margin-left:.3rem">✓</span>{% endif %}
+                                {% if r.is_admin %}<span class="badge-admin" style="margin-left:.2rem">Admin</span>{% endif %}
+                            </div>
+                        </td>
+                        <td style="font-weight:700;color:var(--text-primary)">{{ r.items }}</td>
+                        <td style="font-size:.82rem;color:var(--text-dim)">{{ r.piezas }}</td>
+                        <td style="font-size:.82rem;color:var(--text-dim)">{{ r.monedas }}</td>
+                        <td style="font-size:.82rem;color:var(--text-dim)">{{ r.billetes }}</td>
+                        <td style="font-size:.82rem;color:var(--text-dim)">{{ r.publicas }}</td>
+                        <td style="font-size:.75rem;color:var(--text-dim);white-space:nowrap">
+                            {{ r.ultima.strftime('%d/%m/%Y') if r.ultima else '—' }}
+                        </td>
+                        <td>
+                            {% if r.items %}
+                            <a href="/admin/coleccion?uid={{ r.id }}" class="btn btn-outline btn-sm">Ver</a>
+                            {% else %}
+                            <span style="font-size:.75rem;color:var(--text-dim)">Vacío</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
         <div class="empty-state">
             <div class="empty-icon">👥</div>
-            <p>Seleccioná un coleccionista para ver su inventario.</p>
+            <p>{{ 'Sin usuarios para "' ~ q ~ '"' if q else 'Todavía no hay usuarios registrados.' }}</p>
         </div>
+        {% endif %}
+
         {% endif %}
 
     </main>

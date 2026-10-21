@@ -2,7 +2,7 @@ from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case, desc
 from ..database import get_db
 from ..models.setting import AppSetting
 from ..models.user import User
@@ -234,9 +234,13 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
     total = 0
     total_paginas = 1
     usuario_sel = None
+    resumen = []
+    resumen_total = {"usuarios_con": 0, "items": 0, "piezas": 0}
 
     if uid:
         usuario_sel = db.query(User).filter(User.id == uid).first()
+        if not usuario_sel:
+            return RedirectResponse(url="/admin/coleccion", status_code=302)
         query = db.query(Coin).filter(Coin.user_id == uid)
         if q.strip():
             query = query.filter(Coin.name.ilike(f"%{q.strip()}%"))
@@ -244,11 +248,41 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
         total_paginas = max(1, (total + PER_PAGE - 1) // PER_PAGE)
         pagina = max(1, min(pagina, total_paginas))
         monedas = query.order_by(Coin.created_at.desc()).offset((pagina - 1) * PER_PAGE).limit(PER_PAGE).all()
+    else:
+        # Resumen: qué usuarios tienen ítems guardados en su inventario y cuántos
+        rq = (
+            db.query(
+                User.id.label("id"),
+                User.username.label("username"),
+                User.full_name.label("full_name"),
+                User.email.label("email"),
+                User.is_verified.label("is_verified"),
+                User.is_admin.label("is_admin"),
+                func.count(Coin.id).label("items"),
+                func.coalesce(func.sum(Coin.quantity), 0).label("piezas"),
+                func.coalesce(func.sum(case((Coin.id != None, case((func.coalesce(Coin.tipo, "moneda") == "billete", 0), else_=1)), else_=0)), 0).label("monedas"),
+                func.coalesce(func.sum(case((Coin.tipo == "billete", 1), else_=0)), 0).label("billetes"),
+                func.coalesce(func.sum(case((Coin.is_public == True, 1), else_=0)), 0).label("publicas"),
+                func.max(Coin.created_at).label("ultima"),
+            )
+            .outerjoin(Coin, Coin.user_id == User.id)
+            .group_by(User.id)
+        )
+        if q.strip():
+            like = f"%{q.strip()}%"
+            rq = rq.filter(User.username.ilike(like) | User.email.ilike(like) | User.full_name.ilike(like))
+        resumen = rq.order_by(desc("items"), User.username).all()
+        resumen_total = {
+            "usuarios_con": sum(1 for r in resumen if r.items),
+            "items":        sum(int(r.items or 0) for r in resumen),
+            "piezas":       sum(int(r.piezas or 0) for r in resumen),
+        }
 
     return templates.TemplateResponse(request, "admin/coleccion.html", {
         "user": user, "users": users, "monedas": monedas,
         "usuario_sel": usuario_sel, "uid": uid, "q": q,
         "total": total, "pagina": pagina, "total_paginas": total_paginas,
+        "resumen": resumen, "resumen_total": resumen_total,
     })
 
 
