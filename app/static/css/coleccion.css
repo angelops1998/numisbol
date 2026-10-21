@@ -1580,6 +1580,11 @@
     transition: opacity .2s ease;
 }
 .serie-panel-fondo.abierto { opacity: 1; pointer-events: auto; }
+/* Ojo: estas reglas ponen display/position, y eso le gana al atributo [hidden]
+   del navegador. Sin esto el modal cerrado sigue ahí: un rectángulo invisible
+   de 980px en el centro que se come el hover y los clicks de las tarjetas. */
+.serie-panel-fondo[hidden],
+.serie-panel[hidden] { display: none; }
 .serie-panel {
     position: fixed;
     top: 50%;
@@ -1595,11 +1600,14 @@
     overflow: hidden;              /* para que el radio recorte el encabezado */
     z-index: 201;
     opacity: 0;
+    /* También mientras se desvanece al cerrar: 250ms invisible pero clickeable. */
+    pointer-events: none;
     transform: translate(-50%, -50%) scale(.97);
     transition: opacity .18s ease, transform .18s ease;
 }
 .serie-panel.abierto {
     opacity: 1;
+    pointer-events: auto;
     transform: translate(-50%, -50%) scale(1);
 }
 
