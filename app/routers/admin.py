@@ -225,7 +225,7 @@ async def admin_eliminar_post(pid: int, request: Request, db: Session = Depends(
 # ── Colección ─────────────────────────────────────────────────────────────────
 
 @router.get("/coleccion", response_class=HTMLResponse)
-async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: int = 1, db: Session = Depends(get_db)):
+async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: int = 1, vacios: int = 0, db: Session = Depends(get_db)):
     user = require_admin(request, db)
     users = db.query(User).order_by(User.username).all()
 
@@ -235,7 +235,7 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
     total_paginas = 1
     usuario_sel = None
     resumen = []
-    resumen_total = {"usuarios_con": 0, "items": 0, "piezas": 0}
+    resumen_total = {"usuarios_con": 0, "items": 0, "piezas": 0, "vacios": 0}
 
     if uid:
         usuario_sel = db.query(User).filter(User.id == uid).first()
@@ -276,13 +276,16 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
             "usuarios_con": sum(1 for r in resumen if r.items),
             "items":        sum(int(r.items or 0) for r in resumen),
             "piezas":       sum(int(r.piezas or 0) for r in resumen),
+            "vacios":       sum(1 for r in resumen if not r.items),
         }
+        if not vacios:
+            resumen = [r for r in resumen if r.items]
 
     return templates.TemplateResponse(request, "admin/coleccion.html", {
         "user": user, "users": users, "monedas": monedas,
         "usuario_sel": usuario_sel, "uid": uid, "q": q,
         "total": total, "pagina": pagina, "total_paginas": total_paginas,
-        "resumen": resumen, "resumen_total": resumen_total,
+        "resumen": resumen, "resumen_total": resumen_total, "vacios": vacios,
     })
 
 

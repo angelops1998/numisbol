@@ -13,6 +13,7 @@
         <!-- Selector de usuario -->
         <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
             <form method="get" action="/admin/coleccion" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+                {% if vacios and not uid %}<input type="hidden" name="vacios" value="1">{% endif %}
                 <div class="form-group" style="margin:0;flex:1;min-width:200px">
                     <label class="form-label" style="font-size:.75rem">Coleccionista</label>
                     <select name="uid" class="form-input" onchange="this.form.submit()">
@@ -139,6 +140,13 @@
             <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.usuarios_con }}</strong> usuario{{ 's' if resumen_total.usuarios_con != 1 }} con inventario</span>
             <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.items }}</strong> ítem{{ 's' if resumen_total.items != 1 }} registrado{{ 's' if resumen_total.items != 1 }}</span>
             <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.piezas }}</strong> pieza{{ 's' if resumen_total.piezas != 1 }} (con cantidades)</span>
+            <span style="margin-left:auto">
+                {% if vacios %}
+                <a href="/admin/coleccion{{ '?q=' ~ q if q }}" style="color:var(--text-dim)">Ocultar los {{ resumen_total.vacios }} usuarios sin inventario</a>
+                {% else %}
+                <a href="/admin/coleccion?vacios=1{{ '&q=' ~ q if q }}" style="color:var(--text-dim)">Ver también los {{ resumen_total.vacios }} usuarios sin inventario</a>
+                {% endif %}
+            </span>
         </div>
 
         {% if resumen %}
@@ -190,7 +198,7 @@
         {% else %}
         <div class="empty-state">
             <div class="empty-icon">👥</div>
-            <p>{{ 'Sin usuarios para "' ~ q ~ '"' if q else 'Todavía no hay usuarios registrados.' }}</p>
+            <p>{{ 'Sin usuarios para "' ~ q ~ '"' if q else 'Ningún usuario tiene monedas guardadas todavía.' }}</p>
         </div>
         {% endif %}
 
