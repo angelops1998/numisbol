@@ -138,7 +138,7 @@
         <!-- Resumen por usuario -->
         <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.25rem;font-size:.82rem;color:var(--text-dim)">
             <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.usuarios_con }}</strong> usuario{{ 's' if resumen_total.usuarios_con != 1 }} con inventario</span>
-            <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.items }}</strong> ítem{{ 's' if resumen_total.items != 1 }} registrado{{ 's' if resumen_total.items != 1 }}</span>
+            <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.n_items }}</strong> ítem{{ 's' if resumen_total.n_items != 1 }} registrado{{ 's' if resumen_total.n_items != 1 }}</span>
             <span><strong style="color:var(--text-primary);font-size:1.1rem">{{ resumen_total.piezas }}</strong> pieza{{ 's' if resumen_total.piezas != 1 }} (con cantidades)</span>
             <span style="margin-left:auto">
                 {% if vacios %}

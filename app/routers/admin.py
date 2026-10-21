@@ -235,7 +235,7 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
     total_paginas = 1
     usuario_sel = None
     resumen = []
-    resumen_total = {"usuarios_con": 0, "items": 0, "piezas": 0, "vacios": 0}
+    resumen_total = {"usuarios_con": 0, "n_items": 0, "piezas": 0, "vacios": 0}
 
     if uid:
         usuario_sel = db.query(User).filter(User.id == uid).first()
@@ -274,7 +274,7 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
         resumen = rq.order_by(desc("items"), User.username).all()
         resumen_total = {
             "usuarios_con": sum(1 for r in resumen if r.items),
-            "items":        sum(int(r.items or 0) for r in resumen),
+            "n_items":      sum(int(r.items or 0) for r in resumen),
             "piezas":       sum(int(r.piezas or 0) for r in resumen),
             "vacios":       sum(1 for r in resumen if not r.items),
         }
