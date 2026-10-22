@@ -844,16 +844,18 @@ async def agregar(
 @router.get("/{coin_id}", response_class=HTMLResponse)
 async def detalle(coin_id: int, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
-    coin = db.query(Coin).filter(Coin.id == coin_id, Coin.user_id == user.id).first()
-    if not coin:
+    coin = db.query(Coin).filter(Coin.id == coin_id).first()
+    # El admin ve cualquier pieza (desde el panel de colecciones), pero solo de lectura
+    es_dueno = bool(coin and coin.user_id == user.id)
+    if not coin or (not es_dueno and not user.is_admin):
         raise HTTPException(status_code=404, detail="Moneda no encontrada")
 
-    # Progreso de la serie a la que pertenece esta moneda
+    # Progreso de la serie a la que pertenece esta moneda, según el dueño de la pieza
     serie_info = None
     if coin.variante:
         serie = coin.variante.serie
         rows = (db.query(Coin.variante_id, Coin.id)
-                .filter(Coin.user_id == user.id, Coin.variante_id != None)
+                .filter(Coin.user_id == coin.user_id, Coin.variante_id != None)
                 .all())
         tengo = {}
         for vid, cid in rows:
@@ -866,7 +868,7 @@ async def detalle(coin_id: int, request: Request, db: Session = Depends(get_db))
         }
 
     return templates.TemplateResponse(request, "coleccion/detalle.html", {
-        "user": user, "coin": coin, "serie_info": serie_info,
+        "user": user, "coin": coin, "serie_info": serie_info, "es_dueno": es_dueno,
     })
 
 

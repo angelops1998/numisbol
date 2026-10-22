@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
-from .database import engine
+from .database import engine, SessionLocal
 from .routers import auth, main as main_router, coleccion, recovery, mercado, perfil, anuncios, blog, moneda_publica, admin, preguntas
 from .auth import NotAuthenticatedException
 from .csrf import get_csrf_token, set_csrf_cookie, validate_csrf
@@ -47,7 +47,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 validate_csrf(request, form_token)
             except HTTPException:
                 return _templates.TemplateResponse(
-                    request, "403.html", {}, status_code=403
+                    request, "403.html", _error_ctx(request), status_code=403
                 )
 
         response = await call_next(request)
@@ -62,9 +62,21 @@ app.add_middleware(CSRFMiddleware)
 async def not_authenticated_handler(request: Request, exc: NotAuthenticatedException):
     return RedirectResponse(url=f"/auth/login?next={exc.next_url}", status_code=302)
 
+def _error_ctx(request: Request) -> dict:
+    """Las páginas de error también muestran la barra con la sesión iniciada."""
+    from .auth import get_current_user_optional
+    db = SessionLocal()
+    try:
+        return {"user": get_current_user_optional(request, db)}
+    except Exception:
+        return {}
+    finally:
+        db.close()
+
+
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
-    return _templates.TemplateResponse(request, "404.html", {}, status_code=404)
+    return _templates.TemplateResponse(request, "404.html", _error_ctx(request), status_code=404)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 

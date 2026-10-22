@@ -9,13 +9,22 @@
             <div class="page-header-inner">
                 <div>
                     <p class="page-breadcrumb">
+                        {% if es_dueno %}
                         <a href="/coleccion">Mi Colección</a> /
+                        {% else %}
+                        <a href="/admin/coleccion">Colecciones</a> /
+                        <a href="/admin/coleccion?uid={{ coin.user_id }}">@{{ coin.owner.username }}</a> /
+                        {% endif %}
                         {{ coin.name }}
                     </p>
                     <h1 class="page-title" style="font-size:clamp(1.6rem,4vw,2.8rem);letter-spacing:-.5px">{{ coin.name }}</h1>
                     {% if coin.denomination %}<p class="page-subtitle" style="font-size:1.1rem">{{ coin.denomination }}{% if coin.currency_unit %} · {{ coin.currency_unit }}{% endif %}</p>{% endif %}
                 </div>
+                {% if es_dueno %}
                 <a href="/coleccion" class="btn btn-outline">← Volver a mi colección</a>
+                {% else %}
+                <a href="/admin/coleccion?uid={{ coin.user_id }}" class="btn btn-outline">← Volver al panel</a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -146,6 +155,7 @@
                 </div>
                 {% endif %}
 
+                {% if es_dueno %}
                 <!-- Visibilidad y compartir -->
                 <div class="share-box">
                     <div class="share-box-header">
@@ -209,6 +219,23 @@
                         <button type="submit" class="btn btn-danger" style="width:100%">🗑 Eliminar</button>
                     </form>
                 </div>
+                {% else %}
+                <!-- Vista de admin: pieza de otro coleccionista, solo lectura -->
+                <div class="share-box">
+                    <p class="share-box-label">Vista de administrador</p>
+                    <p class="share-box-desc">
+                        Esta pieza es de <strong>@{{ coin.owner.username }}</strong>
+                        {% if coin.owner.full_name %}({{ coin.owner.full_name }}){% endif %}.
+                        Solo la estás viendo: no se puede editar, eliminar ni cambiar su visibilidad desde acá.
+                    </p>
+                    <p class="share-box-desc" style="margin-top:.5rem">
+                        Visibilidad: <strong>{% if coin.is_public %}pública{% else %}privada{% endif %}</strong>
+                        {% if coin.is_public %}
+                        — <a href="{{ request.url_for('moneda_publica', coin_id=coin.id) }}" style="color:var(--accent)">ver ficha pública</a>
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
 
             </div>
         </div>
