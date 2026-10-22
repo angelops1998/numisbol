@@ -96,7 +96,7 @@
                 {% set billetes_c = info.get('billete', 0) %}
                 {% set flag = static_v('img/flags/' ~ country_info[country][0] ~ '.png') %}
                 {% if total_c > 0 %}
-                <a href="/coleccion?q={{ country | urlencode }}" class="world-country world-country--have"
+                <a href="/coleccion?pais={{ country | urlencode }}" class="world-country world-country--have"
                    data-country="{{ country | lower }}" data-state="have">
                     <img class="world-flag" src="{{ flag }}" alt="" width="40" height="30" loading="lazy">
                     <span class="world-country-text">
