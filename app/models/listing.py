@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Numeric, ForeignKey, DateTime, Enum as SAEnum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import enum
 from ..database import Base
@@ -55,5 +55,8 @@ class Listing(Base):
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
     updated_at  = Column(DateTime(timezone=True), onupdate=func.now())
 
-    seller = relationship("User", backref="listings")
+    # passive_deletes: la FK ya tiene ON DELETE CASCADE; sin esto, borrar al
+    # usuario intentaba poner user_id = NULL y fallaba.
+    seller = relationship("User", backref=backref(
+        "listings", cascade="all, delete-orphan", passive_deletes=True))
     coin   = relationship("Coin", backref="listings")

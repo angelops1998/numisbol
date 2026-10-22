@@ -1,6 +1,6 @@
 import re
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 from ..database import Base
 
@@ -65,7 +65,10 @@ class BlogPost(Base):
     updated_at  = Column(DateTime(timezone=True), onupdate=func.now())
 
     categorias  = relationship("BlogCategoria", secondary="blog_post_categorias", back_populates="posts")
-    autor       = relationship("User", backref="posts")
+    # passive_deletes: la FK ya tiene ON DELETE CASCADE; sin esto, borrar al
+    # usuario intentaba poner autor_id = NULL y fallaba.
+    autor       = relationship("User", backref=backref(
+        "posts", cascade="all, delete-orphan", passive_deletes=True))
     imagenes    = relationship("BlogPostImagen", back_populates="post",
                                order_by="BlogPostImagen.orden", cascade="all, delete-orphan")
     comentarios = relationship("BlogComentario", back_populates="post",

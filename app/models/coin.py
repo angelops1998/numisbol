@@ -2,7 +2,7 @@ from sqlalchemy import (
     Column, Integer, String, Text, Numeric,
     ForeignKey, DateTime, UniqueConstraint, Boolean
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 from ..database import Base
 
@@ -54,7 +54,10 @@ class Coin(Base):
     updated_at       = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relación
-    owner    = relationship("User", backref="coins")
+    # passive_deletes: la FK ya tiene ON DELETE CASCADE; sin esto, borrar al
+    # usuario intentaba poner user_id = NULL y fallaba.
+    owner    = relationship("User", backref=backref(
+        "coins", cascade="all, delete-orphan", passive_deletes=True))
     variante = relationship("SerieVariante", backref="coins")
 
 
