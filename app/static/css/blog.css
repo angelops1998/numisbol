@@ -133,7 +133,7 @@
     border-color: var(--accent-dim);
     box-shadow: 0 0 0 3px rgba(176,176,208,.1);
 }
-.blog-search-input::placeholder { color: var(--text-dim); }
+.blog-search-input::placeholder { color: var(--text-faint); }
 .blog-search-clear {
     color: var(--text-dim);
     font-size: 1rem;
@@ -1307,7 +1307,7 @@
     box-sizing: border-box;
 }
 .blog-com-textarea:focus { border-color: var(--accent); }
-.blog-com-textarea::placeholder { color: var(--text-dim); }
+.blog-com-textarea::placeholder { color: var(--text-faint); }
 .blog-com-form-footer {
     display: flex;
     align-items: center;

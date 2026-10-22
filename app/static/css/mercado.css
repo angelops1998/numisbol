@@ -458,7 +458,7 @@
     font-family: inherit;
 }
 .cp-search-wrap input:focus { border-color: var(--accent-dim); }
-.cp-search-wrap input::placeholder { color: var(--text-dim); }
+.cp-search-wrap input::placeholder { color: var(--text-faint); }
 
 /* Lista de opciones */
 .cp-list {
@@ -572,7 +572,7 @@
     font-size: var(--font-base);
     font-family: inherit;
 }
-.coin-ac-input::placeholder { color: var(--text-dim); }
+.coin-ac-input::placeholder { color: var(--text-faint); }
 .coin-ac-clear {
     background: none;
     border: none;
@@ -781,7 +781,7 @@
     box-sizing: border-box;
 }
 .ss-search:focus { border-color: var(--accent-dim); }
-.ss-search::placeholder { color: var(--text-dim); }
+.ss-search::placeholder { color: var(--text-faint); }
 .ss-list {
     list-style: none;
     max-height: 220px;

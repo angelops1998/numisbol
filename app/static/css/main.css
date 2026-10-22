@@ -29,7 +29,8 @@
     --text-primary: #FFFFFF;   /* títulos — blanco puro */
     --text-body:    #E0E0EC;   /* cuerpo — blanco suave */
     --text-muted:   #A0A0BC;   /* secundario */
-    --text-dim:     #66667A;   /* placeholders */
+    --text-dim:     #A0A0BC;   /* secundario (antes #66667A, muy oscuro) */
+    --text-faint:   #66667A;   /* placeholders e íconos dentro de inputs */
 
     /* Acento — plateado frío */
     --accent:       #E8E8FF;

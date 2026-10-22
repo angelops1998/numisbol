@@ -1311,7 +1311,7 @@
     height: 18px;
     transform: translateY(-50%);
     fill: none;
-    stroke: var(--text-dim);
+    stroke: var(--text-faint);
     stroke-width: 2;
     stroke-linecap: round;
     pointer-events: none;
@@ -1990,7 +1990,7 @@
     border-radius: 999px;
     border: 3px solid var(--bg-card);
 }
-.serie-panel-body::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+.serie-panel-body::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
 /* La descripción va dentro del cuerpo que scrollea: son párrafos largos y en
    el encabezado fijo se comían media ventana antes de llegar a la tabla. */

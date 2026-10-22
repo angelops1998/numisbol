@@ -20,7 +20,7 @@
     outline: none;
     transition: border-color var(--transition), background var(--transition);
 }
-.pq-search-input::placeholder { color: var(--text-dim); }
+.pq-search-input::placeholder { color: var(--text-faint); }
 .pq-search-input:focus { border-color: var(--border-light); background: rgba(255,255,255,.09); }
 .pq-search-clear {
     background: none;
