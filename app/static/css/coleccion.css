@@ -185,6 +185,7 @@
     border-radius: 4px;
     padding: .1rem .45rem;
 }
+.coin-item-value-conv { font-weight: 500; opacity: .75; }
 
 /* Dueño de la pieza (galería pública) */
 .coin-item-owner {
@@ -596,6 +597,20 @@
     text-align: right;
 }
 .detail-value-highlight { font-size: var(--font-base); }
+.detail-value-conv {
+    display: block;
+    margin-top: .2rem;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: #4ade80;
+}
+.detail-value-rate {
+    display: block;
+    margin-top: .1rem;
+    font-size: .72rem;
+    font-weight: 400;
+    color: var(--text-dim);
+}
 .detail-description {
     background: var(--bg-card);
     border: 1px solid var(--border);

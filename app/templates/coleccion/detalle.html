@@ -100,6 +100,16 @@
                         <span class="detail-field-label">Valor estimado</span>
                         <span class="detail-field-value detail-value-highlight">
                             {{ cur_sym }} {{ "%.2f"|format(coin.estimated_value) }}
+                            {% if rate_info %}
+                            {% set ev = coin.estimated_value|float %}
+                            <span class="detail-value-conv">
+                                {% if coin.value_currency == 'USD' %}≈ Bs {{ "%.2f"|format(ev * rate_info.rate) }}
+                                {% else %}≈ US$ {{ "%.2f"|format(ev / rate_info.rate) }}{% endif %}
+                            </span>
+                            <span class="detail-value-rate">
+                                1 USD = Bs {{ "%.2f"|format(rate_info.rate) }}{% if rate_info.updated_local %} · actualizado {{ rate_info.updated_local }}{% endif %}
+                            </span>
+                            {% endif %}
                         </span>
                     </div>
                     {% endif %}

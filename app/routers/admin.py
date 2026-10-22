@@ -11,6 +11,7 @@ from ..models.coin import Coin
 from ..models.pregunta import Pregunta, Respuesta
 from ..models.serie import Serie, SerieVariante
 from ..auth import get_current_user
+from .. import tipo_cambio
 
 
 def _require_admin(request: Request, db: Session = Depends(get_db)):
@@ -458,25 +459,30 @@ async def admin_eliminar_variante(vid: int, request: Request, db: Session = Depe
 @router.get("/configuracion", response_class=HTMLResponse)
 async def configuracion(request: Request, db: Session = Depends(get_db)):
     user = require_admin(request, db)
-    usd_rate = get_setting(db, "usd_bob_rate", "")
     return templates.TemplateResponse(request, "admin/configuracion.html", {
-        "user": user, "usd_rate": usd_rate,
+        "user": user, "rate_info": tipo_cambio.get_rate_info(db),
+        "rate_mode": get_setting(db, tipo_cambio.KEY_MODE) or "auto",
         "saved": request.query_params.get("saved"),
+        "error": request.query_params.get("error"),
     })
 
 
 @router.post("/configuracion", response_class=HTMLResponse)
 async def configuracion_post(
     request: Request,
+    rate_mode: str = Form("auto"),
     usd_bob_rate: str = Form(""),
     db: Session = Depends(get_db),
 ):
     require_admin(request, db)
-    try:
-        rate = float(usd_bob_rate.strip())
-        if rate <= 0:
-            raise ValueError
-        set_setting(db, "usd_bob_rate", str(rate))
-    except (ValueError, AttributeError):
-        pass
+    if rate_mode == "manual":
+        try:
+            rate = float(usd_bob_rate.strip())
+            if rate <= 0:
+                raise ValueError
+            tipo_cambio.set_manual(db, rate)
+        except (ValueError, AttributeError):
+            return RedirectResponse(url="/admin/configuracion?error=tasa", status_code=302)
+    else:
+        tipo_cambio.set_auto(db)
     return RedirectResponse(url="/admin/configuracion?saved=1", status_code=302)

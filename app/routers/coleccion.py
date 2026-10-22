@@ -8,9 +8,9 @@ from sqlalchemy import or_, func
 from ..database import get_db
 from ..models.coin import Coin, CustomOption
 from ..models.serie import Serie, SerieVariante
-from ..models.setting import AppSetting
 from ..auth import get_current_user, get_current_user_optional
 from ..paises import COUNTRY_INFO, CONTINENTS
+from ..tipo_cambio import get_rate, get_rate_info
 
 router = APIRouter(prefix="/coleccion", tags=["coleccion"])
 
@@ -488,6 +488,7 @@ async def coleccion(
         "countries": COUNTRIES,
         "categories": flat_categories,
         "materials": MATERIALS,
+        "usd_rate": get_rate(db),
     })
 
 
@@ -544,9 +545,8 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
             total_bob = float(s or 0)
         count_con_valor += n
 
-    # Tasa de cambio configurada por admin
-    rate_row = db.query(AppSetting).filter(AppSetting.key == "usd_bob_rate").first()
-    usd_rate = float(rate_row.value) if rate_row and rate_row.value else None
+    # Tasa de cambio (automática o la configurada por admin)
+    usd_rate = get_rate(db)
 
     # Total unificado en USD: los BOB se dividen por la tasa
     total_usd_unificado = total_usd + (total_bob / usd_rate if usd_rate and total_bob else 0)
@@ -882,6 +882,7 @@ async def detalle(coin_id: int, request: Request, db: Session = Depends(get_db))
 
     return templates.TemplateResponse(request, "coleccion/detalle.html", {
         "user": user, "coin": coin, "serie_info": serie_info, "es_dueno": es_dueno,
+        "rate_info": get_rate_info(db) if coin.estimated_value else None,
     })
 
 
