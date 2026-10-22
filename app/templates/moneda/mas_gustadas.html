@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "moneda/_card.html" import coin_card %}
+{% block title %}Las más gustadas — NumisBol{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
+
+{% block content %}
+<div style="display:none">{{ csrf_input(request) }}</div>
+<div class="page-wrapper">
+
+    <!-- Encabezado -->
+    <div class="page-header">
+        <div class="container">
+            <div class="page-header-inner">
+                <div>
+                    <p class="page-breadcrumb"><a href="/">NumisBol</a> / <a href="/monedas">Monedas públicas</a> / Las más gustadas</p>
+                    <h1 class="page-title page-title-likes">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg>
+                        Las más gustadas
+                    </h1>
+                    <p class="page-subtitle">
+                        {% if total %}
+                        Las {{ total }} pieza{{ 's' if total != 1 else '' }} que más le gustaron a la comunidad, de la más votada a la menos
+                        {% else %}
+                        El ranking de las piezas que más le gustan a la comunidad
+                        {% endif %}
+                    </p>
+                </div>
+                <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                    <a href="/monedas" class="btn btn-outline">Ver todas las públicas</a>
+                    {% if not user %}
+                    <a href="/auth/registro" class="btn btn-primary">Crear cuenta gratis</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if coins %}
+        <div class="coins-grid">
+            {% for coin in coins %}
+            {{ coin_card(coin, likes, mis_likes, user, rank=(pagina - 1) * per_page + loop.index) }}
+            {% endfor %}
+        </div>
+
+        {% if total_paginas > 1 %}
+        <div class="pagination">
+            {% if pagina > 1 %}
+            <a href="/monedas/mas-gustadas?pagina={{ pagina - 1 }}" class="pag-btn">← Anterior</a>
+            {% else %}
+            <span class="pag-btn pag-disabled">← Anterior</span>
+            {% endif %}
+
+            {% for p in range(1, total_paginas + 1) %}
+                {% if p == pagina %}
+                <span class="pag-btn pag-active">{{ p }}</span>
+                {% elif p == 1 or p == total_paginas or (p >= pagina - 2 and p <= pagina + 2) %}
+                <a href="/monedas/mas-gustadas?pagina={{ p }}" class="pag-btn">{{ p }}</a>
+                {% elif p == pagina - 3 or p == pagina + 3 %}
+                <span class="pag-btn pag-ellipsis">…</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagina < total_paginas %}
+            <a href="/monedas/mas-gustadas?pagina={{ pagina + 1 }}" class="pag-btn">Siguiente →</a>
+            {% else %}
+            <span class="pag-btn pag-disabled">Siguiente →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🤍</div>
+            <h3>Todavía ninguna pieza tiene me gusta</h3>
+            <p>Recorré las monedas públicas y tocá el corazón en las que más te gusten:<br>las más votadas van a aparecer acá.</p>
+            <a href="/monedas" class="btn btn-primary btn-lg">Ver monedas públicas</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ static_v('js/likes.js') }}" defer></script>
+{% endblock %}

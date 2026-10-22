@@ -14,7 +14,6 @@ router = APIRouter(prefix="/moneda", tags=["moneda-publica"])
 galeria_router = APIRouter(prefix="/monedas", tags=["monedas-publicas"])
 
 PER_PAGE = 24
-TOP_LIKES = 8
 
 
 def _publicas(db: Session):
@@ -141,22 +140,7 @@ async def galeria(
     pagina = min(pagina, total_paginas)
     coins = query.offset((pagina - 1) * PER_PAGE).limit(PER_PAGE).all()
 
-    # «Las más gustadas»: solo en la portada de la galería, sin filtros ni
-    # cuando ya se está ordenando por likes (sería la misma lista).
-    top_likes = []
-    sin_filtros = not any([q, pais, material, categoria, tipo, coleccionista, anio_desde, anio_hasta])
-    if pagina == 1 and sin_filtros and orden != "likes":
-        conteo = _conteo_likes(db)
-        top_likes = (
-            _publicas(db)
-            .options(joinedload(Coin.owner))
-            .join(conteo, conteo.c.coin_id == Coin.id)
-            .order_by(conteo.c.n.desc(), Coin.created_at.desc(), Coin.id.desc())
-            .limit(TOP_LIKES)
-            .all()
-        )
-
-    likes, mis_likes = _likes(db, coins + top_likes, user)
+    likes, mis_likes = _likes(db, coins, user)
 
     coleccionistas = (
         db.query(User.username, func.count(Coin.id).label("n"))
@@ -187,8 +171,45 @@ async def galeria(
         "coleccionistas": coleccionistas,
         "likes": likes,
         "mis_likes": mis_likes,
-        "top_likes": top_likes,
         "per_page": PER_PAGE,
+    })
+
+
+# ── Ranking: las más gustadas ────────────────────────────────
+@galeria_router.get("/mas-gustadas", response_class=HTMLResponse)
+async def mas_gustadas(request: Request, pagina: int = 1, db: Session = Depends(get_db)):
+    """Piezas públicas con al menos un like, de la más gustada a la menos."""
+    user = get_current_user_optional(request, db)
+
+    conteo = _conteo_likes(db)
+    query = (
+        _publicas(db)
+        .options(joinedload(Coin.owner))
+        .join(conteo, conteo.c.coin_id == Coin.id)
+    )
+    total = query.count()
+
+    pagina = max(1, pagina)
+    total_paginas = max(1, -(-total // PER_PAGE))
+    pagina = min(pagina, total_paginas)
+    coins = (
+        query.order_by(conteo.c.n.desc(), Coin.created_at.desc(), Coin.id.desc())
+        .offset((pagina - 1) * PER_PAGE)
+        .limit(PER_PAGE)
+        .all()
+    )
+
+    likes, mis_likes = _likes(db, coins, user)
+
+    return templates.TemplateResponse(request, "moneda/mas_gustadas.html", {
+        "user": user,
+        "coins": coins,
+        "total": total,
+        "pagina": pagina,
+        "total_paginas": total_paginas,
+        "per_page": PER_PAGE,
+        "likes": likes,
+        "mis_likes": mis_likes,
     })
 
 

@@ -2221,8 +2221,7 @@ body.serie-panel-abierto { overflow: hidden; }
 
 /* Dentro de la tarjeta: al final de la fila del dueño */
 .coin-like--card {
-    margin-left: auto;
-    margin-right: -.45rem;
+    margin: -.3rem -.45rem -.3rem auto;   /* no agranda la fila: igual altura con o sin corazón */
     flex-shrink: 0;
 }
 .coin-like--card.coin-like--empty { display: none; }
@@ -2271,39 +2270,11 @@ body.serie-panel-abierto { overflow: hidden; }
 .coin-rank--2 { background: #C0C0CC; border-color: #E4E4EE; color: #1A1A1F; }
 .coin-rank--3 { background: #B87333; border-color: #D9955A; color: #1A1A1F; }
 
-/* «Las más gustadas» (arriba de la galería) */
-.top-likes { margin-bottom: 2rem; }
-.top-likes-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: .9rem;
-}
-.top-likes-title,
-.coins-area-title {
+/* Página «Las más gustadas» y su acceso desde la galería */
+.page-title-likes {
     display: flex;
     align-items: center;
-    gap: .5rem;
-    font-size: var(--font-lg);
-    font-weight: 700;
-    color: var(--text-primary);
+    gap: .6rem;
 }
-.coins-area-title { margin-bottom: .9rem; }
-.top-likes-title svg { width: 20px; height: 20px; fill: #F4607A; }
-.top-likes-all { font-size: var(--font-sm); color: var(--accent-dim); text-decoration: none; }
-.top-likes-all:hover { color: var(--accent); }
-.top-likes-row {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(190px, 220px);
-    gap: 1.1rem;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding: 4px 2px 10px;      /* deja ver el hover (sube 3px) y la sombra */
-}
-.top-likes-row > .coin-item { scroll-snap-align: start; }
-@media (max-width: 600px) {
-    .top-likes-row { grid-auto-columns: 62%; }
-}
+.page-title-likes svg { width: .85em; height: .85em; fill: #F4607A; flex-shrink: 0; }
+.btn-likes svg { width: 17px; height: 17px; fill: #F4607A; flex-shrink: 0; }

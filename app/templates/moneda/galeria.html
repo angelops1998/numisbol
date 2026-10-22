@@ -21,6 +21,10 @@
                     </p>
                 </div>
                 <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                    <a href="/monedas/mas-gustadas" class="btn btn-outline btn-likes">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg>
+                        Las más gustadas
+                    </a>
                     {% if user %}
                     <a href="/coleccion" class="btn btn-outline">Mi colección</a>
                     {% else %}
@@ -228,24 +232,6 @@
 
             <!-- Grilla -->
             <main class="coins-area">
-                {% if top_likes %}
-                <section class="top-likes">
-                    <div class="top-likes-header">
-                        <h2 class="top-likes-title">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg>
-                            Las más gustadas
-                        </h2>
-                        <a href="/monedas?orden=likes" class="top-likes-all">Ver ranking completo →</a>
-                    </div>
-                    <div class="top-likes-row">
-                        {% for coin in top_likes %}
-                        {{ coin_card(coin, likes, mis_likes, user, rank=loop.index) }}
-                        {% endfor %}
-                    </div>
-                </section>
-                {% if coins %}<h2 class="coins-area-title">Todas las piezas</h2>{% endif %}
-                {% endif %}
-
                 {% if coins %}
                 <div class="coins-grid">
                     {% for coin in coins %}
