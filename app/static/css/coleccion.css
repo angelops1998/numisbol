@@ -2184,35 +2184,33 @@ body.serie-panel-abierto { overflow: hidden; }
 
 /* ── Me gusta de las piezas públicas ───────────────────────── */
 .coin-like {
+    --like: #F4607A;
     display: inline-flex;
     align-items: center;
     gap: .3rem;
-    border: 1px solid var(--border-light);
-    background: rgba(20,20,24,.78);
-    backdrop-filter: blur(4px);
-    color: var(--text-muted);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--like);
     border-radius: 99px;
     cursor: pointer;
     user-select: none;
     font-size: var(--font-xs);
     font-weight: 700;
     line-height: 1;
-    padding: .35rem .6rem;
-    transition: color var(--transition), border-color var(--transition),
-                background var(--transition), transform var(--transition);
+    padding: .3rem .5rem;
+    transition: background var(--transition), border-color var(--transition);
 }
-.coin-like:hover    { color: #F0A0A0; border-color: #7D2E2E; }
+.coin-like:hover         { background: rgba(244,96,122,.13); }
 .coin-like:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.coin-like svg      { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; }
-.coin-like--on,
-.coin-like--on:hover { color: #F4607A; border-color: #8E2338; background: rgba(142,35,56,.22); }
-.coin-like--on svg  { fill: currentColor; stroke: currentColor; }
-.coin-like--error   { color: var(--error-text); border-color: var(--error); }
-.coin-like[data-busy] { opacity: .55; pointer-events: none; }
+.coin-like svg           { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; }
+.coin-like--on svg,
+.coin-like--static svg   { fill: currentColor; }
+.coin-like--on           { background: rgba(244,96,122,.13); }
 .coin-like--static,
-.coin-like--static:hover { cursor: default; color: var(--text-muted); border-color: var(--border-light); }
-.coin-like--card.coin-like--empty { display: none; }
-.coin-like-count--zero { display: none; }
+.coin-like--static:hover { cursor: default; background: transparent; }
+.coin-like--error        { color: var(--error-text); }
+.coin-like[data-busy]    { opacity: .55; pointer-events: none; }
+.coin-like-count--zero   { display: none; }
 
 @keyframes coin-like-pop {
     0%   { transform: scale(1); }
@@ -2221,13 +2219,13 @@ body.serie-panel-abierto { overflow: hidden; }
 }
 .coin-like--pop { animation: coin-like-pop .3s ease; }
 
-/* Sobre la foto, en la grilla */
+/* Dentro de la tarjeta: al final de la fila del dueño */
 .coin-like--card {
-    position: absolute;
-    top: .5rem;
-    right: .5rem;
-    z-index: 2;
+    margin-left: auto;
+    margin-right: -.45rem;
+    flex-shrink: 0;
 }
+.coin-like--card.coin-like--empty { display: none; }
 
 /* Botón grande del detalle público */
 .coin-like--lg {
@@ -2235,8 +2233,11 @@ body.serie-panel-abierto { overflow: hidden; }
     font-size: var(--font-sm);
     padding: .6rem 1.1rem;
     background: var(--bg-card);
-    backdrop-filter: none;
+    border-color: rgba(244,96,122,.35);
 }
+.coin-like--lg:hover,
+.coin-like--lg.coin-like--on { background: rgba(244,96,122,.13); border-color: rgba(244,96,122,.6); }
+.coin-like--lg.coin-like--static { background: var(--bg-card); border-color: rgba(244,96,122,.35); }
 .coin-like--lg svg { width: 19px; height: 19px; }
 .coin-like--lg .coin-like-count--zero { display: inline; }
 
@@ -2248,3 +2249,61 @@ body.serie-panel-abierto { overflow: hidden; }
     margin-bottom: 1.25rem;
 }
 .coin-like-hint { font-size: var(--font-xs); color: var(--text-muted); }
+
+/* Puesto en el ranking, sobre la foto */
+.coin-rank {
+    position: absolute;
+    top: .5rem;
+    left: .5rem;
+    z-index: 2;
+    min-width: 2rem;
+    padding: .25rem .5rem;
+    border-radius: 99px;
+    background: rgba(20,20,24,.82);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    font-size: var(--font-xs);
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.1;
+}
+.coin-rank--1 { background: #D4AF37; border-color: #F3D774; color: #1A1A1F; }
+.coin-rank--2 { background: #C0C0CC; border-color: #E4E4EE; color: #1A1A1F; }
+.coin-rank--3 { background: #B87333; border-color: #D9955A; color: #1A1A1F; }
+
+/* «Las más gustadas» (arriba de la galería) */
+.top-likes { margin-bottom: 2rem; }
+.top-likes-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: .9rem;
+}
+.top-likes-title,
+.coins-area-title {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: var(--font-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.coins-area-title { margin-bottom: .9rem; }
+.top-likes-title svg { width: 20px; height: 20px; fill: #F4607A; }
+.top-likes-all { font-size: var(--font-sm); color: var(--accent-dim); text-decoration: none; }
+.top-likes-all:hover { color: var(--accent); }
+.top-likes-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(190px, 220px);
+    gap: 1.1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 4px 2px 10px;      /* deja ver el hover (sube 3px) y la sombra */
+}
+.top-likes-row > .coin-item { scroll-snap-align: start; }
+@media (max-width: 600px) {
+    .top-likes-row { grid-auto-columns: 62%; }
+}

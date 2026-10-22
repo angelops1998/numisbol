@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "moneda/_like.html" import like_btn %}
+{% from "moneda/_card.html" import coin_card %}
 {% block title %}{{ coin.name }} — NumisBol{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
 
@@ -166,24 +167,7 @@
             </div>
             <div class="coins-grid">
                 {% for otra in otras %}
-                <a href="/moneda/{{ otra.id }}" class="coin-item">
-                    <div class="coin-item-img">
-                        {% if otra.image_url %}
-                            <img src="{{ otra.image_url }}" alt="{{ otra.name }}" loading="lazy">
-                        {% else %}
-                            <div class="coin-item-no-img">{% if otra.tipo == 'billete' %}💵{% else %}🪙{% endif %}</div>
-                        {% endif %}
-                        {{ like_btn(otra.id, likes.get(otra.id, 0), otra.id in mis_likes, 'coin-like--card', not user or otra.user_id != user.id) }}
-                    </div>
-                    <div class="coin-item-body">
-                        <div class="coin-item-name">{{ otra.name }}</div>
-                        <div class="coin-item-meta">
-                            {% if otra.year %}{{ otra.year }}{% endif %}
-                            {% if otra.year and otra.country %} · {% endif %}
-                            {% if otra.country %}{{ otra.country }}{% endif %}
-                        </div>
-                    </div>
-                </a>
+                {{ coin_card(otra, likes, mis_likes, user, completo=False) }}
                 {% endfor %}
             </div>
         </section>

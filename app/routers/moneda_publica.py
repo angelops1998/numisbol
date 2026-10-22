@@ -14,6 +14,7 @@ router = APIRouter(prefix="/moneda", tags=["moneda-publica"])
 galeria_router = APIRouter(prefix="/monedas", tags=["monedas-publicas"])
 
 PER_PAGE = 24
+TOP_LIKES = 8
 
 
 def _publicas(db: Session):
@@ -39,6 +40,15 @@ def _opciones(db: Session, col):
         .all()
     )
     return [r[0] for r in rows]
+
+
+def _conteo_likes(db: Session):
+    """Subconsulta (coin_id, n) con el total de likes de cada pieza."""
+    return (
+        db.query(CoinLike.coin_id.label("coin_id"), func.count(CoinLike.id).label("n"))
+        .group_by(CoinLike.coin_id)
+        .subquery()
+    )
 
 
 def _likes(db: Session, coins, user):
@@ -118,11 +128,7 @@ async def galeria(
     elif orden == "anio_desc":
         query = query.order_by(Coin.year.desc().nullslast())
     elif orden == "likes":
-        conteo = (
-            db.query(CoinLike.coin_id.label("coin_id"), func.count(CoinLike.id).label("n"))
-            .group_by(CoinLike.coin_id)
-            .subquery()
-        )
+        conteo = _conteo_likes(db)
         query = (
             query.outerjoin(conteo, conteo.c.coin_id == Coin.id)
             .order_by(func.coalesce(conteo.c.n, 0).desc(), Coin.created_at.desc(), Coin.id.desc())
@@ -135,7 +141,22 @@ async def galeria(
     pagina = min(pagina, total_paginas)
     coins = query.offset((pagina - 1) * PER_PAGE).limit(PER_PAGE).all()
 
-    likes, mis_likes = _likes(db, coins, user)
+    # «Las más gustadas»: solo en la portada de la galería, sin filtros ni
+    # cuando ya se está ordenando por likes (sería la misma lista).
+    top_likes = []
+    sin_filtros = not any([q, pais, material, categoria, tipo, coleccionista, anio_desde, anio_hasta])
+    if pagina == 1 and sin_filtros and orden != "likes":
+        conteo = _conteo_likes(db)
+        top_likes = (
+            _publicas(db)
+            .options(joinedload(Coin.owner))
+            .join(conteo, conteo.c.coin_id == Coin.id)
+            .order_by(conteo.c.n.desc(), Coin.created_at.desc(), Coin.id.desc())
+            .limit(TOP_LIKES)
+            .all()
+        )
+
+    likes, mis_likes = _likes(db, coins + top_likes, user)
 
     coleccionistas = (
         db.query(User.username, func.count(Coin.id).label("n"))
@@ -166,6 +187,8 @@ async def galeria(
         "coleccionistas": coleccionistas,
         "likes": likes,
         "mis_likes": mis_likes,
+        "top_likes": top_likes,
+        "per_page": PER_PAGE,
     })
 
 

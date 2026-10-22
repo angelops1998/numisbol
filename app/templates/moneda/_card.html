@@ -1,0 +1,53 @@
+{# Tarjeta de una pieza pública (galería, «Las más gustadas», «Más de …»).
+   completo=False: solo foto, nombre y año/país, sin dueño. #}
+{% from "moneda/_like.html" import like_btn %}
+{% macro coin_card(coin, likes, mis_likes, user, rank=None, completo=True) %}
+{% set n = likes.get(coin.id, 0) %}
+{% set activo = not user or coin.user_id != user.id %}
+<a href="/moneda/{{ coin.id }}" class="coin-item">
+    <div class="coin-item-img">
+        {% if coin.image_url %}
+            <img src="{{ coin.image_url }}" alt="{{ coin.name }}" loading="lazy">
+        {% else %}
+            <div class="coin-item-no-img">{% if coin.tipo == 'billete' %}💵{% else %}🪙{% endif %}</div>
+        {% endif %}
+        {% if rank %}<span class="coin-rank{% if rank <= 3 %} coin-rank--{{ rank }}{% endif %}">#{{ rank }}</span>{% endif %}
+    </div>
+    <div class="coin-item-body">
+        <div class="coin-item-name">{{ coin.name }}</div>
+        <div class="coin-item-meta">
+            {% if coin.year %}{{ coin.year }}{% endif %}
+            {% if coin.year and coin.country %} · {% endif %}
+            {% if coin.country %}{{ coin.country }}{% endif %}
+        </div>
+        {% if completo %}
+        {% if coin.material %}
+        <div class="coin-item-material">{{ coin.material }}</div>
+        {% endif %}
+        {% if coin.condition %}
+        {% set cond_parts = coin.condition.split(' – ') %}
+        {% set cond_num = cond_parts[0] | int(default=0) %}
+        <span class="coin-condition-badge {% if cond_num >= 60 %}cond-mint{% elif cond_num >= 40 %}cond-au{% elif cond_num >= 20 %}cond-vf{% else %}cond-circ{% endif %}">
+            {{ cond_parts[0] }} – {{ cond_parts[1].split(' → ')[0] if cond_parts|length > 1 else '' }}
+        </span>
+        {% endif %}
+        {% endif %}
+        {% if completo and coin.owner %}
+        <div class="coin-item-owner">
+            {% if coin.owner.avatar_url %}
+            <img src="{{ coin.owner.avatar_url }}" alt="" class="coin-item-owner-avatar" width="18" height="18" loading="lazy">
+            {% else %}
+            <span class="coin-item-owner-avatar coin-item-owner-avatar-ph">👤</span>
+            {% endif %}
+            <span class="coin-item-owner-name">{{ coin.owner.username }}</span>
+            {% if coin.owner.is_verified %}<span class="coin-item-owner-check" title="Coleccionista verificado">✔</span>{% endif %}
+            {{ like_btn(coin.id, n, coin.id in mis_likes, 'coin-like--card', activo) }}
+        </div>
+        {% elif activo or n %}
+        <div class="coin-item-owner">
+            {{ like_btn(coin.id, n, coin.id in mis_likes, 'coin-like--card', activo) }}
+        </div>
+        {% endif %}
+    </div>
+</a>
+{% endmacro %}
