@@ -153,19 +153,36 @@
                             <p class="share-box-label">Visibilidad</p>
                             <p class="share-box-desc">
                                 {% if coin.is_public %}
-                                Esta moneda es <strong>pública</strong> — cualquiera con el enlace puede verla.
+                                Esta pieza es <strong>pública</strong> — está listada en
+                                <a href="/monedas" style="color:var(--accent)">Monedas públicas</a>
+                                y cualquier persona que entre a NumisBol puede verla.
                                 {% else %}
-                                Esta moneda es <strong>privada</strong> — solo vos la ves.
+                                Esta pieza es <strong>privada</strong> — solo vos la ves.
                                 {% endif %}
                             </p>
                         </div>
-                        <form method="post" action="/coleccion/{{ coin.id }}/toggle-publico">
+                        <form method="post" action="/coleccion/{{ coin.id }}/toggle-publico"
+                              {% if not coin.is_public %}onsubmit="return confirm('Al hacerla pública, esta pieza va a aparecer en la sección Monedas públicas y cualquier persona que entre a NumisBol podrá verla junto a tu nombre de usuario. ¿Continuar?')"{% endif %}>
                 {{ csrf_input(request) }}
                             <button type="submit" class="btn {% if coin.is_public %}btn-outline share-toggle-on{% else %}btn-outline{% endif %}">
                                 {% if coin.is_public %}🔓 Pública{% else %}🔒 Privada{% endif %}
                             </button>
                         </form>
                     </div>
+
+                    {% if not coin.is_public %}
+                    <div class="visibility-warning" style="margin-top:1rem">
+                        <span class="visibility-warning-icon">⚠</span>
+                        <div>
+                            <strong>Hacerla pública la muestra a toda la comunidad</strong>
+                            <p>
+                                No se comparte solo por enlace: aparece listada en
+                                <a href="/monedas">Monedas públicas</a> junto a tu nombre de usuario.
+                                El valor estimado y el precio de compra nunca se muestran.
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     {% if coin.is_public %}
                     <div class="share-btns" style="margin-top:1rem">

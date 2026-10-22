@@ -186,6 +186,38 @@
     padding: .1rem .45rem;
 }
 
+/* Dueño de la pieza (galería pública) */
+.coin-item-owner {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .55rem;
+    padding-top: .5rem;
+    border-top: 1px solid var(--border);
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    min-width: 0;
+}
+.coin-item-owner-avatar {
+    flex-shrink: 0;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.coin-item-owner-avatar-ph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-2);
+    font-size: 10px;
+}
+.coin-item-owner-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.coin-item-owner-check { color: #4ade80; flex-shrink: 0; }
+
 /* Empty state */
 .empty-state {
     text-align: center;
@@ -907,6 +939,38 @@
 .visibility-toggle-label {
     font-size: var(--font-sm);
     color: var(--text-secondary);
+}
+
+/* ── Aviso: la pieza pública se ve en toda la comunidad ──── */
+.visibility-warning {
+    display: flex;
+    gap: .7rem;
+    margin-top: 1rem;
+    padding: .9rem 1rem;
+    background: rgba(234,179,8,.07);
+    border: 1px solid rgba(234,179,8,.3);
+    border-left-width: 3px;
+    border-radius: var(--radius);
+}
+.visibility-warning-icon { flex-shrink: 0; font-size: 1.05rem; line-height: 1.3; }
+.visibility-warning strong {
+    display: block;
+    font-size: var(--font-sm);
+    color: #eab308;
+    margin-bottom: .25rem;
+}
+.visibility-warning p {
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin: 0;
+}
+.visibility-warning a { color: var(--accent); }
+.visibility-warning-muted {
+    display: block;
+    margin-top: .4rem;
+    font-size: var(--font-xs);
+    color: var(--text-muted);
 }
 
 /* ── Estadísticas ────────────────────────────────────────── */
@@ -2059,3 +2123,57 @@ body.serie-panel-abierto { overflow: hidden; }
 /* Chrome ya dibuja su propia "x" en los type=search: usamos solo la nuestra,
    que además existe en Firefox. */
 .series-search .filter-input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+
+/* ── Página pública: dueño de la pieza y más de su colección ─ */
+.public-owner {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+    padding: .7rem .9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+.public-owner-avatar {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.public-owner-avatar-ph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-2);
+    font-size: 1.1rem;
+}
+.public-owner-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.public-owner-label {
+    font-size: var(--font-xs);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text-muted);
+}
+.public-owner-name {
+    font-size: var(--font-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.public-more { margin: 3rem 0 1rem; }
+.public-more-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+}
+.public-more-title {
+    font-size: var(--font-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+}

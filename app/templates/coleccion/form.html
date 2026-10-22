@@ -487,15 +487,32 @@
                 <div class="form-section">
                     <h2 class="form-section-title">Visibilidad</h2>
                     <label class="visibility-toggle">
-                        <input type="checkbox" name="is_public" value="1"
+                        <input type="checkbox" name="is_public" value="1" id="isPublicCheck"
                                {% if coin and coin.is_public %}checked{% endif %}>
                         <span class="visibility-toggle-track">
                             <span class="visibility-toggle-thumb"></span>
                         </span>
                         <span class="visibility-toggle-label" id="labelVisibilidad">
-                            Moneda pública — cualquiera con el enlace puede verla
+                            Moneda privada — solo vos la ves
                         </span>
                     </label>
+
+                    <div class="visibility-warning" id="visibilityWarning" style="display:none">
+                        <span class="visibility-warning-icon">⚠</span>
+                        <div>
+                            <strong>Al guardar, esta pieza será pública para toda la comunidad</strong>
+                            <p>
+                                No se comparte solo por enlace: va a aparecer listada en la sección
+                                <a href="/monedas" target="_blank" rel="noopener">Monedas públicas</a>,
+                                donde cualquier persona que entre a NumisBol puede encontrarla, junto con
+                                tu nombre de usuario.
+                            </p>
+                            <span class="visibility-warning-muted">
+                                No se muestran el valor estimado ni el precio de compra. Podés volverla
+                                privada en cualquier momento desde el detalle de la pieza.
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Acciones -->
@@ -676,11 +693,6 @@ document.querySelectorAll('input[type=number]').forEach(function(el) {
         var lAnio = document.getElementById('labelAnio');
         if (lAnio) lAnio.textContent = esBillete ? 'Año de emisión' : 'Año de acuñación';
 
-        var lVis = document.getElementById('labelVisibilidad');
-        if (lVis) lVis.textContent = esBillete
-            ? 'Billete público — cualquiera con el enlace puede verlo'
-            : 'Moneda pública — cualquiera con el enlace puede verla';
-
         if (!isEdit && btnSubmit) {
             btnSubmit.textContent = esBillete ? 'Agregar billete' : 'Agregar moneda';
         }
@@ -692,6 +704,34 @@ document.querySelectorAll('input[type=number]').forEach(function(el) {
 
     // init on load
     applyTipo(hidden.value || 'moneda');
+})();
+
+// ── Aviso de visibilidad pública ──────────────────────────────
+(function() {
+    const chk    = document.getElementById('isPublicCheck');
+    const label  = document.getElementById('labelVisibilidad');
+    const warn   = document.getElementById('visibilityWarning');
+    const hidden = document.getElementById('tipoHidden');
+    if (!chk || !label) return;
+
+    function render() {
+        const esBillete = hidden && hidden.value === 'billete';
+        const pieza = esBillete ? 'Billete' : 'Moneda';
+        if (chk.checked) {
+            label.textContent = pieza + (esBillete ? ' público' : ' pública')
+                              + ' — visible para todos en NumisBol';
+        } else {
+            label.textContent = pieza + (esBillete ? ' privado — solo vos lo ves'
+                                                   : ' privada — solo vos la ves');
+        }
+        if (warn) warn.style.display = chk.checked ? 'flex' : 'none';
+    }
+
+    chk.addEventListener('change', render);
+    document.querySelectorAll('.tipo-btn').forEach(function(b) {
+        b.addEventListener('click', render);
+    });
+    render();
 })();
 
 // ── Currency toggle (BOB / USD) ──────────────────────────────

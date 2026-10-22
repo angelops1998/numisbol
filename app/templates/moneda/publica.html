@@ -9,16 +9,19 @@
             <div class="page-header-inner">
                 <div>
                     <p class="page-breadcrumb">
-                        <a href="/">NumisBol</a> / Moneda pública
+                        <a href="/">NumisBol</a> / <a href="/monedas">Monedas públicas</a>
                     </p>
                     <h1 class="page-title" style="font-size:clamp(1.6rem,4vw,2.8rem);letter-spacing:-.5px">{{ coin.name }}</h1>
                     {% if coin.denomination %}<p class="page-subtitle" style="font-size:1.1rem">{{ coin.denomination }}{% if coin.currency_unit %} · {{ coin.currency_unit }}{% endif %}</p>{% endif %}
                 </div>
-                {% if user %}
-                <a href="/coleccion" class="btn btn-outline">← Mi colección</a>
-                {% else %}
-                <a href="/auth/login" class="btn btn-primary">Iniciar sesión</a>
-                {% endif %}
+                <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+                    <a href="/monedas" class="btn btn-outline">Ver todas las públicas</a>
+                    {% if user %}
+                    <a href="/coleccion" class="btn btn-outline">Mi colección</a>
+                    {% else %}
+                    <a href="/auth/registro" class="btn btn-primary">Crear cuenta gratis</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -60,6 +63,28 @@
 
             <!-- Datos -->
             <div class="detail-info">
+
+                {% if coin.owner %}
+                <div class="public-owner">
+                    {% if coin.owner.avatar_url %}
+                    <img src="{{ coin.owner.avatar_url }}" alt="" class="public-owner-avatar">
+                    {% else %}
+                    <span class="public-owner-avatar public-owner-avatar-ph">👤</span>
+                    {% endif %}
+                    <div class="public-owner-info">
+                        <span class="public-owner-label">De la colección de</span>
+                        <span class="public-owner-name">
+                            {{ coin.owner.username }}
+                            {% if coin.owner.is_verified %}<span class="coin-item-owner-check" title="Coleccionista verificado">✔</span>{% endif %}
+                        </span>
+                    </div>
+                    {% if total_del_dueno > 1 %}
+                    <a href="/monedas?coleccionista={{ coin.owner.username | urlencode }}" class="btn btn-outline btn-sm">
+                        Ver sus {{ total_del_dueno }} públicas
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
 
                 {% if coin.condition %}
                 <div class="detail-condition" style="margin-bottom:1.25rem;padding:.6rem 1rem;background:var(--surface);border-radius:var(--radius);font-weight:600;font-size:var(--font-sm)">
@@ -113,10 +138,43 @@
                 </div>
 
                 <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:var(--font-xs);color:var(--text-muted)">
-                    Publicado en <a href="/" style="color:var(--accent)">NumisBol</a> — La comunidad numismática de Bolivia
+                    Publicado en <a href="/monedas" style="color:var(--accent)">Monedas públicas</a>
+                    de <a href="/" style="color:var(--accent)">NumisBol</a> — La comunidad numismática de Bolivia
                 </div>
             </div>
         </div>
+
+        {% if otras %}
+        <section class="public-more">
+            <div class="public-more-header">
+                <h2 class="public-more-title">Más de {{ coin.owner.username }}</h2>
+                {% if total_del_dueno > otras | length + 1 %}
+                <a href="/monedas?coleccionista={{ coin.owner.username | urlencode }}" class="btn btn-outline btn-sm">Ver todas</a>
+                {% endif %}
+            </div>
+            <div class="coins-grid">
+                {% for otra in otras %}
+                <a href="/moneda/{{ otra.id }}" class="coin-item">
+                    <div class="coin-item-img">
+                        {% if otra.image_url %}
+                            <img src="{{ otra.image_url }}" alt="{{ otra.name }}" loading="lazy">
+                        {% else %}
+                            <div class="coin-item-no-img">{% if otra.tipo == 'billete' %}💵{% else %}🪙{% endif %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="coin-item-body">
+                        <div class="coin-item-name">{{ otra.name }}</div>
+                        <div class="coin-item-meta">
+                            {% if otra.year %}{{ otra.year }}{% endif %}
+                            {% if otra.year and otra.country %} · {% endif %}
+                            {% if otra.country %}{{ otra.country }}{% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
     </div>
 </div>
 
