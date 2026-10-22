@@ -252,10 +252,10 @@
             <img src="" alt="" id="coinLbImg" draggable="false">
         </div>
         <div class="lb-zoom-bar">
-            <button class="lb-zoom-btn" id="coinLbZoomOut">−</button>
+            <button class="lb-zoom-btn" id="coinLbZoomOut" title="Alejar">−</button>
             <span class="lb-zoom-label" id="coinLbZoomLabel">100%</span>
-            <button class="lb-zoom-btn" id="coinLbZoomIn">+</button>
-            <button class="lb-zoom-btn lb-zoom-btn-sm" id="coinLbZoomReset">1:1</button>
+            <button class="lb-zoom-btn" id="coinLbZoomIn" title="Acercar">+</button>
+            <button class="lb-zoom-btn lb-zoom-btn-sm" id="coinLbZoomReset" title="Restablecer">⟲</button>
         </div>
     </div>
 </div>
@@ -273,100 +273,36 @@ document.getElementById('shareCopyBtn')?.addEventListener('click', function(){
 });
 </script>
 {% if coin.image_url or coin.image_back_url %}
+<script src="/static/js/lightbox-zoom.js"></script>
 <script>
 (function(){
-    const slides  = Array.from(document.querySelectorAll('.coin-carousel-slide'));
-    const track   = document.getElementById('coinCarouselTrack');
-    const dotsEl  = Array.from(document.querySelectorAll('.coin-car-dot'));
-    let carCur    = 0;
+    const slides = Array.from(document.querySelectorAll('.coin-carousel-slide'));
+    const track  = document.getElementById('coinCarouselTrack');
+    const dotsEl = Array.from(document.querySelectorAll('.coin-car-dot'));
+    let carCur   = 0;
 
     function carGoTo(i) {
         carCur = (i + slides.length) % slides.length;
-        track.style.transform = `translateX(-${carCur * 100}%)`;
+        if (track) track.style.transform = `translateX(-${carCur * 100}%)`;
         dotsEl.forEach((d, idx) => d.classList.toggle('coin-car-dot-active', idx === carCur));
     }
 
     let autoTimer = null;
-    function startAuto() { if (slides.length < 2) return; autoTimer = setInterval(() => carGoTo(carCur + 1), 3500); }
-    function stopAuto()  { clearInterval(autoTimer); }
+    function stopAuto()  { clearInterval(autoTimer); autoTimer = null; }
+    function startAuto() { if (slides.length < 2) return; stopAuto(); autoTimer = setInterval(() => carGoTo(carCur + 1), 3500); }
 
     document.getElementById('coinCarPrev')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); carGoTo(carCur - 1); startAuto(); });
     document.getElementById('coinCarNext')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); carGoTo(carCur + 1); startAuto(); });
     dotsEl.forEach(d => d.addEventListener('click', () => { stopAuto(); carGoTo(+d.dataset.idx); startAuto(); }));
     startAuto();
 
-    const lb    = document.getElementById('coinLb');
-    const wrap  = document.getElementById('coinLbWrap');
-    const img   = document.getElementById('coinLbImg');
-    const label = document.getElementById('coinLbZoomLabel');
-
-    let cur = 0, scale = 1, ox = 0, oy = 0;
-    let dragging = false, dragStartX = 0, dragStartY = 0, dragOx = 0, dragOy = 0, didDrag = false;
-    const MIN = 1, MAX = 5;
-
-    function clampOffset(s, x, y) {
-        const iw = img.naturalWidth || img.offsetWidth, ih = img.naturalHeight || img.offsetHeight;
-        const maxX = Math.max(0, (iw * s - wrap.offsetWidth) / 2);
-        const maxY = Math.max(0, (ih * s - wrap.offsetHeight) / 2);
-        return { x: Math.max(-maxX, Math.min(maxX, x)), y: Math.max(-maxY, Math.min(maxY, y)) };
-    }
-    function apply(s, x, y) {
-        scale = Math.max(MIN, Math.min(MAX, s));
-        const c = clampOffset(scale, x, y); ox = c.x; oy = c.y;
-        img.style.transform = `translate(${ox}px,${oy}px) scale(${scale})`;
-        label.textContent = Math.round(scale * 100) + '%';
-        wrap.style.cursor = scale > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in';
-    }
-    function reset() { apply(1, 0, 0); }
-    function zoomAt(ns, cx, cy) {
-        const r = img.getBoundingClientRect();
-        apply(ns, ox - (cx - (r.left + r.width/2)) * (ns/scale - 1), oy - (cy - (r.top + r.height/2)) * (ns/scale - 1));
-    }
-    function open(i) {
-        cur = i; stopAuto(); carGoTo(i); reset();
-        img.src = slides[i].dataset.src;
-        lb.classList.add('lb-open'); document.body.style.overflow = 'hidden';
-        const multi = slides.length > 1;
-        document.getElementById('coinLbPrev').style.display = multi ? '' : 'none';
-        document.getElementById('coinLbNext').style.display = multi ? '' : 'none';
-    }
-    function close() { lb.classList.remove('lb-open'); document.body.style.overflow = ''; reset(); }
-    function prev()  { open((cur - 1 + slides.length) % slides.length); }
-    function next()  { open((cur + 1) % slides.length); }
-
-    slides.forEach((el, i) => el.addEventListener('click', () => open(i)));
-    document.getElementById('coinLbClose').addEventListener('click', close);
-    document.getElementById('coinLbPrev').addEventListener('click', e => { e.stopPropagation(); prev(); });
-    document.getElementById('coinLbNext').addEventListener('click', e => { e.stopPropagation(); next(); });
-    lb.addEventListener('click', e => { if (e.target === lb) close(); });
-
-    img.addEventListener('click', e => { e.stopPropagation(); if (didDrag) { didDrag = false; return; } scale > 1 ? reset() : zoomAt(2.5, e.clientX, e.clientY); });
-    wrap.addEventListener('wheel', e => { e.preventDefault(); zoomAt(scale * (e.deltaY < 0 ? 1.12 : 0.89), e.clientX, e.clientY); }, { passive: false });
-
-    function centerZoom(f) { const r = wrap.getBoundingClientRect(); zoomAt(scale * f, r.left + r.width/2, r.top + r.height/2); }
-    document.getElementById('coinLbZoomIn').addEventListener('click',    e => { e.stopPropagation(); centerZoom(1.5); });
-    document.getElementById('coinLbZoomOut').addEventListener('click',   e => { e.stopPropagation(); centerZoom(1/1.5); });
-    document.getElementById('coinLbZoomReset').addEventListener('click', e => { e.stopPropagation(); reset(); });
-
-    wrap.addEventListener('mousedown', e => { if (scale <= 1) return; e.preventDefault(); dragging = true; didDrag = false; dragStartX = e.clientX; dragStartY = e.clientY; dragOx = ox; dragOy = oy; });
-    window.addEventListener('mousemove', e => { if (!dragging) return; if (Math.abs(e.clientX-dragStartX)+Math.abs(e.clientY-dragStartY) > 4) didDrag = true; apply(scale, dragOx+e.clientX-dragStartX, dragOy+e.clientY-dragStartY); });
-    window.addEventListener('mouseup', () => { dragging = false; });
-
-    let t0dist = 0;
-    wrap.addEventListener('touchstart', e => {
-        if (e.touches.length === 2) t0dist = Math.hypot(e.touches[1].clientX-e.touches[0].clientX, e.touches[1].clientY-e.touches[0].clientY);
-        else if (e.touches.length === 1 && scale > 1) { dragging=true; dragStartX=e.touches[0].clientX; dragStartY=e.touches[0].clientY; dragOx=ox; dragOy=oy; }
-    }, { passive: true });
-    wrap.addEventListener('touchmove', e => {
-        if (e.touches.length === 2) { e.preventDefault(); const d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY); zoomAt(scale*d/t0dist,(e.touches[0].clientX+e.touches[1].clientX)/2,(e.touches[0].clientY+e.touches[1].clientY)/2); t0dist=d; }
-        else if (e.touches.length===1 && dragging) apply(scale, dragOx+e.touches[0].clientX-dragStartX, dragOy+e.touches[0].clientY-dragStartY);
-    }, { passive: false });
-    wrap.addEventListener('touchend', () => { dragging = false; });
-
-    document.addEventListener('keydown', e => {
-        if (!lb.classList.contains('lb-open')) return;
-        if (e.key==='Escape') close(); if (e.key==='ArrowLeft') prev(); if (e.key==='ArrowRight') next();
-        if (e.key==='+' || e.key==='=') centerZoom(1.3); if (e.key==='-') centerZoom(1/1.3); if (e.key==='0') reset();
+    window.initLightboxZoom({
+        lb: 'coinLb', wrap: 'coinLbWrap', img: 'coinLbImg', label: 'coinLbZoomLabel',
+        close: 'coinLbClose', prev: 'coinLbPrev', next: 'coinLbNext',
+        zoomIn: 'coinLbZoomIn', zoomOut: 'coinLbZoomOut', zoomReset: 'coinLbZoomReset',
+        triggers: '.coin-carousel-slide',
+        onOpen:  i => { stopAuto(); carGoTo(i); },
+        onClose: () => startAuto()
     });
 })();
 </script>

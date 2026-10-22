@@ -1204,11 +1204,15 @@ input[type=number] { -moz-appearance: textfield; }
     border-radius: 10px;
     touch-action: none;
 }
+.lightbox-img-wrap.lb-zoomed            { cursor: grab; }
+.lightbox-img-wrap.lb-zoomed:active     { cursor: grabbing; }
 .lightbox-img-wrap img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    transform-origin: 0 0;
+    /* El JS del zoom calcula los desplazamientos desde el centro */
+    transform-origin: 50% 50%;
+    will-change: transform;
     user-select: none;
     -webkit-user-drag: none;
     border-radius: 8px;
@@ -1372,9 +1376,14 @@ input[type=number] { -moz-appearance: textfield; }
     /* Lightbox en móvil */
     .lightbox-prev { left: .15rem; width: 40px; }
     .lightbox-next { right: .15rem; width: 40px; }
-    .lightbox-img-wrap { max-width: 95vw; }
+    .lightbox-img-wrap { max-width: 95vw; height: 64vh; }
     .lightbox-caption { font-size: var(--font-xs); padding: .4rem 1rem; }
-    .lb-zoom-bar { display: none; }
+
+    /* Barra de zoom compacta: también se usa en móvil */
+    .lb-content   { gap: .85rem; max-width: 95vw; }
+    .lb-zoom-bar  { gap: .35rem; padding: .35rem .5rem; }
+    .lb-zoom-btn  { width: 40px; height: 40px; font-size: 1.15rem; }
+    .lb-zoom-label { min-width: 3.6rem; height: 40px; font-size: .9rem; padding: 0 .5rem; }
 
     /* Admin anuncios */
     .admin-anuncio-row { grid-template-columns: 56px 1fr; }

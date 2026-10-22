@@ -187,6 +187,12 @@
         <div class="lightbox-img-wrap" id="coinLbWrap">
             <img src="" alt="" id="coinLbImg" draggable="false">
         </div>
+        <div class="lb-zoom-bar">
+            <button class="lb-zoom-btn" id="coinLbZoomOut" title="Alejar">−</button>
+            <span class="lb-zoom-label" id="coinLbZoomLabel">100%</span>
+            <button class="lb-zoom-btn" id="coinLbZoomIn" title="Acercar">+</button>
+            <button class="lb-zoom-btn lb-zoom-btn-sm" id="coinLbZoomReset" title="Restablecer">⟲</button>
+        </div>
     </div>
 </div>
 {% endif %}
@@ -203,24 +209,31 @@ document.getElementById('shareCopyBtn')?.addEventListener('click', function(){
 });
 </script>
 {% if coin.image_url or coin.image_back_url %}
+<script src="/static/js/lightbox-zoom.js"></script>
 <script>
 (function(){
     const slides = Array.from(document.querySelectorAll('.coin-carousel-slide'));
     const track  = document.getElementById('coinCarouselTrack');
     const dotsEl = Array.from(document.querySelectorAll('.coin-car-dot'));
-    let cur = 0;
-    function goTo(i){ cur=(i+slides.length)%slides.length; track.style.transform=`translateX(-${cur*100}%)`; dotsEl.forEach((d,j)=>d.classList.toggle('coin-car-dot-active',j===cur)); }
-    document.getElementById('coinCarPrev')?.addEventListener('click',e=>{e.stopPropagation();goTo(cur-1);});
-    document.getElementById('coinCarNext')?.addEventListener('click',e=>{e.stopPropagation();goTo(cur+1);});
-    dotsEl.forEach(d=>d.addEventListener('click',()=>goTo(+d.dataset.idx)));
+    let carCur   = 0;
 
-    const lb=document.getElementById('coinLb'), wrap=document.getElementById('coinLbWrap'), img=document.getElementById('coinLbImg');
-    function open(i){ cur=i; img.src=slides[i].dataset.src; lb.classList.add('lb-open'); document.body.style.overflow='hidden'; }
-    function close(){ lb.classList.remove('lb-open'); document.body.style.overflow=''; }
-    slides.forEach((el,i)=>el.addEventListener('click',()=>open(i)));
-    document.getElementById('coinLbClose').addEventListener('click',close);
-    lb.addEventListener('click',e=>{if(e.target===lb)close();});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+    function carGoTo(i) {
+        carCur = (i + slides.length) % slides.length;
+        if (track) track.style.transform = `translateX(-${carCur * 100}%)`;
+        dotsEl.forEach((d, idx) => d.classList.toggle('coin-car-dot-active', idx === carCur));
+    }
+
+    document.getElementById('coinCarPrev')?.addEventListener('click', e => { e.stopPropagation(); carGoTo(carCur - 1); });
+    document.getElementById('coinCarNext')?.addEventListener('click', e => { e.stopPropagation(); carGoTo(carCur + 1); });
+    dotsEl.forEach(d => d.addEventListener('click', () => carGoTo(+d.dataset.idx)));
+
+    window.initLightboxZoom({
+        lb: 'coinLb', wrap: 'coinLbWrap', img: 'coinLbImg', label: 'coinLbZoomLabel',
+        close: 'coinLbClose', prev: 'coinLbPrev', next: 'coinLbNext',
+        zoomIn: 'coinLbZoomIn', zoomOut: 'coinLbZoomOut', zoomReset: 'coinLbZoomReset',
+        triggers: '.coin-carousel-slide',
+        onOpen: i => carGoTo(i)
+    });
 })();
 </script>
 {% endif %}
