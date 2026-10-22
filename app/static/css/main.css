@@ -104,7 +104,7 @@ img { max-width: 100%; display: block; }
     text-decoration: none;
     flex-shrink: 0;
 }
-.logo-icon { font-size: 1.6rem; line-height: 1; }
+.logo-icon { width: 28px; height: 28px; display: block; object-fit: contain; flex: 0 0 auto; }
 .logo-text {
     font-size: var(--font-xl);
     font-weight: 700;

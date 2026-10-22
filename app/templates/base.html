@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}NumisBol{% endblock %}</title>
-    <link rel="icon" href="/static/img/icons/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/icons/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/static/img/icons/favicon-512.png">
-    <link rel="apple-touch-icon" href="/static/img/icons/apple-touch-icon.png">
+    <link rel="icon" href="/static/img/icons/favicon-white.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/icons/favicon-32-white.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/img/icons/favicon-512-white.png">
+    <link rel="apple-touch-icon" href="/static/img/icons/apple-touch-icon-white.png">
     <link rel="stylesheet" href="{{ static_v('css/main.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
@@ -16,7 +16,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="/" class="nav-logo">
-                <span class="logo-icon">🪙</span>
+                <img class="logo-icon" src="{{ static_v('img/icons/favicon-512-white.png') }}" alt="" width="28" height="28">
                 <span class="logo-text">Numis<em>Bol</em></span>
             </a>
 
