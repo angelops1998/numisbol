@@ -1,0 +1,17 @@
+{# Botón de «me gusta» de una pieza pública. Lo maneja static/js/likes.js.
+   activo=False: solo muestra el conteo (p. ej. en las piezas propias). #}
+{% macro like_btn(coin_id, n, mio, extra='', activo=True) %}
+{% if activo %}
+<span class="coin-like {{ extra }}{% if mio %} coin-like--on{% endif %}"
+      data-like="/moneda/{{ coin_id }}/like" role="button" tabindex="0"
+      aria-pressed="{{ 'true' if mio else 'false' }}"
+      aria-label="Me gusta"
+      title="{{ 'Ya no me gusta' if mio else 'Me gusta' }}">
+{% else %}
+<span class="coin-like coin-like--static {{ extra }}{% if not n %} coin-like--empty{% endif %}"
+      title="{{ n }} me gusta">
+{% endif %}
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg>
+    <span class="coin-like-count{% if not n %} coin-like-count--zero{% endif %}">{{ n }}</span>
+</span>
+{% endmacro %}

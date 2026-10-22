@@ -1,10 +1,12 @@
 from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_, func
 from ..database import get_db
 from ..models.coin import Coin
+from ..models.coin_like import CoinLike
 from ..models.user import User
 from ..auth import get_current_user_optional
 
@@ -37,6 +39,27 @@ def _opciones(db: Session, col):
         .all()
     )
     return [r[0] for r in rows]
+
+
+def _likes(db: Session, coins, user):
+    """Likes de una lista de piezas: {coin_id: total} y los ids que le gustan al usuario."""
+    ids = [c.id for c in coins]
+    if not ids:
+        return {}, set()
+    totales = dict(
+        db.query(CoinLike.coin_id, func.count(CoinLike.id))
+        .filter(CoinLike.coin_id.in_(ids))
+        .group_by(CoinLike.coin_id)
+        .all()
+    )
+    mios = set()
+    if user:
+        mios = {
+            r[0] for r in db.query(CoinLike.coin_id).filter(
+                CoinLike.coin_id.in_(ids), CoinLike.user_id == user.id
+            )
+        }
+    return totales, mios
 
 
 # ── Galería de monedas públicas ──────────────────────────────
@@ -85,22 +108,34 @@ async def galeria(
     if anio_hasta.isdigit():
         query = query.filter(Coin.year <= int(anio_hasta))
 
+    total_publicas = _publicas(db).count()
+    total_filtrado = query.count()
+
     if orden == "nombre":
         query = query.order_by(Coin.name)
     elif orden == "anio_asc":
         query = query.order_by(Coin.year.asc().nullslast())
     elif orden == "anio_desc":
         query = query.order_by(Coin.year.desc().nullslast())
+    elif orden == "likes":
+        conteo = (
+            db.query(CoinLike.coin_id.label("coin_id"), func.count(CoinLike.id).label("n"))
+            .group_by(CoinLike.coin_id)
+            .subquery()
+        )
+        query = (
+            query.outerjoin(conteo, conteo.c.coin_id == Coin.id)
+            .order_by(func.coalesce(conteo.c.n, 0).desc(), Coin.created_at.desc(), Coin.id.desc())
+        )
     else:
         query = query.order_by(Coin.created_at.desc(), Coin.id.desc())
-
-    total_publicas = _publicas(db).count()
-    total_filtrado = query.count()
 
     pagina = max(1, pagina)
     total_paginas = max(1, -(-total_filtrado // PER_PAGE))
     pagina = min(pagina, total_paginas)
     coins = query.offset((pagina - 1) * PER_PAGE).limit(PER_PAGE).all()
+
+    likes, mis_likes = _likes(db, coins, user)
 
     coleccionistas = (
         db.query(User.username, func.count(Coin.id).label("n"))
@@ -129,6 +164,8 @@ async def galeria(
         "materials": _opciones(db, Coin.material),
         "categories": _opciones(db, Coin.category),
         "coleccionistas": coleccionistas,
+        "likes": likes,
+        "mis_likes": mis_likes,
     })
 
 
@@ -154,9 +191,55 @@ async def moneda_publica(coin_id: int, request: Request, db: Session = Depends(g
     )
     total_del_dueno = _publicas(db).filter(Coin.user_id == coin.user_id).count()
 
+    likes, mis_likes = _likes(db, [coin] + otras, user)
+
     return templates.TemplateResponse(request, "moneda/publica.html", {
         "coin": coin,
         "user": user,
         "otras": otras,
         "total_del_dueno": total_del_dueno,
+        "likes": likes,
+        "mis_likes": mis_likes,
     })
+
+
+# ── Me gusta (toggle) ────────────────────────────────────────
+@router.post("/{coin_id}/like")
+async def toggle_like(coin_id: int, request: Request, db: Session = Depends(get_db)):
+    """Pone o quita el like del usuario actual. Responde JSON para el front."""
+    user = get_current_user_optional(request, db)
+    if not user:
+        return JSONResponse(
+            {"error": "login", "login_url": f"/auth/login?next=/moneda/{coin_id}"},
+            status_code=401,
+        )
+
+    coin = _publicas(db).filter(Coin.id == coin_id).first()
+    if not coin:
+        raise HTTPException(status_code=404, detail="Moneda no encontrada o no es pública")
+    if coin.user_id == user.id:
+        return JSONResponse({"error": "propia"}, status_code=400)
+
+    like = (
+        db.query(CoinLike)
+        .filter(CoinLike.coin_id == coin_id, CoinLike.user_id == user.id)
+        .first()
+    )
+    if like:
+        db.delete(like)
+        liked = False
+    else:
+        db.add(CoinLike(coin_id=coin_id, user_id=user.id))
+        liked = True
+
+    try:
+        db.commit()
+    except IntegrityError:
+        # Doble clic / pestañas en paralelo: el like ya existía. No es un error.
+        db.rollback()
+        liked = True
+
+    total = (
+        db.query(func.count(CoinLike.id)).filter(CoinLike.coin_id == coin_id).scalar() or 0
+    )
+    return {"liked": liked, "likes": total}

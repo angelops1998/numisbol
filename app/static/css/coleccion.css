@@ -2181,3 +2181,70 @@ body.serie-panel-abierto { overflow: hidden; }
     font-weight: 700;
     color: var(--text-primary);
 }
+
+/* ── Me gusta de las piezas públicas ───────────────────────── */
+.coin-like {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    border: 1px solid var(--border-light);
+    background: rgba(20,20,24,.78);
+    backdrop-filter: blur(4px);
+    color: var(--text-muted);
+    border-radius: 99px;
+    cursor: pointer;
+    user-select: none;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    line-height: 1;
+    padding: .35rem .6rem;
+    transition: color var(--transition), border-color var(--transition),
+                background var(--transition), transform var(--transition);
+}
+.coin-like:hover    { color: #F0A0A0; border-color: #7D2E2E; }
+.coin-like:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.coin-like svg      { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; }
+.coin-like--on,
+.coin-like--on:hover { color: #F4607A; border-color: #8E2338; background: rgba(142,35,56,.22); }
+.coin-like--on svg  { fill: currentColor; stroke: currentColor; }
+.coin-like--error   { color: var(--error-text); border-color: var(--error); }
+.coin-like[data-busy] { opacity: .55; pointer-events: none; }
+.coin-like--static,
+.coin-like--static:hover { cursor: default; color: var(--text-muted); border-color: var(--border-light); }
+.coin-like--card.coin-like--empty { display: none; }
+.coin-like-count--zero { display: none; }
+
+@keyframes coin-like-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.22); }
+    100% { transform: scale(1); }
+}
+.coin-like--pop { animation: coin-like-pop .3s ease; }
+
+/* Sobre la foto, en la grilla */
+.coin-like--card {
+    position: absolute;
+    top: .5rem;
+    right: .5rem;
+    z-index: 2;
+}
+
+/* Botón grande del detalle público */
+.coin-like--lg {
+    gap: .5rem;
+    font-size: var(--font-sm);
+    padding: .6rem 1.1rem;
+    background: var(--bg-card);
+    backdrop-filter: none;
+}
+.coin-like--lg svg { width: 19px; height: 19px; }
+.coin-like--lg .coin-like-count--zero { display: inline; }
+
+.coin-like-bar {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+.coin-like-hint { font-size: var(--font-xs); color: var(--text-muted); }

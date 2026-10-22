@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% from "moneda/_like.html" import like_btn %}
 {% block title %}{{ coin.name }} — NumisBol{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
 
 {% block content %}
+<div style="display:none">{{ csrf_input(request) }}</div>
 <div class="page-wrapper">
     <div class="page-header">
         <div class="container">
@@ -86,6 +88,16 @@
                 </div>
                 {% endif %}
 
+                {% set n_likes = likes.get(coin.id, 0) %}
+                <div class="coin-like-bar">
+                    {{ like_btn(coin.id, n_likes, coin.id in mis_likes, 'coin-like--lg', not user or coin.user_id != user.id) }}
+                    {% if not user %}
+                    <span class="coin-like-hint"><a href="/auth/login?next=/moneda/{{ coin.id }}" style="color:var(--accent)">Iniciá sesión</a> para darle me gusta</span>
+                    {% elif user.id == coin.user_id %}
+                    <span class="coin-like-hint">{% if n_likes %}A {{ n_likes }} persona{{ 's' if n_likes != 1 else '' }} le{{ 's' if n_likes != 1 else '' }} gusta tu pieza{% else %}Todavía nadie le dio me gusta a tu pieza{% endif %}</span>
+                    {% endif %}
+                </div>
+
                 {% if coin.condition %}
                 <div class="detail-condition" style="margin-bottom:1.25rem;padding:.6rem 1rem;background:var(--surface);border-radius:var(--radius);font-weight:600;font-size:var(--font-sm)">
                     {{ coin.condition.split(' → ')[0] }}
@@ -161,6 +173,7 @@
                         {% else %}
                             <div class="coin-item-no-img">{% if otra.tipo == 'billete' %}💵{% else %}🪙{% endif %}</div>
                         {% endif %}
+                        {{ like_btn(otra.id, likes.get(otra.id, 0), otra.id in mis_likes, 'coin-like--card', not user or otra.user_id != user.id) }}
                     </div>
                     <div class="coin-item-body">
                         <div class="coin-item-name">{{ otra.name }}</div>
@@ -199,6 +212,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ static_v('js/likes.js') }}" defer></script>
 <script>
 document.getElementById('shareCopyBtn')?.addEventListener('click', function(){
     navigator.clipboard.writeText(this.dataset.url).then(function(){

@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% from "moneda/_like.html" import like_btn %}
 {% block title %}Monedas públicas — NumisBol{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
 
 {% block content %}
+<div style="display:none">{{ csrf_input(request) }}</div>
 <div class="page-wrapper">
 
     <!-- Encabezado -->
@@ -203,6 +205,7 @@
                                     {% if filters.orden == 'nombre' %}Nombre A–Z
                                     {% elif filters.orden == 'anio_desc' %}Año más nuevo
                                     {% elif filters.orden == 'anio_asc' %}Año más antiguo
+                                    {% elif filters.orden == 'likes' %}Más gustadas
                                     {% else %}Más reciente{% endif %}
                                 </span>
                                 <span class="ss-arrow">▾</span>
@@ -213,6 +216,7 @@
                                     <li class="ss-option {% if filters.orden == 'nombre' %}ss-selected{% endif %}" data-value="nombre">Nombre A–Z</li>
                                     <li class="ss-option {% if filters.orden == 'anio_desc' %}ss-selected{% endif %}" data-value="anio_desc">Año más nuevo</li>
                                     <li class="ss-option {% if filters.orden == 'anio_asc' %}ss-selected{% endif %}" data-value="anio_asc">Año más antiguo</li>
+                                    <li class="ss-option {% if filters.orden == 'likes' %}ss-selected{% endif %}" data-value="likes">Más gustadas</li>
                                 </ul>
                             </div>
                         </div>
@@ -234,6 +238,7 @@
                             {% else %}
                                 <div class="coin-item-no-img">{% if coin.tipo == 'billete' %}💵{% else %}🪙{% endif %}</div>
                             {% endif %}
+                            {{ like_btn(coin.id, likes.get(coin.id, 0), coin.id in mis_likes, 'coin-like--card', not user or coin.user_id != user.id) }}
                         </div>
                         <div class="coin-item-body">
                             <div class="coin-item-name">{{ coin.name }}</div>
@@ -322,6 +327,7 @@
 </div>
 
 <script src="{{ static_v('js/searchable-select.js') }}"></script>
+<script src="{{ static_v('js/likes.js') }}" defer></script>
 <script>
 initSearchableSelects({ container: document.getElementById('filtersPanel') });
 
