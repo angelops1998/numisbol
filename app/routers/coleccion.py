@@ -10,6 +10,7 @@ from ..models.coin import Coin, CustomOption
 from ..models.serie import Serie, SerieVariante
 from ..models.setting import AppSetting
 from ..auth import get_current_user, get_current_user_optional
+from ..paises import COUNTRY_INFO, CONTINENTS
 
 router = APIRouter(prefix="/coleccion", tags=["coleccion"])
 
@@ -628,12 +629,24 @@ async def paises(request: Request, db: Session = Depends(get_db)):
             tienen[country] = {"moneda": 0, "billete": 0, "total": 0}
         tienen[country][t] = tienen[country].get(t, 0) + cnt
         tienen[country]["total"] += cnt
+    grupos = []
+    for cont in CONTINENTS:
+        paises_c = [c for c in COUNTRIES if COUNTRY_INFO[c][1] == cont]
+        grupos.append({
+            "nombre": cont,
+            "paises": paises_c,
+            "tienen": sum(1 for c in paises_c if c in tienen),
+        })
     return templates.TemplateResponse(request, "coleccion/paises.html", {
         "user": user,
-        "countries": COUNTRIES,
+        "grupos": grupos,
+        "country_info": COUNTRY_INFO,
         "tienen": tienen,
         "total_paises": len(COUNTRIES),
         "tienen_count": len(tienen),
+        "total_monedas": sum(i["moneda"] for i in tienen.values()),
+        "total_billetes": sum(i["billete"] for i in tienen.values()),
+        "continentes_con": sum(1 for g in grupos if g["tienen"]),
     })
 
 

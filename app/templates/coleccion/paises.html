@@ -3,6 +3,7 @@
 {% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
 
 {% block content %}
+{% set pct = (tienen_count / total_paises * 100) if total_paises else 0 %}
 <div class="page-wrapper">
     <div class="page-header">
         <div class="container">
@@ -11,7 +12,7 @@
                     <p class="page-breadcrumb"><a href="/coleccion">Mi Colección</a> / Países</p>
                     <h1 class="page-title">Países del Mundo</h1>
                     <p class="page-subtitle">
-                        Tenés monedas de <strong>{{ tienen_count }}</strong> de <strong>{{ total_paises }}</strong> países
+                        Tenés piezas de <strong>{{ tienen_count }}</strong> de <strong>{{ total_paises }}</strong> países
                     </p>
                 </div>
                 <a href="/coleccion" class="btn btn-outline">← Volver</a>
@@ -21,55 +22,104 @@
 
     <div class="container">
 
-        <!-- Barra de progreso global -->
-        <div class="world-progress-card">
-            <div class="world-progress-header">
-                <span class="world-progress-label">Progreso mundial</span>
-                <span class="world-progress-pct" id="pctLabel">{{ ((tienen_count / total_paises) * 100) | round(1) }}%</span>
+        <!-- Resumen: anillo de progreso + continentes -->
+        <section class="world-hero">
+            <div class="world-hero-main">
+                <div class="world-ring">
+                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                        <circle class="world-ring-track" cx="60" cy="60" r="52" pathLength="100"></circle>
+                        <circle class="world-ring-fill" cx="60" cy="60" r="52" pathLength="100"
+                                stroke-dasharray="{{ '%.2f' | format(pct) }} 100"></circle>
+                    </svg>
+                    <div class="world-ring-center">
+                        <span class="world-ring-pct">{{ ('%.1f' | format(pct)).replace('.', ',') }}%</span>
+                        <span class="world-ring-sub">del mundo</span>
+                    </div>
+                </div>
+                <div class="world-stats">
+                    <div class="world-stat">
+                        <span class="world-stat-value">{{ tienen_count }}<small>/{{ total_paises }}</small></span>
+                        <span class="world-stat-label">Países</span>
+                    </div>
+                    <div class="world-stat">
+                        <span class="world-stat-value">{{ continentes_con }}<small>/{{ grupos | length }}</small></span>
+                        <span class="world-stat-label">Continentes</span>
+                    </div>
+                    <div class="world-stat">
+                        <span class="world-stat-value">{{ total_monedas }}</span>
+                        <span class="world-stat-label">Monedas</span>
+                    </div>
+                    <div class="world-stat">
+                        <span class="world-stat-value">{{ total_billetes }}</span>
+                        <span class="world-stat-label">Billetes</span>
+                    </div>
+                </div>
             </div>
-            <div class="world-progress-track">
-                <div class="world-progress-fill" style="width: {{ ((tienen_count / total_paises) * 100) | round(1) }}%"></div>
-            </div>
-            <div class="world-progress-sub">
-                <span class="world-tag world-tag--have">{{ tienen_count }} tenés</span>
-                <span class="world-tag world-tag--miss">{{ total_paises - tienen_count }} te faltan</span>
-            </div>
-        </div>
 
-        <!-- Buscador + toggle -->
+            <div class="world-continents">
+                {% for g in grupos %}
+                {% set gpct = (g.tienen / (g.paises | length) * 100) if g.paises else 0 %}
+                <a href="#cont-{{ loop.index }}" class="world-cont {% if g.tienen %}world-cont--on{% endif %}">
+                    <span class="world-cont-name">{{ g.nombre }}</span>
+                    <span class="world-cont-track"><span class="world-cont-fill" style="width: {{ '%.1f' | format(gpct) }}%"></span></span>
+                    <span class="world-cont-count"><strong>{{ g.tienen }}</strong> / {{ g.paises | length }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Buscador + filtro -->
         <div class="world-toolbar">
-            <input type="search" id="countrySearch" class="filter-input" placeholder="Buscar país...">
-            <div class="world-view-toggle">
-                <button class="world-view-btn active" id="btnAll" onclick="setFilter('all')">Todos</button>
-                <button class="world-view-btn" id="btnHave" onclick="setFilter('have')">Tenés</button>
-                <button class="world-view-btn" id="btnMiss" onclick="setFilter('miss')">Te faltan</button>
+            <div class="world-search">
+                <svg class="world-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                <input type="search" id="countrySearch" class="filter-input" placeholder="Buscar país..." autocomplete="off">
+            </div>
+            <div class="world-view-toggle" role="group" aria-label="Filtrar países">
+                <button type="button" class="world-view-btn active" id="btnAll" onclick="setFilter('all')">Todos <span>{{ total_paises }}</span></button>
+                <button type="button" class="world-view-btn" id="btnHave" onclick="setFilter('have')">Tenés <span>{{ tienen_count }}</span></button>
+                <button type="button" class="world-view-btn" id="btnMiss" onclick="setFilter('miss')">Te faltan <span>{{ total_paises - tienen_count }}</span></button>
             </div>
         </div>
 
-        <!-- Grilla de países -->
-        <div class="world-grid" id="worldGrid">
-            {% for country in countries %}
-            {% set info = tienen.get(country, {}) %}
-            {% set total_c = info.get('total', 0) %}
-            {% set monedas_c = info.get('moneda', 0) %}
-            {% set billetes_c = info.get('billete', 0) %}
-            <a href="/coleccion?q={{ country | urlencode }}"
-               class="world-country {% if total_c > 0 %}world-country--have{% else %}world-country--miss{% endif %}"
-               data-country="{{ country | lower }}"
-               data-state="{{ 'have' if total_c > 0 else 'miss' }}"
-               {% if total_c == 0 %}tabindex="-1" onclick="return false"{% endif %}>
-                <span class="world-country-name">{{ country }}</span>
+        <!-- Países agrupados por continente -->
+        {% for g in grupos %}
+        <section class="world-section" id="cont-{{ loop.index }}">
+            <h2 class="world-section-title">
+                {{ g.nombre }}
+                <span class="world-section-count">{{ g.tienen }} de {{ g.paises | length }}</span>
+            </h2>
+            <div class="world-grid">
+                {% for country in g.paises %}
+                {% set info = tienen.get(country, {}) %}
+                {% set total_c = info.get('total', 0) %}
+                {% set monedas_c = info.get('moneda', 0) %}
+                {% set billetes_c = info.get('billete', 0) %}
+                {% set flag = static_v('img/flags/' ~ country_info[country][0] ~ '.png') %}
                 {% if total_c > 0 %}
-                <span class="world-country-badges">
-                    {% if monedas_c > 0 %}<span class="world-badge world-badge--moneda">🪙 {{ monedas_c }}</span>{% endif %}
-                    {% if billetes_c > 0 %}<span class="world-badge world-badge--billete">💵 {{ billetes_c }}</span>{% endif %}
-                </span>
+                <a href="/coleccion?q={{ country | urlencode }}" class="world-country world-country--have"
+                   data-country="{{ country | lower }}" data-state="have">
+                    <img class="world-flag" src="{{ flag }}" alt="" width="40" height="30" loading="lazy">
+                    <span class="world-country-text">
+                        <span class="world-country-name">{{ country }}</span>
+                        <span class="world-country-meta">
+                            {%- if monedas_c %}{{ monedas_c }} moneda{{ 's' if monedas_c != 1 }}{% endif -%}
+                            {%- if monedas_c and billetes_c %} · {% endif -%}
+                            {%- if billetes_c %}{{ billetes_c }} billete{{ 's' if billetes_c != 1 }}{% endif -%}
+                        </span>
+                    </span>
+                </a>
                 {% else %}
-                <span class="world-country-dash">—</span>
+                <div class="world-country world-country--miss" data-country="{{ country | lower }}" data-state="miss">
+                    <img class="world-flag" src="{{ flag }}" alt="" width="40" height="30" loading="lazy">
+                    <span class="world-country-text">
+                        <span class="world-country-name">{{ country }}</span>
+                    </span>
+                </div>
                 {% endif %}
-            </a>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
 
         <p class="world-empty-msg" id="emptyMsg" style="display:none">
             No hay países que coincidan con tu búsqueda.
@@ -98,14 +148,18 @@ document.getElementById('countrySearch').addEventListener('input', function(){
 });
 
 function applyFilters(){
-    var items = document.querySelectorAll('.world-country');
     var visible = 0;
-    items.forEach(function(el){
-        var nameMatch = !currentSearch || norm(el.dataset.country).includes(currentSearch);
-        var stateMatch = currentFilter === 'all' || el.dataset.state === currentFilter;
-        var show = nameMatch && stateMatch;
-        el.style.display = show ? '' : 'none';
-        if(show) visible++;
+    document.querySelectorAll('.world-section').forEach(function(sec){
+        var inSection = 0;
+        sec.querySelectorAll('.world-country').forEach(function(el){
+            var nameMatch = !currentSearch || norm(el.dataset.country).includes(currentSearch);
+            var stateMatch = currentFilter === 'all' || el.dataset.state === currentFilter;
+            var show = nameMatch && stateMatch;
+            el.style.display = show ? '' : 'none';
+            if(show) inSection++;
+        });
+        sec.style.display = inSection ? '' : 'none';
+        visible += inSection;
     });
     document.getElementById('emptyMsg').style.display = visible === 0 ? '' : 'none';
 }
