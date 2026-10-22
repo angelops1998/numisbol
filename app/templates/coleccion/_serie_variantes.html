@@ -26,7 +26,7 @@
 
     {# Las notas cortas del tipo "Muy rara" se destacan; las largas, que son
        descripciones de la pieza, van en texto normal para no gritar. #}
-    {% set nota_corta = v.nota and v.nota|length <= 26 %}
+    {% set nota_corta = v.nota and v.nota|length <= 50 %}
     {% set es_rara = nota_corta and ('rar' in v.nota|lower or 'escas' in v.nota|lower) %}
 
     {# La tirada queda fuera del buscador a propósito: "1.200.000" se parte
