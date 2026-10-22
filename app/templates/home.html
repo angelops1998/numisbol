@@ -206,6 +206,10 @@
     // ── Carrusel hero ─────────────────────────────────────
     const slides = Array.from(document.querySelectorAll('.hero-anuncio-slide'));
     const dots   = Array.from(document.querySelectorAll('.hero-dot'));
+
+    // El primer slide siempre debe verse (con uno solo no hay carrusel)
+    slides[0]?.classList.add('slide-active');
+    dots[0]?.classList.add('hero-dot-active');
     if (slides.length <= 1) return;
 
     let active = 0, timer = null;
@@ -221,8 +225,6 @@
     function startAuto() { timer = setInterval(() => goTo(active + 1), 4500); }
     function stopAuto()  { clearInterval(timer); }
 
-    // Inicializar primer slide
-    slides[0].classList.add('slide-active');
     startAuto();
 
     dots.forEach(d => d.addEventListener('click', () => {
