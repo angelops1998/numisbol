@@ -1828,7 +1828,9 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: .85rem 1rem;
+    cursor: pointer;
 }
+.serie-panel-desc:hover .serie-panel-desc-btn { color: #C4B5FD; }
 .serie-panel-desc[hidden] { display: none; }
 .serie-panel-desc-btn {
     display: flex;
@@ -1846,7 +1848,7 @@
     color: #9B8BD0;
     transition: color var(--transition);
 }
-.serie-panel-desc-btn:hover { color: #C4B5FD; }
+.serie-panel-desc-btn { text-align: left; }
 .serie-panel-desc-flecha { margin-left: auto; font-size: var(--font-sm); }
 .serie-panel-desc-txt {
     font-size: var(--font-sm);

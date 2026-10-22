@@ -461,7 +461,14 @@
     fondo.addEventListener('click', cerrar);
     pFaltan.addEventListener('change', aplicarFilas);
     pVerTodas.addEventListener('click', () => { input.value = ''; filtrar(); });
-    pDescBtn.addEventListener('click', () => plegarDesc(!pDesc.classList.contains('abierta')));
+    // Toda la tarjeta es el disparador, no solo la flecha: en mobile el botón
+    // era un blanco diminuto. El <button> sigue ahí por accesibilidad y su
+    // click burbujea hasta acá, así que un solo listener basta.
+    pDesc.addEventListener('click', () => {
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed && pDesc.contains(sel.anchorNode)) return;
+        plegarDesc(!pDesc.classList.contains('abierta'));
+    });
     pPrev.addEventListener('click', () => { const v = vecinas(); if (v.prev) abrir(v.prev, v.prev.card); });
     pNext.addEventListener('click', () => { const v = vecinas(); if (v.next) abrir(v.next, v.next.card); });
 
