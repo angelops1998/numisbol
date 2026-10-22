@@ -365,6 +365,7 @@
     color: var(--text-primary);
     font-size: var(--font-sm);
     outline: none;
+    box-sizing: border-box;
 }
 .ss-search:focus { border-color: var(--accent-dim); }
 .ss-search::placeholder { color: var(--text-dim); }
@@ -373,6 +374,7 @@
     list-style: none;
     max-height: 280px;
     overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: var(--border-light) transparent;
 }
@@ -385,6 +387,8 @@
     color: var(--text-body);
     cursor: pointer;
     transition: background var(--transition), color var(--transition);
+    overflow-wrap: anywhere;
+    word-break: break-word;
     border-bottom: 1px solid rgba(255,255,255,.03);
 }
 .ss-option:hover    { background: rgba(255,255,255,.06); color: var(--text-primary); }
