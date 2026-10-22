@@ -269,7 +269,7 @@ DENOMINATIONS = [
 # Se excluyen territorios ISO que solo usan la moneda de otro país (Guam, Åland, Mayotte...).
 COUNTRIES = [
     "Afganistán", "Albania", "Alemania", "Andorra", "Angola", "Anguila",
-    "Antártida", "Antigua y Barbuda", "Arabia Saudita", "Argelia", "Argentina",
+    "Antigua y Barbuda", "Arabia Saudita", "Argelia", "Argentina",
     "Armenia", "Aruba", "Australia", "Austria", "Azerbaiyán",
     "Bahamas", "Bangladés", "Barbados", "Baréin", "Bélgica", "Belice", "Benín",
     "Bermudas", "Bielorrusia", "Bolivia", "Bosnia y Herzegovina", "Botsuana", "Brasil", "Brunéi", "Bulgaria",

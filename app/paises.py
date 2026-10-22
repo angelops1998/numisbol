@@ -1,6 +1,6 @@
 # Código ISO 3166-1 (para la bandera) y continente de cada país de COUNTRIES.
 
-CONTINENTS = ["América", "Europa", "Asia", "África", "Oceanía", "Antártida"]
+CONTINENTS = ["América", "Europa", "Asia", "África", "Oceanía"]
 
 COUNTRY_INFO = {
     # ── América ──
@@ -242,7 +242,4 @@ COUNTRY_INFO = {
     "Tonga": ("to", "Oceanía"),
     "Tuvalu": ("tv", "Oceanía"),
     "Vanuatu": ("vu", "Oceanía"),
-
-    # ── Antártida ──
-    "Antártida": ("aq", "Antártida"),
 }
