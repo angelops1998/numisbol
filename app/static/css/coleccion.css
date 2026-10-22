@@ -609,7 +609,7 @@
     margin-top: .1rem;
     font-size: .72rem;
     font-weight: 400;
-    color: var(--text-dim);
+    color: var(--text-muted);
 }
 .detail-description {
     background: var(--bg-card);
