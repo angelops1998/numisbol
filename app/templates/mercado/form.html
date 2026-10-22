@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ title }} — NumisBol{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="/static/css/mercado.css">
-<link rel="stylesheet" href="/static/css/coleccion.css">
+<link rel="stylesheet" href="{{ static_v('css/mercado.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">
 <style>
 #currencyToggle { display:flex !important; border:1px solid var(--border) !important; border-radius:8px !important; overflow:hidden !important; flex-shrink:0 !important; background:var(--bg-2) !important; }
 .curr-btn { padding:.55rem 1rem !important; font-size:.85rem !important; font-weight:700 !important; border:none !important; cursor:pointer !important; background:transparent !important; color:var(--text-dim) !important; font-family:inherit !important; line-height:1 !important; transition:background .15s,color .15s !important; }
@@ -293,7 +293,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="/static/js/searchable-select.js"></script>
+<script src="{{ static_v('js/searchable-select.js') }}"></script>
 <script>
 /* ── Coin Autocomplete ───────────────────────────────── */
 (function () {

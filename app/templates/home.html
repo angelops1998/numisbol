@@ -98,11 +98,19 @@
 <div class="anuncio-lightbox" id="lightbox" role="dialog" aria-modal="true">
     <button class="lightbox-close" id="lightboxClose" aria-label="Cerrar">✕</button>
     <button class="lightbox-prev" id="lightboxPrev" aria-label="Anterior">&#8249;</button>
-    <div class="lightbox-img-wrap">
-        <img src="" alt="" id="lightboxImg">
-    </div>
     <button class="lightbox-next" id="lightboxNext" aria-label="Siguiente">&#8250;</button>
-    <div class="lightbox-caption" id="lightboxCaption"></div>
+    <div class="lb-content">
+        <div class="lightbox-img-wrap" id="lightboxWrap">
+            <img src="" alt="" id="lightboxImg" draggable="false">
+        </div>
+        <div class="lb-zoom-bar">
+            <button class="lb-zoom-btn" id="lbAnuncioZoomOut" title="Alejar">−</button>
+            <span class="lb-zoom-label" id="lbAnuncioZoomLabel">100%</span>
+            <button class="lb-zoom-btn" id="lbAnuncioZoomIn" title="Acercar">+</button>
+            <button class="lb-zoom-btn lb-zoom-btn-sm" id="lbAnuncioZoomReset" title="Restablecer">⟲</button>
+        </div>
+        <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
 </div>
 {% endif %}
 
@@ -167,54 +175,20 @@
 
 {% block extra_scripts %}
 {% if anuncios %}
+<script src="{{ static_v('js/lightbox-zoom.js') }}"></script>
 <script>
 (function () {
-    // ── Lightbox ──────────────────────────────────────────
-    const cards  = Array.from(document.querySelectorAll('.anuncio-card'));
-    const lb     = document.getElementById('lightbox');
-    const lbImg  = document.getElementById('lightboxImg');
-    const lbCap  = document.getElementById('lightboxCaption');
-    let current  = 0;
-
-    function lbOpen(idx) {
-        current = idx;
-        const card  = cards[idx];
-        const img   = card.querySelector('img');
-        const title = card.querySelector('.anuncio-title');
-        lbImg.src   = img.src;
-        lbImg.alt   = img.alt;
-        lbCap.textContent = title ? title.textContent.trim() : '';
-        lb.classList.add('lb-open');
-        document.body.style.overflow = 'hidden';
-    }
-    function lbClose() { lb.classList.remove('lb-open'); document.body.style.overflow = ''; }
-    function lbPrev()  { lbOpen((current - 1 + cards.length) % cards.length); }
-    function lbNext()  { lbOpen((current + 1) % cards.length); }
-
-    cards.forEach((c, i) => c.addEventListener('click', () => lbOpen(i)));
-    document.getElementById('lightboxClose').addEventListener('click', lbClose);
-    document.getElementById('lightboxPrev').addEventListener('click', e => { e.stopPropagation(); lbPrev(); });
-    document.getElementById('lightboxNext').addEventListener('click', e => { e.stopPropagation(); lbNext(); });
-    lb.addEventListener('click', e => { if (e.target === lb) lbClose(); });
-    document.addEventListener('keydown', e => {
-        if (!lb.classList.contains('lb-open')) return;
-        if (e.key === 'Escape')     lbClose();
-        if (e.key === 'ArrowLeft')  lbPrev();
-        if (e.key === 'ArrowRight') lbNext();
-    });
-
     // ── Carrusel hero ─────────────────────────────────────
     const slides = Array.from(document.querySelectorAll('.hero-anuncio-slide'));
     const dots   = Array.from(document.querySelectorAll('.hero-dot'));
+    let active = 0, timer = null;
 
     // El primer slide siempre debe verse (con uno solo no hay carrusel)
     slides[0]?.classList.add('slide-active');
     dots[0]?.classList.add('hero-dot-active');
-    if (slides.length <= 1) return;
-
-    let active = 0, timer = null;
 
     function goTo(idx) {
+        if (slides.length <= 1) return;
         slides[active].classList.remove('slide-active');
         dots[active]?.classList.remove('hero-dot-active');
         active = (idx + slides.length) % slides.length;
@@ -222,20 +196,23 @@
         dots[active]?.classList.add('hero-dot-active');
     }
 
-    function startAuto() { timer = setInterval(() => goTo(active + 1), 4500); }
-    function stopAuto()  { clearInterval(timer); }
+    function stopAuto()  { clearInterval(timer); timer = null; }
+    function startAuto() { if (slides.length <= 1) return; stopAuto(); timer = setInterval(() => goTo(active + 1), 4500); }
 
+    dots.forEach(d => d.addEventListener('click', () => { stopAuto(); goTo(+d.dataset.idx); startAuto(); }));
+    document.getElementById('heroArrowPrev')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); goTo(active - 1); startAuto(); });
+    document.getElementById('heroArrowNext')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); goTo(active + 1); startAuto(); });
     startAuto();
 
-    dots.forEach(d => d.addEventListener('click', () => {
-        stopAuto(); goTo(+d.dataset.idx); startAuto();
-    }));
-
-    document.getElementById('heroArrowPrev')?.addEventListener('click', e => {
-        e.stopPropagation(); stopAuto(); goTo(active - 1); startAuto();
-    });
-    document.getElementById('heroArrowNext')?.addEventListener('click', e => {
-        e.stopPropagation(); stopAuto(); goTo(active + 1); startAuto();
+    // ── Lightbox con zoom ─────────────────────────────────
+    window.initLightboxZoom({
+        lb: 'lightbox', wrap: 'lightboxWrap', img: 'lightboxImg',
+        label: 'lbAnuncioZoomLabel', caption: 'lightboxCaption', captionFrom: '.anuncio-title',
+        close: 'lightboxClose', prev: 'lightboxPrev', next: 'lightboxNext',
+        zoomIn: 'lbAnuncioZoomIn', zoomOut: 'lbAnuncioZoomOut', zoomReset: 'lbAnuncioZoomReset',
+        triggers: '.anuncio-card',
+        onOpen:  i => { stopAuto(); goTo(i); },
+        onClose: () => startAuto()
     });
 })();
 </script>

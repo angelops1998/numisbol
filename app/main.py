@@ -2,7 +2,6 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 from .database import engine, SessionLocal
 from .routers import auth, main as main_router, coleccion, recovery, mercado, perfil, anuncios, blog, moneda_publica, admin, preguntas
@@ -10,7 +9,7 @@ from .auth import NotAuthenticatedException
 from .csrf import get_csrf_token, set_csrf_cookie, validate_csrf
 import secrets, hmac, hashlib
 
-_templates = Jinja2Templates(directory="app/templates")
+from .templates_config import templates as _templates
 
 app = FastAPI(
     title="NumisColect",

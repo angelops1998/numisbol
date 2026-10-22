@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ title }} — NumisBol{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="/static/css/coleccion.css">
+<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">
 <style>
 .curr-toggle {
     display: inline-flex;
@@ -530,7 +530,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="/static/js/searchable-select.js"></script>
+<script src="{{ static_v('js/searchable-select.js') }}"></script>
 <script>
 initSearchableSelects({ freeTextFields: ['mint', 'currency_unit'] });
 

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ pregunta.titulo }} — NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/css/preguntas.css">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/preguntas.css') }}">{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">

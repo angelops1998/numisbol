@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ coin.name }} — NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/css/coleccion.css">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
@@ -209,7 +209,7 @@ document.getElementById('shareCopyBtn')?.addEventListener('click', function(){
 });
 </script>
 {% if coin.image_url or coin.image_back_url %}
-<script src="/static/js/lightbox-zoom.js"></script>
+<script src="{{ static_v('js/lightbox-zoom.js') }}"></script>
 <script>
 (function(){
     const slides = Array.from(document.querySelectorAll('.coin-carousel-slide'));

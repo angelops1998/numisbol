@@ -1191,11 +1191,15 @@ input[type=number] { -moz-appearance: textfield; }
     gap: 1.25rem;
     max-width: min(88vw, 860px);
     width: 100%;
+    /* La barra de zoom y el pie siempre deben caber en pantalla */
+    max-height: 100vh;
+    padding: 1rem 0;
 }
 
 .lightbox-img-wrap {
     width: 100%;
     height: 72vh;
+    max-height: calc(100vh - 11rem);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1302,8 +1306,7 @@ input[type=number] { -moz-appearance: textfield; }
 .lightbox-next:hover { background: rgba(255,255,255,.22); }
 
 .lightbox-caption {
-    position: fixed;
-    bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    /* Va dentro de .lb-content, debajo de la barra de zoom */
     background: rgba(0,0,0,.6);
     backdrop-filter: blur(6px);
     color: #fff;
@@ -1376,7 +1379,7 @@ input[type=number] { -moz-appearance: textfield; }
     /* Lightbox en móvil */
     .lightbox-prev { left: .15rem; width: 40px; }
     .lightbox-next { right: .15rem; width: 40px; }
-    .lightbox-img-wrap { max-width: 95vw; height: 64vh; }
+    .lightbox-img-wrap { max-width: 95vw; height: 64vh; max-height: calc(100vh - 10rem); }
     .lightbox-caption { font-size: var(--font-xs); padding: .4rem 1rem; }
 
     /* Barra de zoom compacta: también se usa en móvil */

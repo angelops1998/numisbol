@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ autor.full_name or autor.username }} — Blog NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/css/blog.css">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/blog.css') }}">{% endblock %}
 
 {% block content %}
 <div class="container" style="padding-top:2.5rem; padding-bottom:3rem">

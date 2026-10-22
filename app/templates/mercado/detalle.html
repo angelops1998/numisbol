@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ listing.title }} — Mercado NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/css/mercado.css">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/mercado.css') }}">{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
@@ -310,7 +310,7 @@
 
 {% block extra_scripts %}
 {% if listing.image_url or listing.image_back_url %}
-<script src="/static/js/lightbox-zoom.js"></script>
+<script src="{{ static_v('js/lightbox-zoom.js') }}"></script>
 <script>
 (function(){
     const slides = Array.from(document.querySelectorAll('.coin-carousel-slide'));

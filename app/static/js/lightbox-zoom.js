@@ -19,6 +19,7 @@
         if (!lb || !wrap || !img) return null;
 
         var label    = byId(cfg.label);
+        var caption  = byId(cfg.caption);
         var btnClose = byId(cfg.close);
         var btnPrev  = byId(cfg.prev);
         var btnNext  = byId(cfg.next);
@@ -31,6 +32,14 @@
             return el.dataset.src || (inner ? (inner.dataset.full || inner.currentSrc || inner.src) : '');
         }).filter(Boolean);
         if (!sources.length) return null;
+
+        /* Pie de foto: data-caption del disparador o el texto de cfg.captionFrom */
+        function captionOf(trigger) {
+            if (!trigger) return '';
+            if (trigger.dataset.caption) return trigger.dataset.caption;
+            var el = cfg.captionFrom ? trigger.querySelector(cfg.captionFrom) : null;
+            return el ? el.textContent.trim() : '';
+        }
 
         var cur = 0, scale = MIN, ox = 0, oy = 0;
         var pts = new Map();   // pointerId -> {x, y}
@@ -88,8 +97,10 @@
             cur = (i + sources.length) % sources.length;
             reset();
             img.src = sources[cur];
-            var inner = triggers[cur] && triggers[cur].querySelector('img');
+            var trigger = triggers[cur];
+            var inner = trigger && trigger.querySelector('img');
             img.alt = inner ? inner.alt : '';
+            if (caption) caption.textContent = captionOf(trigger);
             lb.classList.add('lb-open');
             document.body.style.overflow = 'hidden';
             var multi = sources.length > 1;

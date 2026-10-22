@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Blog — NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="/static/css/blog.css">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/blog.css') }}">{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
@@ -388,7 +388,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="/static/js/searchable-select.js"></script>
+<script src="{{ static_v('js/searchable-select.js') }}"></script>
 <script>
 // ── Scroll a resultados si hay filtro activo (mobile) ────────
 (function () {
