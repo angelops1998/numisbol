@@ -880,11 +880,8 @@ input[type=number] { -moz-appearance: textfield; }
     .features-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Mobile (≤640px) */
-@media (max-width: 640px) {
-    :root { --font-base: 16px; }
-    .container { padding: 0 .5rem; }
-
+/* Navbar: con todos los links ya no entra en una fila por debajo de ~1080px */
+@media (max-width: 1080px) {
     /* Navbar: colapsa en hamburguesa */
     .nav-container { padding: 0 1rem; gap: 1rem; }
     .nav-links {
@@ -980,6 +977,13 @@ input[type=number] { -moz-appearance: textfield; }
         z-index: 98;
     }
     .nav-overlay.open { display: block; }
+}
+
+/* Mobile (≤640px) */
+@media (max-width: 640px) {
+    :root { --font-base: 16px; }
+    .container { padding: 0 .5rem; }
+
 
     /* Hero */
     .hero { padding: 2.5rem 0 2rem; }
