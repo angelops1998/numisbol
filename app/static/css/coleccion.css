@@ -2030,6 +2030,8 @@
     line-height: 1.6;
     max-width: 78ch;
     margin-top: .7rem;
+    /* las descripciones largas vienen en párrafos: respetamos los saltos */
+    white-space: pre-line;
 }
 .serie-panel-desc:not(.abierta) .serie-panel-desc-txt {
     display: -webkit-box;
