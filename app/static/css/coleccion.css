@@ -2026,9 +2026,8 @@
 .serie-panel-desc-flecha { margin-left: auto; font-size: var(--font-sm); }
 .serie-panel-desc-txt {
     font-size: var(--font-sm);
-    color: var(--text-muted);
+    color: var(--text-primary);
     line-height: 1.6;
-    max-width: 78ch;
     margin-top: .7rem;
     /* las descripciones largas vienen en párrafos: respetamos los saltos */
     white-space: pre-line;
