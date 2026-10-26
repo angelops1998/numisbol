@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "admin/_precios_macros.html" import estimado %}
 {% block title %}Series — Admin NumisBol{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/admin.css') }}">{% endblock %}
 
@@ -7,89 +8,121 @@
     {% include "admin/_sidebar.html" %}
 
     <main class="admin-main">
-        <h1 class="admin-page-title">Series numismáticas</h1>
-        <p class="admin-page-sub">Catálogo de series y sus variantes (año · ensayador · ceca)</p>
+        <div class="sx-head">
+            <div>
+                <h1 class="admin-page-title">Series numismáticas</h1>
+                <p class="admin-page-sub" style="margin-bottom:0">
+                    {{ series|length }} series · {{ total_variantes }} variantes · {{ total_precios }} precios de referencia
+                </p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="#sx-nueva">+ Nueva serie</button>
+        </div>
 
         {% if saved %}
-        <div class="alert alert-success" style="margin-bottom:1.25rem">✓ Cambios guardados.</div>
+        <div class="alert alert-success sx-flash">✓ Cambios guardados.</div>
         {% endif %}
         {% if error == 'nombre' %}
-        <div class="alert alert-error" style="margin-bottom:1.25rem">⚠ El nombre de la serie es obligatorio.</div>
+        <div class="alert alert-error sx-flash">⚠ El nombre de la serie es obligatorio.</div>
         {% elif error == 'duplicado' %}
-        <div class="alert alert-error" style="margin-bottom:1.25rem">⚠ Ya existe una serie con ese nombre.</div>
+        <div class="alert alert-error sx-flash">⚠ Ya existe una serie con ese nombre.</div>
         {% endif %}
 
-        <!-- Crear serie -->
-        <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
-            <form method="post" action="/admin/series" style="display:flex;flex-direction:column;gap:.9rem">
+        <!-- Crear serie (se despliega con el botón) -->
+        <div id="sx-nueva" class="sx-card" {% if not error %}hidden{% endif %}>
+            <form method="post" action="/admin/series" class="sx-form">
                 {{ csrf_input(request) }}
-                <div class="form-group" style="margin:0;max-width:480px">
-                    <label class="form-label" style="font-size:.75rem">Nombre de la serie *</label>
-                    <input type="text" name="nombre" class="form-input" required
-                           placeholder="Ej: 20 centavos de plata 1884-1909">
+                <div class="form-group" style="margin:0">
+                    <label class="form-label">Nombre de la serie *</label>
+                    <input type="text" name="nombre" class="form-input" required autocomplete="off"
+                           placeholder="Ej: 4 SOLES 1853 LA PAZ CABEZA DESCUBIERTA">
                 </div>
                 <div class="form-group" style="margin:0">
-                    <label class="form-label" style="font-size:.75rem">Descripción (opcional)</label>
-                    <textarea name="descripcion" class="form-input" rows="6"
-                              placeholder="Ej: Diseño de patrones de 1884"></textarea>
+                    <label class="form-label">Descripción (opcional)</label>
+                    <textarea name="descripcion" class="form-input sx-autogrow" rows="4"
+                              placeholder="Texto del libro: contexto, anverso, reverso… y al final módulo y peso."></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-start">+ Crear serie</button>
+                <div class="sx-form-actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Crear y agregar variantes →</button>
+                    <button type="button" class="btn btn-outline btn-sm" data-toggle="#sx-nueva">Cancelar</button>
+                    <span class="sx-hint">Se agrega al final de la lista.</span>
+                </div>
             </form>
         </div>
 
         {% if series %}
+        <div class="sx-toolbar">
+            <input type="search" id="sx-buscar" class="admin-search-input" placeholder="Buscar serie… (atajo: /)"
+                   autocomplete="off">
+            <div class="sx-filtros" role="group" aria-label="Filtrar">
+                <button type="button" class="sx-chip is-on" data-filtro="">Todas</button>
+                <button type="button" class="sx-chip" data-filtro="sin-variantes">Sin variantes</button>
+                <button type="button" class="sx-chip" data-filtro="sin-precios">Sin precios</button>
+                <button type="button" class="sx-chip" data-filtro="ocultas">Ocultas</button>
+            </div>
+        </div>
+
         <div class="admin-table-wrap">
-            <table class="admin-table">
+            <table class="admin-table sx-tabla" id="sx-tabla">
                 <thead>
                     <tr>
-                        <th style="width:90px">Orden</th>
+                        <th class="sx-col-orden" title="Menor número = aparece antes">#</th>
                         <th>Serie</th>
-                        <th>Descripción</th>
-                        <th>Variantes</th>
-                        <th></th>
+                        <th class="sx-col-num">Variantes</th>
+                        <th class="sx-col-precio">Precio estimado</th>
+                        <th class="sx-col-acc"></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for s in series %}
-                    <tr>
-                        <td>
-                            <form method="post" action="/admin/series/{{ s.id }}/orden" style="display:flex;gap:.35rem;align-items:center">
+                    {% set nv = conteos.get(s.id, 0) %}
+                    {% set r = resumenes.get(s.id) %}
+                    <tr class="sx-fila{% if not s.activo %} is-oculta{% endif %}"
+                        data-href="/admin/series/{{ s.id }}"
+                        data-buscar="{{ s.nombre|lower }}"
+                        data-variantes="{{ nv }}" data-precios="{{ 1 if r else 0 }}" data-activo="{{ 1 if s.activo else 0 }}">
+                        <td class="sx-col-orden">
+                            <form method="post" action="/admin/series/{{ s.id }}/orden" class="sx-orden-form">
                                 {{ csrf_input(request) }}
-                                <input type="number" name="orden" value="{{ s.orden }}" class="form-input"
-                                       style="width:64px;padding:.35rem .5rem">
-                                <button type="submit" class="btn btn-outline btn-sm" title="Guardar orden">✓</button>
+                                <input type="number" name="orden" value="{{ s.orden }}" class="form-input sx-orden"
+                                       aria-label="Orden de {{ s.nombre }}">
+                                <noscript><button type="submit" class="btn btn-outline btn-sm">✓</button></noscript>
                             </form>
                         </td>
                         <td>
-                            <a href="/admin/series/{{ s.id }}"
-                               style="color:var(--text-primary);font-weight:600;font-size:.86rem;text-decoration:none">
-                                {{ s.nombre }}
-                            </a>
+                            <a href="/admin/series/{{ s.id }}" class="sx-nombre">{{ s.nombre }}</a>
+                            {% if not s.activo %}<span class="badge-status badge-cerrado">Oculta</span>{% endif %}
+                            {% if s.descripcion %}
+                            <span class="sx-desc">{{ s.descripcion|truncate(160) }}</span>
+                            {% else %}
+                            <span class="sx-desc sx-desc--falta">Sin descripción</span>
+                            {% endif %}
                         </td>
-                        <td style="font-size:.8rem;color:var(--text-dim)">{{ s.descripcion or '—' }}</td>
-                        <td style="font-size:.85rem;font-weight:600;color:var(--text-primary)">
-                            {{ conteos.get(s.id, 0) }}
+                        <td class="sx-col-num">
+                            {% if nv %}{{ nv }}{% else %}<span class="sx-falta">0</span>{% endif %}
                         </td>
-                        <td style="text-align:right;white-space:nowrap">
-                            <a href="/admin/series/{{ s.id }}" class="btn btn-outline btn-sm">Gestionar</a>
-                            <form method="post" action="/admin/series/{{ s.id }}/eliminar" style="display:inline"
-                                  onsubmit="return confirm('¿Eliminar la serie «{{ s.nombre }}» y todas sus variantes? Las monedas vinculadas no se eliminan.')">
-                                {{ csrf_input(request) }}
-                                <button type="submit" class="btn btn-outline btn-sm" style="color:#f87171;border-color:rgba(248,113,113,.4)">✕</button>
-                            </form>
+                        <td class="sx-col-precio">{{ estimado(r, rate) }}</td>
+                        <td class="sx-col-acc">
+                            <a href="/admin/series/{{ s.id }}" class="btn btn-outline btn-sm">Abrir →</a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            <p class="sx-sin-resultados" id="sx-sin-resultados" hidden>Ninguna serie coincide.</p>
         </div>
+        <p class="sx-hint" style="margin-top:.75rem">
+            El número de orden se guarda solo al cambiarlo. Los precios se estiman con la mediana de lo vendido
+            (o, si no hay ventas cargadas, de lo ofertado){% if rate %}; dólar a Bs {{ '%.2f'|format(rate) }}{% endif %}.
+        </p>
         {% else %}
         <div class="empty-state">
             <div class="empty-icon">📚</div>
-            <p>Todavía no hay series. Creá la primera con el formulario de arriba.</p>
+            <p>Todavía no hay series. Creá la primera con «+ Nueva serie».</p>
         </div>
         {% endif %}
 
     </main>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}<script src="{{ static_v('js/admin-series.js') }}"></script>{% endblock %}

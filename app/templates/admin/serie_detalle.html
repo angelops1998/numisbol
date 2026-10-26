@@ -1,168 +1,263 @@
 {% extends "base.html" %}
+{% from "admin/_precios_macros.html" import estimado, lista_precios, form_precio with context %}
 {% block title %}{{ serie.nombre }} — Admin NumisBol{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/admin.css') }}">{% endblock %}
+
+{# Select de ensayador / ceca, con el valor actual aunque ya no esté en la lista. #}
+{% macro select_ensayador(actual, form_id=none) -%}
+<select name="ensayador" class="form-input" {% if form_id %}form="{{ form_id }}"{% endif %} aria-label="Ensayador">
+    <option value="">— Sin especificar —</option>
+    {% for group_name, group_items in assayer_groups %}
+    <optgroup label="{{ group_name }}">
+        {% for a in group_items %}
+        <option value="{{ a }}" {% if actual == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+    </optgroup>
+    {% endfor %}
+    {% if actual and actual not in assayer_values %}
+    <option value="{{ actual }}" selected>{{ actual }}</option>
+    {% endif %}
+</select>
+{%- endmacro %}
+
+{% macro select_ceca(actual, form_id=none) -%}
+<select name="ceca" class="form-input" {% if form_id %}form="{{ form_id }}"{% endif %} aria-label="Ceca">
+    <option value="">— Sin especificar —</option>
+    {% for m in mints_bolivia %}
+    <option value="{{ m }}" {% if actual == m %}selected{% endif %}>{{ m }}</option>
+    {% endfor %}
+    {% if actual and actual not in mints_bolivia %}
+    <option value="{{ actual }}" selected>{{ actual }}</option>
+    {% endif %}
+</select>
+{%- endmacro %}
 
 {% block content %}
 <div class="admin-layout">
     {% include "admin/_sidebar.html" %}
 
     <main class="admin-main">
-        <p style="margin-bottom:.5rem"><a href="/admin/series" style="color:var(--text-dim);font-size:.82rem;text-decoration:none">← Volver a series</a></p>
-        <h1 class="admin-page-title">{{ serie.nombre }}</h1>
-        <p class="admin-page-sub">{{ serie.variantes|length }} variante{{ 's' if serie.variantes|length != 1 }}</p>
+        <!-- Navegación entre series -->
+        <nav class="sd-nav">
+            <a href="/admin/series" class="sd-volver">← Todas las series</a>
+            <span class="sd-pos">Serie {{ posicion }} de {{ total_series }}</span>
+            <span class="sd-flechas">
+                {% if anterior %}
+                <a href="/admin/series/{{ anterior.id }}" class="btn btn-outline btn-sm" title="{{ anterior.nombre }} (atajo: Alt+←)">← Anterior</a>
+                {% else %}<span class="btn btn-outline btn-sm is-disabled">← Anterior</span>{% endif %}
+                {% if siguiente %}
+                <a href="/admin/series/{{ siguiente.id }}" class="btn btn-outline btn-sm" title="{{ siguiente.nombre }} (atajo: Alt+→)">Siguiente →</a>
+                {% else %}<span class="btn btn-outline btn-sm is-disabled">Siguiente →</span>{% endif %}
+            </span>
+        </nav>
+
+        <h1 class="admin-page-title sd-titulo">{{ serie.nombre }}</h1>
+        <div class="sd-resumen">
+            <span class="sd-dato"><b>{{ serie.variantes|length }}</b> variante{{ 's' if serie.variantes|length != 1 }}</span>
+            <span class="sd-dato">Orden <b>{{ serie.orden }}</b></span>
+            {% if serie.activo %}
+            <span class="badge-status badge-activo">Visible</span>
+            {% else %}
+            <span class="badge-status badge-cerrado">Oculta en el sitio</span>
+            {% endif %}
+            <span class="sd-dato sd-dato--precio">Estimado: {{ estimado(resumen_serie, rate) }}</span>
+        </div>
 
         {% if saved %}
-        <div class="alert alert-success" style="margin-bottom:1.25rem">✓ Cambios guardados.</div>
+        <div class="alert alert-success sx-flash">✓ Cambios guardados.</div>
         {% endif %}
 
-        <!-- Editar serie -->
-        <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
-            <form method="post" action="/admin/series/{{ serie.id }}" style="display:flex;flex-direction:column;gap:.9rem">
+        <!-- ── Datos de la serie ─────────────────────────────── -->
+        <section class="sx-card" id="datos">
+            <div class="sx-card-head">
+                <h2 class="sx-card-title">Datos de la serie</h2>
+                <button type="button" class="btn btn-outline btn-sm" data-toggle="#sd-ver,#sd-editar" id="sd-btn-editar">✎ Editar</button>
+            </div>
+
+            <div id="sd-ver">
+                {% if serie.descripcion %}
+                <div class="sd-desc is-plegada" id="sd-desc">{{ serie.descripcion }}</div>
+                <button type="button" class="sd-mas" id="sd-mas" hidden>Ver descripción completa ▾</button>
+                {% else %}
+                <p class="sx-hint">Sin descripción. Tocá «Editar» para agregarla.</p>
+                {% endif %}
+            </div>
+
+            <form id="sd-editar" method="post" action="/admin/series/{{ serie.id }}" class="sx-form" hidden>
                 {{ csrf_input(request) }}
-                <div class="form-group" style="margin:0;max-width:480px">
-                    <label class="form-label" style="font-size:.75rem">Nombre</label>
-                    <input type="text" name="nombre" class="form-input" value="{{ serie.nombre }}" required>
+                <div class="sd-form-fila">
+                    <div class="form-group" style="margin:0;flex:1;min-width:240px">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-input" value="{{ serie.nombre }}" required>
+                    </div>
+                    <div class="form-group" style="margin:0;width:110px">
+                        <label class="form-label">Orden</label>
+                        <input type="number" name="orden" class="form-input" value="{{ serie.orden }}">
+                    </div>
+                    <label class="sd-check">
+                        <input type="checkbox" name="activo" value="1" {% if serie.activo %}checked{% endif %}>
+                        Visible en el sitio
+                    </label>
                 </div>
                 <div class="form-group" style="margin:0">
-                    <label class="form-label" style="font-size:.75rem">Descripción</label>
-                    <textarea name="descripcion" class="form-input" rows="6">{{ serie.descripcion or '' }}</textarea>
+                    <label class="form-label">Descripción</label>
+                    <textarea name="descripcion" class="form-input sx-autogrow" rows="8">{{ serie.descripcion or '' }}</textarea>
                 </div>
-                <div class="form-group" style="margin:0;max-width:160px">
-                    <label class="form-label" style="font-size:.75rem">Orden</label>
-                    <input type="number" name="orden" class="form-input" value="{{ serie.orden }}">
-                    <p style="font-size:.72rem;color:var(--text-dim);margin:.35rem 0 0">Menor número = aparece antes en /coleccion/series. Por defecto 100.</p>
+                <div class="sx-form-actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar datos</button>
+                    <button type="button" class="btn btn-outline btn-sm" data-toggle="#sd-ver,#sd-editar">Cancelar</button>
                 </div>
-                <button type="submit" class="btn btn-outline btn-sm" style="align-self:flex-start">Guardar</button>
             </form>
-        </div>
+        </section>
 
-        <!-- Agregar variante -->
-        <div class="admin-table-wrap" style="padding:1.25rem;margin-bottom:1.5rem">
-            <h3 style="font-size:.9rem;color:var(--text-primary);margin:0 0 .85rem">Agregar variante</h3>
-            <form method="post" action="/admin/series/{{ serie.id }}/variantes" style="display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap">
-                {{ csrf_input(request) }}
-                <div class="form-group" style="margin:0;width:90px">
-                    <label class="form-label" style="font-size:.75rem">Año</label>
-                    <input type="number" name="anio" class="form-input" placeholder="1884" min="1500" max="2100">
-                </div>
-                <div class="form-group" style="margin:0;flex:1;min-width:220px">
-                    <label class="form-label" style="font-size:.75rem">Ensayador</label>
-                    <select name="ensayador" class="form-input">
-                        <option value="">— Sin especificar —</option>
-                        {% for group_name, group_items in assayer_groups %}
-                        <optgroup label="{{ group_name }}">
-                            {% for a in group_items %}
-                            <option value="{{ a }}">{{ a }}</option>
-                            {% endfor %}
-                        </optgroup>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group" style="margin:0;width:160px">
-                    <label class="form-label" style="font-size:.75rem">Ceca</label>
-                    <select name="ceca" class="form-input">
-                        <option value="">— Sin especificar —</option>
-                        {% for m in mints_bolivia %}
-                        <option value="{{ m }}">{{ m }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group" style="margin:0;width:130px">
-                    <label class="form-label" style="font-size:.75rem">Mintage</label>
-                    <input type="text" name="mintage" class="form-input" placeholder="1.200.000">
-                </div>
-                <div class="form-group" style="margin:0;flex-basis:100%;min-width:220px">
-                    <label class="form-label" style="font-size:.75rem">Nota (opcional)</label>
-                    <textarea name="nota" class="form-input" rows="3"
-                              style="resize:vertical;min-height:2.4rem"
-                              placeholder="Ej: sobrefecha 4/3"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-end;margin-bottom:.05rem">+ Agregar</button>
-            </form>
-        </div>
+        <!-- ── Variantes ──────────────────────────────────────── -->
+        <section class="sx-card sx-card--tabla" id="variantes">
+            <div class="sx-card-head">
+                <h2 class="sx-card-title">Variantes <span class="sx-count">{{ serie.variantes|length }}</span></h2>
+                {% if serie.variantes %}
+                <input type="search" id="sd-buscar" class="admin-search-input sd-buscar" placeholder="Filtrar por año, ensayador, nota…" autocomplete="off">
+                {% endif %}
+            </div>
 
-        {% if serie.variantes %}
-        <!-- Formularios de edición/eliminación por variante (referenciados vía atributo form=) -->
-        {% for v in serie.variantes %}
-        <form id="edit-v-{{ v.id }}" method="post" action="/admin/series/variantes/{{ v.id }}">{{ csrf_input(request) }}</form>
-        <form id="del-v-{{ v.id }}" method="post" action="/admin/series/variantes/{{ v.id }}/eliminar"
-              onsubmit="return confirm('¿Eliminar la variante {{ v.etiqueta }}?')">{{ csrf_input(request) }}</form>
-        {% endfor %}
+            {% if serie.variantes %}
+            {# Un form por variante, vinculado a los campos de la fila con el atributo form= #}
+            {% for v in serie.variantes %}
+            <form id="edit-v-{{ v.id }}" class="sd-vform" method="post" action="/admin/series/variantes/{{ v.id }}" data-vid="{{ v.id }}">{{ csrf_input(request) }}</form>
+            <form id="del-v-{{ v.id }}" method="post" action="/admin/series/variantes/{{ v.id }}/eliminar"
+                  onsubmit="return confirm('¿Eliminar la variante {{ v.etiqueta|truncate(80)|e }}? También se borran sus precios.')">{{ csrf_input(request) }}</form>
+            {% endfor %}
 
-        <div class="admin-table-wrap">
-            <p style="font-size:.78rem;color:var(--text-dim);margin:0;padding:.85rem 1.1rem 0">
-                Editá cualquier campo y presioná <strong>Guardar</strong> en esa fila.
-            </p>
-            <table class="admin-table">
+            <div class="sd-tabla-scroll">
+            <table class="admin-table sd-tabla">
                 <thead>
                     <tr>
-                        <th style="width:90px">Año</th>
-                        <th>Ensayador</th>
-                        <th style="width:160px">Ceca</th>
-                        <th style="width:130px">Mintage</th>
-                        <th>Nota</th>
-                        <th style="width:130px"></th>
+                        <th class="sd-c-anio">Año</th>
+                        <th class="sd-c-ens">Ensayador</th>
+                        <th class="sd-c-ceca">Ceca</th>
+                        <th class="sd-c-tir">Tirada</th>
+                        <th>Nota / rareza</th>
+                        <th class="sd-c-precio">Precio</th>
+                        <th class="sd-c-acc"></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for v in serie.variantes %}
-                    <tr>
-                        <td>
-                            <input type="number" name="anio" form="edit-v-{{ v.id }}" class="form-input"
-                                   value="{{ v.anio or '' }}" min="1500" max="2100" style="padding:.35rem .5rem">
+                    {% set fid = 'edit-v-' ~ v.id %}
+                    {% set ps = precios_var.get(v.id, []) %}
+                    <tr id="v-{{ v.id }}" class="sd-fila{% if ultima and ultima.id == v.id %} is-nueva{% endif %}"
+                        data-vid="{{ v.id }}"
+                        data-buscar="{{ v.anio or '' }} {{ v.ensayador or '' }} {{ v.ceca or '' }} {{ v.nota or '' }}">
+                        <td class="sd-c-anio">
+                            <input type="number" name="anio" form="{{ fid }}" class="form-input"
+                                   value="{{ v.anio or '' }}" min="1500" max="2100" aria-label="Año">
+                        </td>
+                        <td class="sd-c-ens">{{ select_ensayador(v.ensayador, fid) }}</td>
+                        <td class="sd-c-ceca">{{ select_ceca(v.ceca, fid) }}</td>
+                        <td class="sd-c-tir">
+                            <input type="text" name="mintage" form="{{ fid }}" class="form-input"
+                                   value="{{ v.mintage or '' }}" placeholder="1.200.000" aria-label="Tirada">
                         </td>
                         <td>
-                            <select name="ensayador" form="edit-v-{{ v.id }}" class="form-input" style="padding:.35rem .5rem">
-                                <option value="">— Sin especificar —</option>
-                                {% for group_name, group_items in assayer_groups %}
-                                <optgroup label="{{ group_name }}">
-                                    {% for a in group_items %}
-                                    <option value="{{ a }}" {% if v.ensayador == a %}selected{% endif %}>{{ a }}</option>
-                                    {% endfor %}
-                                </optgroup>
-                                {% endfor %}
-                                {% if v.ensayador and v.ensayador not in assayer_values %}
-                                <option value="{{ v.ensayador }}" selected>{{ v.ensayador }}</option>
-                                {% endif %}
-                            </select>
+                            <textarea name="nota" form="{{ fid }}" class="form-input sx-autogrow" rows="1"
+                                      placeholder="Ej: Muy rara" aria-label="Nota">{{ v.nota or '' }}</textarea>
                         </td>
-                        <td>
-                            <select name="ceca" form="edit-v-{{ v.id }}" class="form-input" style="padding:.35rem .5rem">
-                                <option value="">— Sin especificar —</option>
-                                {% for m in mints_bolivia %}
-                                <option value="{{ m }}" {% if v.ceca == m %}selected{% endif %}>{{ m }}</option>
-                                {% endfor %}
-                                {% if v.ceca and v.ceca not in mints_bolivia %}
-                                <option value="{{ v.ceca }}" selected>{{ v.ceca }}</option>
-                                {% endif %}
-                            </select>
+                        <td class="sd-c-precio">
+                            <button type="button" class="sd-precio-btn{% if ps %} tiene{% endif %}"
+                                    data-toggle-precios="{{ v.id }}" aria-expanded="false" aria-controls="vp-{{ v.id }}">
+                                {% if ps %}{{ estimado(resumen_var[v.id], rate, rango=false) }}
+                                <span class="pz-rango">{{ ps|length }} precio{{ 's' if ps|length != 1 }} ▾</span>
+                                {% else %}<span class="pz-vacio">+ precio</span>{% endif %}
+                            </button>
                         </td>
-                        <td>
-                            <input type="text" name="mintage" form="edit-v-{{ v.id }}" class="form-input"
-                                   value="{{ v.mintage or '' }}" placeholder="1.200.000" style="padding:.35rem .5rem">
+                        <td class="sd-c-acc">
+                            <button type="submit" form="{{ fid }}" class="btn btn-outline btn-sm sd-guardar" disabled>Guardar</button>
+                            <button type="submit" form="del-v-{{ v.id }}" class="sx-icon-btn sx-icon-btn--danger"
+                                    title="Eliminar variante" aria-label="Eliminar variante">✕</button>
+                            <span class="sd-estado" aria-live="polite"></span>
                         </td>
-                        <td>
-                            <textarea name="nota" form="edit-v-{{ v.id }}" class="form-input" rows="2"
-                                      placeholder="Ej: sobrefecha 4/3"
-                                      style="padding:.35rem .5rem;resize:vertical;min-height:2rem">{{ v.nota or '' }}</textarea>
-                        </td>
-                        <td style="text-align:right;white-space:nowrap">
-                            <button type="submit" form="edit-v-{{ v.id }}" class="btn btn-outline btn-sm">Guardar</button>
-                            <button type="submit" form="del-v-{{ v.id }}" class="btn btn-outline btn-sm"
-                                    style="color:#f87171;border-color:rgba(248,113,113,.4)">✕</button>
+                    </tr>
+                    <tr id="vp-{{ v.id }}" class="sd-precios-fila" {% if abierta != v.id|string %}hidden{% endif %}>
+                        <td colspan="7">
+                            <div class="sd-precios">
+                                <div class="sd-precios-head">
+                                    <strong>Precios vistos de {{ v.etiqueta|truncate(90) }}</strong>
+                                    {% if ps %}<span>{{ estimado(resumen_var[v.id], rate) }}</span>{% endif %}
+                                </div>
+                                {{ lista_precios(ps, rate) }}
+                                {{ form_precio(serie, variante=v) }}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <div class="empty-icon">🪙</div>
-            <p>Esta serie no tiene variantes todavía. Agregá la primera con el formulario de arriba.</p>
-        </div>
-        {% endif %}
+            </div>
+            <p class="sx-sin-resultados" id="sd-sin-resultados" hidden>Ninguna variante coincide.</p>
+            {% endif %}
 
+            <!-- Agregar variante -->
+            <form method="post" action="/admin/series/{{ serie.id }}/variantes" class="sd-nueva" id="nueva-variante">
+                {{ csrf_input(request) }}
+                <div class="sd-nueva-titulo">
+                    <strong>+ Nueva variante</strong>
+                    {% if ultima %}<span class="sx-hint">Ensayador y ceca copiados de la que acabás de agregar.</span>{% endif %}
+                </div>
+                <div class="sd-nueva-campos">
+                    <label class="pz-campo sd-c-anio"><span>Año</span>
+                        <input type="number" name="anio" class="form-input" placeholder="1884" min="1500" max="2100"
+                               {% if ultima %}autofocus{% endif %}>
+                    </label>
+                    <label class="pz-campo pz-campo--ancho"><span>Ensayador</span>{{ select_ensayador(ultima.ensayador if ultima else none) }}</label>
+                    <label class="pz-campo"><span>Ceca</span>{{ select_ceca(ultima.ceca if ultima else none) }}</label>
+                    <label class="pz-campo"><span>Tirada</span>
+                        <input type="text" name="mintage" class="form-input" placeholder="1.200.000" autocomplete="off">
+                    </label>
+                    <label class="pz-campo pz-campo--ancho"><span>Nota / rareza</span>
+                        <input type="text" name="nota" class="form-input" placeholder="Ej: Muy rara" list="sd-rarezas" autocomplete="off">
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-sm pz-submit">+ Agregar</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- ── Precios generales de la serie ──────────────────── -->
+        <section class="sx-card" id="precios">
+            <div class="sx-card-head">
+                <h2 class="sx-card-title">Precios de la serie en general</h2>
+                {% if resumen_generales %}<span>{{ estimado(resumen_generales, rate) }}</span>{% endif %}
+            </div>
+            <p class="sx-hint" style="margin-top:0">
+                Para publicaciones donde no se sabe la variante exacta. Si sabés el año o el ensayador,
+                mejor cargalo en la variante (botón «+ precio» de la tabla).
+                {% if rate %}Conversión: 1 US$ = Bs {{ '%.2f'|format(rate) }}.{% endif %}
+            </p>
+            {{ lista_precios(precios_generales, rate) }}
+            {{ form_precio(serie, variantes=serie.variantes) }}
+        </section>
+
+        <!-- ── Zona peligrosa ─────────────────────────────────── -->
+        <details class="sd-peligro">
+            <summary>Eliminar esta serie</summary>
+            <form method="post" action="/admin/series/{{ serie.id }}/eliminar"
+                  onsubmit="return confirm('¿Eliminar la serie «{{ serie.nombre|e }}» con sus {{ serie.variantes|length }} variantes y precios? Las monedas vinculadas no se eliminan.')">
+                {{ csrf_input(request) }}
+                <p class="sx-hint">Se borran la serie, sus {{ serie.variantes|length }} variantes y todos sus precios. Las monedas de los usuarios no se tocan.</p>
+                <button type="submit" class="btn-danger-sm">Eliminar serie definitivamente</button>
+            </form>
+        </details>
+
+        <datalist id="pz-fuentes">{% for f in fuentes %}<option value="{{ f }}">{% endfor %}</datalist>
+        <datalist id="pz-estados">{% for e in estados %}<option value="{{ e }}">{% endfor %}</datalist>
+        <datalist id="sd-rarezas">
+            {% for r in ['Una conocida', 'Extremadamente rara', 'Rarísima', 'Muy rara', 'Rara', 'Escasa', 'Común', 'Muy común'] %}<option value="{{ r }}">{% endfor %}
+        </datalist>
+
+        <div class="sd-barra" id="sd-barra" hidden>
+            <span id="sd-barra-texto">Hay cambios sin guardar</span>
+            <button type="button" class="btn btn-primary btn-sm" id="sd-guardar-todo">Guardar todo (Ctrl+S)</button>
+        </div>
     </main>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}<script src="{{ static_v('js/admin-series.js') }}"></script>{% endblock %}

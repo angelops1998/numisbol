@@ -7,9 +7,9 @@ from .anuncio import Anuncio
 from .blog import BlogPost, BlogCategoria, BlogPostImagen
 from .setting import AppSetting
 from .pregunta import Pregunta, Respuesta
-from .serie import Serie, SerieVariante
+from .serie import Serie, SerieVariante, SeriePrecio
 
 __all__ = ["User", "Coin", "CustomOption", "CoinLike",
            "PasswordResetToken", "Listing", "ListingType", "ListingStatus",
            "Anuncio", "BlogPost", "BlogCategoria", "AppSetting",
-           "Pregunta", "Respuesta", "Serie", "SerieVariante"]
+           "Pregunta", "Respuesta", "Serie", "SerieVariante", "SeriePrecio"]

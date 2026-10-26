@@ -1,6 +1,10 @@
+from datetime import date
+from decimal import Decimal, InvalidOperation
+from statistics import median
+
 from ..templates_config import templates
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case, desc
 from ..database import get_db
@@ -9,7 +13,7 @@ from ..models.user import User
 from ..models.listing import Listing
 from ..models.coin import Coin
 from ..models.pregunta import Pregunta, Respuesta
-from ..models.serie import Serie, SerieVariante
+from ..models.serie import Serie, SerieVariante, SeriePrecio
 from ..auth import get_current_user
 from .. import tipo_cambio
 
@@ -292,6 +296,45 @@ async def admin_coleccion(request: Request, uid: int = 0, q: str = "", pagina: i
 
 # ── Series ─────────────────────────────────────────────────────────────────────
 
+FUENTES_PRECIO = ["eBay", "MercadoLibre", "Facebook Marketplace", "Grupo de Facebook",
+                  "WhatsApp", "Numista", "Heritage Auctions", "Subasta", "Tienda numismática"]
+ESTADOS_PRECIO = ["MC (G)", "BC (F)", "MBC (VF)", "EBC (XF)", "SC (UNC)", "Proof"]
+
+
+def _responder(request: Request, url: str, **extra):
+    """Los formularios con JS piden JSON (cabecera X-Fetch) para guardar sin
+    recargar la página; sin JS se sigue redirigiendo como siempre."""
+    if request.headers.get("x-fetch") == "1":
+        return JSONResponse({"ok": True, **extra})
+    return RedirectResponse(url=url, status_code=302)
+
+
+def _en_usd(p: SeriePrecio, rate: float | None) -> float | None:
+    monto = float(p.monto)
+    if p.moneda == "USD":
+        return monto
+    return monto / rate if rate else None
+
+
+def _resumen_precios(precios, rate: float | None) -> dict | None:
+    """Estimativo en USD: la mediana de los precios vendidos si hay alguno
+    (son el dato más fiel); si no, la de las ofertas publicadas."""
+    vendidos = [x for x in (_en_usd(p, rate) for p in precios if p.tipo == "vendido") if x is not None]
+    ofertas  = [x for x in (_en_usd(p, rate) for p in precios if p.tipo != "vendido") if x is not None]
+    base = vendidos or ofertas
+    if not base:
+        return None
+    todos = vendidos + ofertas
+    return {
+        "estimado": median(base),
+        "base": "vendido" if vendidos else "oferta",
+        "n_base": len(base),
+        "n": len(todos),
+        "min": min(todos),
+        "max": max(todos),
+    }
+
+
 @router.get("/series", response_class=HTMLResponse)
 async def admin_series(request: Request, db: Session = Depends(get_db)):
     user = require_admin(request, db)
@@ -300,8 +343,16 @@ async def admin_series(request: Request, db: Session = Depends(get_db)):
         db.query(SerieVariante.serie_id, func.count(SerieVariante.id))
         .group_by(SerieVariante.serie_id).all()
     )
+    rate = tipo_cambio.get_rate(db)
+    por_serie: dict[int, list] = {}
+    for p in db.query(SeriePrecio).all():
+        por_serie.setdefault(p.serie_id, []).append(p)
+    resumenes = {sid: _resumen_precios(ps, rate) for sid, ps in por_serie.items()}
     return templates.TemplateResponse(request, "admin/series.html", {
         "user": user, "series": series, "conteos": conteos,
+        "resumenes": resumenes, "rate": rate,
+        "total_variantes": sum(conteos.values()),
+        "total_precios": sum(len(ps) for ps in por_serie.values()),
         "saved": request.query_params.get("saved"),
         "error": request.query_params.get("error"),
     })
@@ -320,7 +371,10 @@ async def admin_crear_serie(
         return RedirectResponse(url="/admin/series?error=nombre", status_code=302)
     if db.query(Serie).filter(func.lower(Serie.nombre) == nombre.lower()).first():
         return RedirectResponse(url="/admin/series?error=duplicado", status_code=302)
-    serie = Serie(nombre=nombre, descripcion=descripcion.strip() or None)
+    # Las series nuevas van al final, como en el libro
+    ultimo = db.query(func.max(Serie.orden)).scalar()
+    serie = Serie(nombre=nombre, descripcion=descripcion.strip() or None,
+                  orden=(ultimo + 1) if ultimo is not None else 100)
     db.add(serie)
     db.commit()
     db.refresh(serie)
@@ -335,11 +389,44 @@ async def admin_serie_detalle(sid: int, request: Request, db: Session = Depends(
         raise HTTPException(status_code=404)
     from .coleccion import ASSAYER_GROUPS, MINTS_BOLIVIA
     assayer_values = [a for _, items in ASSAYER_GROUPS for a in items]
+
+    # Anterior / siguiente según el mismo orden de la lista
+    ids = [r[0] for r in db.query(Serie.id).order_by(Serie.orden, Serie.nombre).all()]
+    i = ids.index(sid)
+    anterior = db.get(Serie, ids[i - 1]) if i > 0 else None
+    siguiente = db.get(Serie, ids[i + 1]) if i + 1 < len(ids) else None
+
+    rate = tipo_cambio.get_rate(db)
+    precios_var: dict[int, list] = {}
+    precios_generales = []
+    for p in serie.precios:
+        if p.variante_id:
+            precios_var.setdefault(p.variante_id, []).append(p)
+        else:
+            precios_generales.append(p)
+
+    # Tras agregar una variante, el formulario nuevo arranca con el mismo
+    # ensayador y ceca: en el libro suelen venir varias seguidas iguales.
+    last = request.query_params.get("last")
+    ultima = next((v for v in serie.variantes if str(v.id) == last), None)
+
     return templates.TemplateResponse(request, "admin/serie_detalle.html", {
         "user": user, "serie": serie,
         "assayer_groups": ASSAYER_GROUPS,
         "assayer_values": assayer_values,
         "mints_bolivia": MINTS_BOLIVIA,
+        "anterior": anterior, "siguiente": siguiente,
+        "posicion": i + 1, "total_series": len(ids),
+        "rate": rate,
+        "precios_var": precios_var,
+        "precios_generales": precios_generales,
+        "resumen_var": {vid: _resumen_precios(ps, rate) for vid, ps in precios_var.items()},
+        "resumen_serie": _resumen_precios(serie.precios, rate),
+        "resumen_generales": _resumen_precios(precios_generales, rate),
+        "fuentes": FUENTES_PRECIO, "estados": ESTADOS_PRECIO,
+        "hoy": date.today().isoformat(),
+        "ultima": ultima,
+        "abierta": request.query_params.get("open"),
         "saved": request.query_params.get("saved"),
     })
 
@@ -351,18 +438,26 @@ async def admin_editar_serie(
     nombre: str = Form(""),
     descripcion: str = Form(""),
     orden: int = Form(100),
+    activo: str = Form(""),
     db: Session = Depends(get_db),
 ):
     require_admin(request, db)
     serie = db.query(Serie).filter(Serie.id == sid).first()
     if not serie:
         raise HTTPException(status_code=404)
-    if nombre.strip():
-        serie.nombre = nombre.strip()
+    nombre = nombre.strip()
+    if nombre and nombre.lower() != serie.nombre.lower() and \
+            db.query(Serie).filter(func.lower(Serie.nombre) == nombre.lower(), Serie.id != sid).first():
+        if request.headers.get("x-fetch") == "1":
+            return JSONResponse({"ok": False, "error": "Ya existe otra serie con ese nombre."}, status_code=400)
+        return RedirectResponse(url=f"/admin/series/{sid}", status_code=302)
+    if nombre:
+        serie.nombre = nombre
     serie.descripcion = descripcion.strip() or None
     serie.orden = orden
+    serie.activo = activo == "1"
     db.commit()
-    return RedirectResponse(url=f"/admin/series/{sid}?saved=1", status_code=302)
+    return _responder(request, f"/admin/series/{sid}?saved=1")
 
 
 @router.post("/series/{sid}/orden")
@@ -378,7 +473,7 @@ async def admin_reordenar_serie(
         raise HTTPException(status_code=404)
     serie.orden = orden
     db.commit()
-    return RedirectResponse(url="/admin/series?saved=1", status_code=302)
+    return _responder(request, "/admin/series?saved=1")
 
 
 @router.post("/series/{sid}/eliminar")
@@ -389,6 +484,16 @@ async def admin_eliminar_serie(sid: int, request: Request, db: Session = Depends
         db.delete(serie)
         db.commit()
     return RedirectResponse(url="/admin/series?saved=1", status_code=302)
+
+
+def _datos_variante(anio, ensayador, ceca, mintage, nota) -> dict:
+    return {
+        "anio":      int(anio) if anio.strip().isdigit() else None,
+        "ensayador": ensayador.strip() or None,
+        "ceca":      ceca.strip() or None,
+        "mintage":   mintage.strip() or None,
+        "nota":      nota.strip() or None,
+    }
 
 
 @router.post("/series/{sid}/variantes")
@@ -406,17 +511,10 @@ async def admin_crear_variante(
     serie = db.query(Serie).filter(Serie.id == sid).first()
     if not serie:
         raise HTTPException(status_code=404)
-    v = SerieVariante(
-        serie_id  = sid,
-        anio      = int(anio) if anio.strip().isdigit() else None,
-        ensayador = ensayador.strip() or None,
-        ceca      = ceca.strip() or None,
-        mintage   = mintage.strip() or None,
-        nota      = nota.strip() or None,
-    )
+    v = SerieVariante(serie_id=sid, **_datos_variante(anio, ensayador, ceca, mintage, nota))
     db.add(v)
     db.commit()
-    return RedirectResponse(url=f"/admin/series/{sid}?saved=1", status_code=302)
+    return RedirectResponse(url=f"/admin/series/{sid}?saved=1&last={v.id}#nueva-variante", status_code=302)
 
 
 @router.post("/series/variantes/{vid}")
@@ -434,13 +532,10 @@ async def admin_editar_variante(
     v = db.query(SerieVariante).filter(SerieVariante.id == vid).first()
     if not v:
         raise HTTPException(status_code=404)
-    v.anio      = int(anio) if anio.strip().isdigit() else None
-    v.ensayador = ensayador.strip() or None
-    v.ceca      = ceca.strip() or None
-    v.mintage   = mintage.strip() or None
-    v.nota      = nota.strip() or None
+    for campo, valor in _datos_variante(anio, ensayador, ceca, mintage, nota).items():
+        setattr(v, campo, valor)
     db.commit()
-    return RedirectResponse(url=f"/admin/series/{v.serie_id}?saved=1", status_code=302)
+    return _responder(request, f"/admin/series/{v.serie_id}?saved=1#v-{vid}")
 
 
 @router.post("/series/variantes/{vid}/eliminar")
@@ -451,7 +546,75 @@ async def admin_eliminar_variante(vid: int, request: Request, db: Session = Depe
     if v:
         db.delete(v)
         db.commit()
-    return RedirectResponse(url=f"/admin/series/{sid}?saved=1", status_code=302)
+    return RedirectResponse(url=f"/admin/series/{sid}?saved=1#variantes", status_code=302)
+
+
+@router.post("/series/{sid}/precios")
+async def admin_crear_precio(
+    sid: int,
+    request: Request,
+    variante_id: str = Form(""),
+    monto: str = Form(""),
+    moneda: str = Form("USD"),
+    tipo: str = Form("oferta"),
+    estado: str = Form(""),
+    fuente: str = Form(""),
+    url: str = Form(""),
+    fecha: str = Form(""),
+    nota: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    serie = db.query(Serie).filter(Serie.id == sid).first()
+    if not serie:
+        raise HTTPException(status_code=404)
+    vid = int(variante_id) if variante_id.isdigit() else None
+    if vid and not db.query(SerieVariante).filter(SerieVariante.id == vid, SerieVariante.serie_id == sid).first():
+        vid = None
+    destino = f"/admin/series/{sid}?saved=1" + (f"&open={vid}#v-{vid}" if vid else "#precios")
+    try:
+        # Acepta "1.250,50", "1250.50" y "1,250.50"
+        m = monto.strip().replace(" ", "")
+        if "," in m and "." in m:
+            m = m.replace(".", "").replace(",", ".") if m.rfind(",") > m.rfind(".") else m.replace(",", "")
+        else:
+            m = m.replace(",", ".")
+        valor = Decimal(m)
+    except (InvalidOperation, ValueError):
+        return RedirectResponse(url=destino, status_code=302)
+    if valor <= 0:
+        return RedirectResponse(url=destino, status_code=302)
+    try:
+        f = date.fromisoformat(fecha) if fecha else None
+    except ValueError:
+        f = None
+    db.add(SeriePrecio(
+        serie_id    = sid,
+        variante_id = vid,
+        monto       = valor,
+        moneda      = "BOB" if moneda == "BOB" else "USD",
+        tipo        = "vendido" if tipo == "vendido" else "oferta",
+        estado      = estado.strip()[:30] or None,
+        fuente      = fuente.strip()[:100] or None,
+        url         = url.strip()[:500] if url.strip().startswith(("http://", "https://")) else None,
+        fecha       = f,
+        nota        = nota.strip() or None,
+    ))
+    db.commit()
+    return RedirectResponse(url=destino, status_code=302)
+
+
+@router.post("/series/precios/{pid}/eliminar")
+async def admin_eliminar_precio(pid: int, request: Request, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    p = db.query(SeriePrecio).filter(SeriePrecio.id == pid).first()
+    if not p:
+        raise HTTPException(status_code=404)
+    sid, vid = p.serie_id, p.variante_id
+    db.delete(p)
+    db.commit()
+    destino = f"/admin/series/{sid}?saved=1" + (f"&open={vid}#v-{vid}" if vid else "#precios")
+    return RedirectResponse(url=destino, status_code=302)
 
 
 # ── Configuración ──────────────────────────────────────────────────────────────

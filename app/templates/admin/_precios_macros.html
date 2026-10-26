@@ -1,0 +1,99 @@
+{# Montos en formato boliviano: 1.250 / 12,50 #}
+{% macro monto(x) -%}
+{%- if x >= 100 -%}{{ '{:,.0f}'.format(x).replace(',', '.') }}
+{%- else -%}{{ ('%.2f'|format(x)).replace('.', ',').replace(',00', '') }}{%- endif -%}
+{%- endmacro %}
+
+{# Estimativo compacto: "US$ 120 · Bs 835" + rango #}
+{% macro estimado(r, rate, rango=true) -%}
+{%- if r -%}
+<span class="pz-est" title="Mediana de {{ r.n_base }} precio{{ 's' if r.n_base != 1 }} {{ 'vendido' if r.base == 'vendido' else 'ofertado' }}{{ 's' if r.n_base != 1 }}">
+    <b>US$ {{ monto(r.estimado) }}</b>{% if rate %} <span class="pz-bs">Bs {{ monto(r.estimado * rate) }}</span>{% endif %}
+</span>
+{%- if rango and r.n > 1 %}<span class="pz-rango">{{ monto(r.min) }}–{{ monto(r.max) }} · {{ r.n }} precios</span>{% elif rango %}<span class="pz-rango">1 precio</span>{% endif -%}
+{%- else -%}<span class="pz-vacio">—</span>{%- endif -%}
+{%- endmacro %}
+
+{# Lista de precios cargados. Se importa "with context" por csrf_input/request. #}
+{% macro lista_precios(precios, rate) -%}
+{% if precios %}
+<ul class="pz-lista">
+    {% for p in precios %}
+    <li class="pz-item">
+        <span class="pz-monto">{{ 'US$' if p.moneda == 'USD' else 'Bs' }} {{ monto(p.monto|float) }}</span>
+        {% if p.moneda == 'BOB' and rate %}<span class="pz-conv">≈ US$ {{ monto(p.monto|float / rate) }}</span>
+        {% elif p.moneda == 'USD' and rate %}<span class="pz-conv">≈ Bs {{ monto(p.monto|float * rate) }}</span>{% endif %}
+        <span class="pz-tag pz-tag--{{ p.tipo }}">{{ 'Vendido' if p.tipo == 'vendido' else 'Ofertado' }}</span>
+        {% if p.estado %}<span class="pz-tag">{{ p.estado }}</span>{% endif %}
+        <span class="pz-meta">
+            {%- if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ p.fuente or 'Ver publicación' }} ↗</a>
+            {%- elif p.fuente %}{{ p.fuente }}{% endif %}
+            {%- if p.fecha %} · {{ p.fecha.strftime('%d/%m/%Y') }}{% endif %}
+        </span>
+        {% if p.nota %}<span class="pz-nota">{{ p.nota }}</span>{% endif %}
+        <form method="post" action="/admin/series/precios/{{ p.id }}/eliminar" class="pz-del"
+              onsubmit="return confirm('¿Borrar este precio?')">
+            {{ csrf_input(request) }}
+            <button type="submit" class="sx-icon-btn sx-icon-btn--danger" title="Borrar precio" aria-label="Borrar precio">✕</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+{%- endmacro %}
+
+{# Formulario para cargar un precio visto en internet. #}
+{% macro form_precio(serie, variante=none, variantes=none) -%}
+<form method="post" action="/admin/series/{{ serie.id }}/precios" class="pz-form">
+    {{ csrf_input(request) }}
+    {% if variante %}
+    <input type="hidden" name="variante_id" value="{{ variante.id }}">
+    {% elif variantes %}
+    <label class="pz-campo pz-campo--ancho">
+        <span>Variante</span>
+        <select name="variante_id" class="form-input">
+            <option value="">Serie en general</option>
+            {% for v in variantes %}<option value="{{ v.id }}">{{ v.etiqueta|truncate(70) }}</option>{% endfor %}
+        </select>
+    </label>
+    {% endif %}
+    <label class="pz-campo pz-campo--monto">
+        <span>Precio *</span>
+        <span class="pz-monto-input">
+            <input type="text" name="monto" class="form-input" inputmode="decimal" required placeholder="120" autocomplete="off">
+            <select name="moneda" class="form-input" aria-label="Moneda">
+                <option value="USD">US$</option>
+                <option value="BOB">Bs</option>
+            </select>
+        </span>
+    </label>
+    <label class="pz-campo">
+        <span>Tipo</span>
+        <select name="tipo" class="form-input">
+            <option value="oferta">Ofertado (pedido)</option>
+            <option value="vendido">Vendido</option>
+        </select>
+    </label>
+    <label class="pz-campo">
+        <span>Estado</span>
+        <input type="text" name="estado" class="form-input" list="pz-estados" placeholder="MBC (VF)" autocomplete="off">
+    </label>
+    <label class="pz-campo pz-campo--ancho">
+        <span>Enlace</span>
+        <input type="url" name="url" class="form-input pz-url" placeholder="https://www.ebay.com/itm/…" autocomplete="off">
+    </label>
+    <label class="pz-campo">
+        <span>Fuente</span>
+        <input type="text" name="fuente" class="form-input pz-fuente" list="pz-fuentes" placeholder="eBay" autocomplete="off">
+    </label>
+    <label class="pz-campo">
+        <span>Fecha</span>
+        <input type="date" name="fecha" class="form-input" value="{{ hoy }}">
+    </label>
+    <label class="pz-campo pz-campo--ancho">
+        <span>Nota</span>
+        <input type="text" name="nota" class="form-input" placeholder="Ej: con envío, limpiada, lote de 2…" autocomplete="off">
+    </label>
+    <button type="submit" class="btn btn-primary btn-sm pz-submit">+ Agregar precio</button>
+</form>
+{%- endmacro %}
