@@ -23,13 +23,44 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
+# Duración de la sesión: 400 días es el máximo que aceptan los navegadores
+# para una cookie. Se renueva sola con el uso (ver refresh_session_cookie).
+SESSION_DAYS = 400
+
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
-        expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
-    )
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(days=SESSION_DAYS))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+
+
+def set_session_cookie(response, username: str) -> None:
+    response.set_cookie(
+        key="access_token",
+        value=create_access_token(data={"sub": username}),
+        httponly=True,
+        max_age=60 * 60 * 24 * SESSION_DAYS,
+        samesite="lax",
+        secure=settings.https_only,
+    )
+
+
+def refresh_session_cookie(request: Request, response) -> None:
+    """Renueva la sesión (como mucho una vez al día) mientras el usuario la use."""
+    token = get_token_from_cookie(request)
+    if not token:
+        return
+    if any(k == b"set-cookie" and v.startswith(b"access_token=") for k, v in response.raw_headers):
+        return  # login/logout ya manejan la cookie
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except JWTError:
+        return
+    username = payload.get("sub")
+    remaining = datetime.fromtimestamp(payload.get("exp", 0), timezone.utc) - datetime.now(timezone.utc)
+    if username and remaining < timedelta(days=SESSION_DAYS - 1):
+        set_session_cookie(response, username)
 
 
 def get_user_by_email(db: Session, email: str) -> Optional[User]:

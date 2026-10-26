@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from .database import engine, SessionLocal
 from .routers import auth, main as main_router, coleccion, recovery, mercado, perfil, anuncios, blog, moneda_publica, admin, preguntas
-from .auth import NotAuthenticatedException
+from .auth import NotAuthenticatedException, refresh_session_cookie
 from .csrf import get_csrf_token, set_csrf_cookie, validate_csrf
 import secrets, hmac, hashlib
 
@@ -50,6 +50,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 )
 
         response = await call_next(request)
+        refresh_session_cookie(request, response)
         if "csrf_token" not in request.cookies:
             token = secrets.token_hex(32)
             set_csrf_cookie(response, token)

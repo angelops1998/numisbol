@@ -8,7 +8,7 @@ from ..models.user import User
 from ..auth import (
     hash_password,
     authenticate_user,
-    create_access_token,
+    set_session_cookie,
     get_current_user_optional,
 )
 
@@ -78,15 +78,8 @@ async def registro(
             status_code=422,
         )
 
-    token = create_access_token(data={"sub": new_user.username})
     response = RedirectResponse(url="/", status_code=302)
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        max_age=60 * 60 * 24 * 7,  # 7 días
-        samesite="lax",
-    )
+    set_session_cookie(response, new_user.username)
     return response
 
 
@@ -130,15 +123,8 @@ async def login(
             status_code=401,
         )
 
-    token = create_access_token(data={"sub": user.username})
     response = RedirectResponse(url=next or "/", status_code=302)
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        max_age=60 * 60 * 24 * 7,  # 7 días
-        samesite="lax",
-    )
+    set_session_cookie(response, user.username)
     return response
 
 
