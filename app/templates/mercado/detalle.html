@@ -101,7 +101,7 @@
                 <!-- Precio -->
                 {% if listing.price %}
                 <div class="market-detail-price">
-                    {% if listing.currency == "USD" %}US${% else %}Bs{% endif %}
+                    US$
                     {{ "%.2f"|format(listing.price) }}
                 </div>
                 {% else %}
@@ -227,7 +227,7 @@
                             <input type="hidden" name="nuevo_estado" value="vendido">
                             <div class="modal-body">
                                 <div class="form-group" style="margin-bottom:1rem">
-                                    <label for="sale_price_actual">Precio de venta real <span style="color:var(--text-dim)">({{ listing.currency }})</span></label>
+                                    <label for="sale_price_actual">Precio de venta real <span style="color:var(--text-dim)">(US$)</span></label>
                                     <input type="number" id="sale_price_actual" name="sale_price_actual"
                                         step="0.01" min="0"
                                         value="{{ listing.price if listing.price else '' }}"
@@ -273,7 +273,7 @@
                         <div class="market-card-title">{{ o.title }}</div>
                         <div class="market-card-footer">
                             {% if o.price %}
-                            <span class="market-price">{% if o.currency == "USD" %}US${% else %}Bs{% endif %} {{ "%.2f"|format(o.price) }}</span>
+                            <span class="market-price">US$ {{ "%.2f"|format(o.price) }}</span>
                             {% else %}
                             <span class="market-price-trade">Intercambio</span>
                             {% endif %}

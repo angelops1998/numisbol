@@ -99,7 +99,7 @@
                         </td>
                         <td style="font-size:.82rem;font-weight:600;color:var(--text-primary);white-space:nowrap">
                             {% if m.estimated_value %}
-                                {{ m.estimated_value|int }} {{ m.value_currency or 'USD' }}
+                                US$ {{ m.estimated_value|int }}
                             {% else %}—{% endif %}
                         </td>
                         <td>

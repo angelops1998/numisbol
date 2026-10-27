@@ -97,7 +97,6 @@
 .vt-cost { white-space: nowrap; color: #f87171; font-size: .82rem; }
 .vt-ganancia-pos { color: #4ade80; font-weight: 700; white-space: nowrap; }
 .vt-ganancia-neg { color: #f87171; font-weight: 700; white-space: nowrap; }
-.vt-rate { font-size: .72rem; color: var(--text-dim); white-space: nowrap; }
 .vt-date { color: var(--text-dim); white-space: nowrap; font-size: .8rem; }
 .vt-note { color: var(--text-muted); font-style: italic; max-width: 160px;
            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .78rem; }
@@ -198,17 +197,9 @@
                     <label>Hasta</label>
                     <input type="date" name="hasta" value="{{ hasta }}">
                 </div>
-                <div class="vt-filter-group">
-                    <label>Moneda</label>
-                    <select name="moneda">
-                        <option value="" {% if not moneda %}selected{% endif %}>Todas</option>
-                        <option value="BOB" {% if moneda == 'BOB' %}selected{% endif %}>Bolivianos (Bs)</option>
-                        <option value="USD" {% if moneda == 'USD' %}selected{% endif %}>Dólares (US$)</option>
-                    </select>
-                </div>
                 <div class="vt-filter-actions">
                     <button type="submit" class="vt-btn-filter">Filtrar</button>
-                    {% if q or desde or hasta or moneda %}
+                    {% if q or desde or hasta %}
                     <a href="/mercado/mis-publicaciones/ventas" class="vt-btn-clear">✕ Limpiar</a>
                     {% endif %}
                 </div>
@@ -224,7 +215,7 @@
         {% if not has_filter %}
         <div class="vt-empty-state">
             <div class="vt-empty-icon">🔍</div>
-            <p>Usá los filtros para buscar ventas por nombre, fecha o moneda.</p>
+            <p>Usá los filtros para buscar ventas por nombre o fecha.</p>
         </div>
         {% else %}
 
@@ -233,38 +224,21 @@
         <div class="vt-summary">
             <div class="vt-sum-card vt-sum-card--green">
                 <div class="vt-sum-label">Ingresos</div>
-                {% if tot_bob > 0 %}<div class="vt-sum-val">Bs {{ "%.2f"|format(tot_bob) }}</div>{% endif %}
-                {% if tot_usd > 0 %}
-                <div class="vt-sum-val" style="color:#38bdf8">US$ {{ "%.2f"|format(tot_usd) }}</div>
-                {% if tot_usd_en_bob > 0 %}
-                <div class="vt-sum-sub">≈ Bs {{ "%.2f"|format(tot_usd_en_bob) }} convertido</div>
-                {% endif %}
-                {% endif %}
-                {% if tot_bob > 0 and tot_usd_en_bob > 0 %}
-                <div class="vt-sum-sub" style="color:#22c55e;font-weight:700">Total: Bs {{ "%.2f"|format(tot_ingreso) }}</div>
-                {% endif %}
+                <div class="vt-sum-val">US$ {{ "%.2f"|format(tot_ingreso) }}</div>
             </div>
             <div class="vt-sum-card vt-sum-card--red">
                 <div class="vt-sum-label">Costos</div>
-                {% if tot_costo_bob > 0 %}<div class="vt-sum-val">Bs {{ "%.2f"|format(tot_costo_bob) }}</div>{% endif %}
-                {% if tot_costo_usd > 0 %}
-                <div class="vt-sum-val" style="color:#f87171">US$ {{ "%.2f"|format(tot_costo_usd) }}</div>
-                {% if tot_costo_usd_en_bob > 0 %}
-                <div class="vt-sum-sub">≈ Bs {{ "%.2f"|format(tot_costo_usd_en_bob) }} convertido</div>
-                {% endif %}
-                {% endif %}
-                {% if tot_costo_bob > 0 and tot_costo_usd_en_bob > 0 %}
-                <div class="vt-sum-sub" style="color:#f87171;font-weight:700">Total: Bs {{ "%.2f"|format(tot_costo) }}</div>
-                {% endif %}
-                {% if not tot_costo_bob and not tot_costo_usd %}
+                {% if tot_costo > 0 %}
+                <div class="vt-sum-val" style="color:#f87171">US$ {{ "%.2f"|format(tot_costo) }}</div>
+                {% else %}
                 <div class="vt-sum-val vt-dim">—</div>
                 {% endif %}
             </div>
             <div class="vt-sum-card {% if tot_ganancia is not none %}{% if tot_ganancia >= 0 %}vt-sum-card--amber{% else %}vt-sum-card--red{% endif %}{% endif %}">
                 <div class="vt-sum-label">Ganancia</div>
                 {% if tot_ganancia is not none %}
-                <div class="vt-sum-val">{{ '+' if tot_ganancia >= 0 else '' }}Bs {{ "%.2f"|format(tot_ganancia) }}</div>
-                <div class="vt-sum-sub">ingresos − costos (en Bs)</div>
+                <div class="vt-sum-val">{{ '+' if tot_ganancia >= 0 else '' }}US$ {{ "%.2f"|format(tot_ganancia) }}</div>
+                <div class="vt-sum-sub">ingresos − costos</div>
                 {% else %}
                 <div class="vt-sum-val vt-dim">—</div>
                 <div class="vt-sum-sub">registrá costos para verla</div>
@@ -284,7 +258,6 @@
                         <th>Precio venta</th>
                         <th>Costo</th>
                         <th>Ganancia</th>
-                        <th>Tasa</th>
                         <th>Fecha venta</th>
                         <th>Notas</th>
                     </tr>
@@ -292,10 +265,8 @@
                 <tbody>
                     {% for l in ventas %}
                     {% set venta_val = l.sale_price_actual|float if l.sale_price_actual else (l.price|float if l.price else 0) %}
-                    {% set venta_bob = venta_val * (l.usd_rate|float if l.usd_rate else 1) if l.currency == 'USD' else venta_val %}
                     {% set costo_val = l.cost|float if l.cost else 0 %}
-                    {% set costo_bob = costo_val * (l.cost_usd_rate|float if l.cost_usd_rate else 1) if l.cost_currency == 'USD' else costo_val %}
-                    {% set gan = venta_bob - costo_bob if l.cost else none %}
+                    {% set gan = venta_val - costo_val if l.cost else none %}
                     <tr>
                         <td>
                             <a href="/mercado/{{ l.id }}" class="vt-title-link">{{ l.title }}</a>
@@ -303,31 +274,25 @@
                         </td>
                         <td class="vt-pub-price">
                             {% if l.price %}
-                                {% if l.currency == 'USD' %}US$ {{ "%.2f"|format(l.price|float) }}{% else %}Bs {{ "%.2f"|format(l.price|float) }}{% endif %}
+                                US$ {{ "%.2f"|format(l.price|float) }}
                             {% else %}<span class="vt-dim">—</span>{% endif %}
                         </td>
                         <td class="vt-price">
                             {% if l.sale_price_actual or l.price %}
-                                {% if l.currency == 'USD' %}US$ {{ "%.2f"|format(venta_val) }}{% else %}Bs {{ "%.2f"|format(venta_val) }}{% endif %}
-                                {% if l.currency != 'USD' and l.usd_rate %}
-                                <div style="font-size:.72rem;color:#38bdf8;font-weight:400">≈ US$ {{ "%.2f"|format(venta_val / l.usd_rate|float) }}</div>
-                                {% endif %}
+                                US$ {{ "%.2f"|format(venta_val) }}
                             {% else %}<span class="vt-dim">—</span>{% endif %}
                         </td>
                         <td class="vt-cost">
                             {% if l.cost %}
-                                {% if l.cost_currency == 'USD' %}US$ {{ "%.2f"|format(costo_val) }}{% else %}Bs {{ "%.2f"|format(costo_val) }}{% endif %}
+                                US$ {{ "%.2f"|format(costo_val) }}
                             {% else %}<span class="vt-dim">—</span>{% endif %}
                         </td>
                         <td>
                             {% if gan is not none %}
                                 <span class="{{ 'vt-ganancia-pos' if gan >= 0 else 'vt-ganancia-neg' }}">
-                                    {{ '+' if gan >= 0 else '' }}Bs {{ "%.2f"|format(gan) }}
+                                    {{ '+' if gan >= 0 else '' }}US$ {{ "%.2f"|format(gan) }}
                                 </span>
                             {% else %}<span class="vt-dim">—</span>{% endif %}
-                        </td>
-                        <td class="vt-rate">
-                            {% if l.currency == 'USD' and l.usd_rate %}1 USD = Bs {{ l.usd_rate|float }}{% else %}<span class="vt-dim">—</span>{% endif %}
                         </td>
                         <td class="vt-date">
                             {% if l.sold_at %}{{ l.sold_at.strftime('%d/%m/%Y') }}{% else %}<span class="vt-dim">—</span>{% endif %}
@@ -346,10 +311,8 @@
         <div class="vt-cards">
             {% for l in ventas %}
             {% set venta_val = l.sale_price_actual|float if l.sale_price_actual else (l.price|float if l.price else 0) %}
-            {% set venta_bob = venta_val * (l.usd_rate|float if l.usd_rate else 1) if l.currency == 'USD' else venta_val %}
             {% set costo_val = l.cost|float if l.cost else 0 %}
-            {% set costo_bob = costo_val * (l.cost_usd_rate|float if l.cost_usd_rate else 1) if l.cost_currency == 'USD' else costo_val %}
-            {% set gan = venta_bob - costo_bob if l.cost else none %}
+            {% set gan = venta_val - costo_val if l.cost else none %}
             <div class="vt-card">
                 <div class="vt-card-header">
                     <a href="/mercado/{{ l.id }}" class="vt-title-link vt-card-title">{{ l.title }}</a>
@@ -358,33 +321,24 @@
                 <div class="vt-card-meta">{{ (l.item_type or 'moneda')|capitalize }}{% if l.coin_country %} · {{ l.coin_country }}{% endif %}</div>
                 <div class="vt-card-row">
                     <span>Precio publicado</span>
-                    <span>{% if l.price %}{% if l.currency == 'USD' %}US$ {{ "%.2f"|format(l.price|float) }}{% else %}Bs {{ "%.2f"|format(l.price|float) }}{% endif %}{% else %}—{% endif %}</span>
+                    <span>{% if l.price %}US$ {{ "%.2f"|format(l.price|float) }}{% else %}—{% endif %}</span>
                 </div>
                 <div class="vt-card-row">
                     <span>Precio de venta</span>
                     <span>
-                        <strong class="vt-price">{% if l.currency == 'USD' %}US$ {{ "%.2f"|format(venta_val) }}{% else %}Bs {{ "%.2f"|format(venta_val) }}{% endif %}</strong>
-                        {% if l.currency != 'USD' and l.usd_rate %}
-                        <div style="font-size:.7rem;color:#38bdf8">≈ US$ {{ "%.2f"|format(venta_val / l.usd_rate|float) }}</div>
-                        {% endif %}
+                        <strong class="vt-price">US$ {{ "%.2f"|format(venta_val) }}</strong>
                     </span>
                 </div>
                 {% if l.cost %}
                 <div class="vt-card-row">
                     <span>Costo</span>
-                    <span class="vt-cost">{% if l.cost_currency == 'USD' %}US$ {{ "%.2f"|format(costo_val) }}{% else %}Bs {{ "%.2f"|format(costo_val) }}{% endif %}</span>
+                    <span class="vt-cost">US$ {{ "%.2f"|format(costo_val) }}</span>
                 </div>
                 {% endif %}
                 {% if gan is not none %}
                 <div class="vt-card-row">
                     <span>Ganancia</span>
-                    <span class="{{ 'vt-ganancia-pos' if gan >= 0 else 'vt-ganancia-neg' }}">{{ '+' if gan >= 0 else '' }}Bs {{ "%.2f"|format(gan) }}</span>
-                </div>
-                {% endif %}
-                {% if l.currency == 'USD' and l.usd_rate %}
-                <div class="vt-card-row">
-                    <span>Tasa</span>
-                    <span class="vt-rate">1 USD = Bs {{ l.usd_rate|float }}</span>
+                    <span class="{{ 'vt-ganancia-pos' if gan >= 0 else 'vt-ganancia-neg' }}">{{ '+' if gan >= 0 else '' }}US$ {{ "%.2f"|format(gan) }}</span>
                 </div>
                 {% endif %}
                 {% if l.sale_notes %}
@@ -399,7 +353,7 @@
         <!-- Paginación -->
         {% set total_pags = ((total + per_page - 1) // per_page) %}
         {% if total_pags > 1 %}
-        {% macro page_url(p) %}?q={{ q }}&desde={{ desde }}&hasta={{ hasta }}&moneda={{ moneda }}&pagina={{ p }}{% endmacro %}
+        {% macro page_url(p) %}?q={{ q }}&desde={{ desde }}&hasta={{ hasta }}&pagina={{ p }}{% endmacro %}
         <div class="vt-pag">
             <a href="{{ page_url(pagina - 1) }}" class="{% if pagina == 1 %}disabled{% endif %}">‹ Ant.</a>
             {% for p in range([1, pagina - 2]|max, [total_pags + 1, pagina + 3]|min) %}

@@ -60,7 +60,7 @@
             {% else %}
             <span class="badge-status badge-cerrado">Oculta en el sitio</span>
             {% endif %}
-            <span class="sd-dato sd-dato--precio">Estimado: {{ estimado(resumen_serie, rate) }}</span>
+            <span class="sd-dato sd-dato--precio">Estimado: {{ estimado(resumen_serie) }}</span>
         </div>
 
         {% if saved %}
@@ -164,7 +164,7 @@
                         <td class="sd-c-precio">
                             <button type="button" class="sd-precio-btn{% if ps %} tiene{% endif %}"
                                     data-toggle-precios="{{ v.id }}" aria-expanded="false" aria-controls="vp-{{ v.id }}">
-                                {% if ps %}{{ estimado(resumen_var[v.id], rate, rango=false) }}
+                                {% if ps %}{{ estimado(resumen_var[v.id], rango=false) }}
                                 <span class="pz-rango">{{ ps|length }} precio{{ 's' if ps|length != 1 }} ▾</span>
                                 {% else %}<span class="pz-vacio">+ precio</span>{% endif %}
                             </button>
@@ -181,9 +181,9 @@
                             <div class="sd-precios">
                                 <div class="sd-precios-head">
                                     <strong>Precios vistos de {{ v.etiqueta|truncate(90) }}</strong>
-                                    {% if ps %}<span>{{ estimado(resumen_var[v.id], rate) }}</span>{% endif %}
+                                    {% if ps %}<span>{{ estimado(resumen_var[v.id]) }}</span>{% endif %}
                                 </div>
-                                {{ lista_precios(ps, rate) }}
+                                {{ lista_precios(ps) }}
                                 {{ form_precio(serie, variante=v) }}
                             </div>
                         </td>
@@ -224,14 +224,13 @@
         <section class="sx-card" id="precios">
             <div class="sx-card-head">
                 <h2 class="sx-card-title">Precios de la serie en general</h2>
-                {% if resumen_generales %}<span>{{ estimado(resumen_generales, rate) }}</span>{% endif %}
+                {% if resumen_generales %}<span>{{ estimado(resumen_generales) }}</span>{% endif %}
             </div>
             <p class="sx-hint" style="margin-top:0">
                 Para publicaciones donde no se sabe la variante exacta. Si sabés el año o el ensayador,
                 mejor cargalo en la variante (botón «+ precio» de la tabla).
-                {% if rate %}Conversión: 1 US$ = Bs {{ '%.2f'|format(rate) }}.{% endif %}
             </p>
-            {{ lista_precios(precios_generales, rate) }}
+            {{ lista_precios(precios_generales) }}
             {{ form_precio(serie, variantes=serie.variantes) }}
         </section>
 

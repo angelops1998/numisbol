@@ -57,7 +57,7 @@
                             {% else %}Ambos{% endif %}
                         </td>
                         <td style="font-size:.82rem;font-weight:600;color:var(--text-primary);white-space:nowrap">
-                            {% if l.price %}{{ l.price|int }} {{ l.currency }}{% else %}—{% endif %}
+                            {% if l.price %}US$ {{ l.price|int }}{% else %}—{% endif %}
                         </td>
                         <td>
                             <span class="badge-status badge-{{ l.status.value if l.status else 'activo' }}">

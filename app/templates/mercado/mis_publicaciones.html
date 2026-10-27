@@ -42,7 +42,7 @@
                 </div>
                 <div class="mis-listing-price">
                     {% if l.price %}
-                    <span class="market-price">{{ 'US$' if l.currency == 'USD' else 'Bs' }} {{ "%.2f"|format(l.price) }}</span>
+                    <span class="market-price">US$ {{ "%.2f"|format(l.price) }}</span>
                     {% else %}
                     <span class="market-price-trade">Intercambio</span>
                     {% endif %}

@@ -66,7 +66,7 @@ class SeriePrecio(Base):
     serie_id    = Column(Integer, ForeignKey("series.id", ondelete="CASCADE"), nullable=False, index=True)
     variante_id = Column(Integer, ForeignKey("serie_variantes.id", ondelete="CASCADE"), nullable=True, index=True)
     monto       = Column(Numeric(12, 2), nullable=False)
-    moneda      = Column(String(3), nullable=False, default="USD", server_default="USD")   # USD | BOB
+    moneda      = Column(String(3), nullable=False, default="USD", server_default="USD")
     tipo        = Column(String(10), nullable=False, default="oferta", server_default="oferta")  # oferta | vendido
     estado      = Column(String(30), nullable=True)    # conservación: "MBC", "XF", "MS63"…
     fuente      = Column(String(100), nullable=True)   # "eBay", "MercadoLibre", "Facebook"…

@@ -144,7 +144,6 @@
 .mes-nombre { font-size: .72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
 .mes-activo .mes-nombre { color: #4ade80; }
 .mes-n { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
-.mes-bob { font-size: .75rem; color: #4ade80; margin-top: .15rem; }
 .mes-usd { font-size: .75rem; color: #38bdf8; margin-top: .15rem; font-weight: 600; }
 .mes-total { font-size: .7rem; color: #fbbf24; margin-top: .2rem; border-top: 1px solid var(--border); padding-top: .15rem; }
 .mes-activo .mes-total { border-color: rgba(74,222,128,.2); }
@@ -154,7 +153,7 @@
     .meses-grid { grid-template-columns: repeat(4, 1fr); gap: .3rem; }
     .mes-cell { padding: .4rem .3rem; }
     .mes-n { font-size: .95rem; }
-    .mes-bob { font-size: .6rem; }
+    .mes-usd { font-size: .6rem; }
 }
 
 /* Evitar desbordamiento horizontal en todos los tamaños */
@@ -255,100 +254,46 @@
             <div class="fin-section">
                 <div class="fin-section-title">📈 Ingresos</div>
                 <div class="fin-rows">
-                    {% if ingreso_bob > 0 %}
+                    {% if ingreso > 0 %}
                     <div class="fin-row">
-                        <span class="fin-label">Bolivianos</span>
-                        <span class="fin-val fin-green">Bs {{ "%.2f"|format(ingreso_bob) }}</span>
+                        <span class="fin-label">Ventas</span>
+                        <span class="fin-val fin-green">US$ {{ "%.2f"|format(ingreso) }}</span>
                     </div>
-                    {% if ingreso_bob_en_usd > 0 %}
-                    <div class="fin-row fin-row--sub">
-                        <span class="fin-label">≈ ref. en USD</span>
-                        <span class="fin-val" style="color:#38bdf8">US$ {{ "%.2f"|format(ingreso_bob_en_usd) }}</span>
-                    </div>
-                    {% endif %}
-                    {% endif %}
-                    {% if ingreso_usd > 0 %}
-                    <div class="fin-row">
-                        <span class="fin-label">Dólares</span>
-                        <span class="fin-val fin-green">US$ {{ "%.2f"|format(ingreso_usd) }}</span>
-                    </div>
-                    {% if ingreso_usd_en_bob > 0 %}
-                    <div class="fin-row fin-row--sub">
-                        <span class="fin-label">≈ convertido</span>
-                        <span class="fin-val" style="color:var(--accent)">Bs {{ "%.2f"|format(ingreso_usd_en_bob) }}</span>
-                    </div>
-                    {% endif %}
-                    {% endif %}
-                    {% if ingreso_bob == 0 and ingreso_usd == 0 %}
+                    {% else %}
                     <div class="fin-empty">Sin ventas registradas</div>
                     {% endif %}
                 </div>
-                {% if ingreso_total_bob > 0 %}
-                <div class="fin-total fin-total--green">
-                    <span>Total en Bs</span>
-                    <span>Bs {{ "%.2f"|format(ingreso_total_bob) }}</span>
-                </div>
-                {% endif %}
             </div>
 
             <!-- Costos -->
             <div class="fin-section">
                 <div class="fin-section-title">📉 Costos</div>
                 <div class="fin-rows">
-                    {% if costo_bob > 0 %}
+                    {% if costo > 0 %}
                     <div class="fin-row">
-                        <span class="fin-label">Bolivianos</span>
-                        <span class="fin-val fin-red">Bs {{ "%.2f"|format(costo_bob) }}</span>
+                        <span class="fin-label">Costos</span>
+                        <span class="fin-val fin-red">US$ {{ "%.2f"|format(costo) }}</span>
                     </div>
-                    {% if costo_bob_en_usd > 0 %}
-                    <div class="fin-row fin-row--sub">
-                        <span class="fin-label">≈ ref. en USD</span>
-                        <span class="fin-val" style="color:#f87171;opacity:.8">US$ {{ "%.2f"|format(costo_bob_en_usd) }}</span>
-                    </div>
-                    {% endif %}
-                    {% endif %}
-                    {% if costo_usd > 0 %}
-                    <div class="fin-row">
-                        <span class="fin-label">Dólares</span>
-                        <span class="fin-val fin-red">US$ {{ "%.2f"|format(costo_usd) }}</span>
-                    </div>
-                    {% if costo_usd_en_bob > 0 %}
-                    <div class="fin-row fin-row--sub">
-                        <span class="fin-label">≈ convertido</span>
-                        <span class="fin-val fin-red">Bs {{ "%.2f"|format(costo_usd_en_bob) }}</span>
-                    </div>
-                    {% endif %}
-                    {% endif %}
-                    {% if costo_bob == 0 and costo_usd == 0 %}
+                    {% else %}
                     <div class="fin-empty">Sin costos registrados</div>
                     {% endif %}
                 </div>
-                {% if costo_total_bob > 0 %}
-                <div class="fin-total fin-total--red">
-                    <span>Total en Bs</span>
-                    <span>Bs {{ "%.2f"|format(costo_total_bob) }}</span>
-                </div>
-                {% endif %}
             </div>
 
             <!-- Ganancia -->
-            <div class="fin-section fin-section--ganancia {% if ganancia_bob is not none %}{% if ganancia_bob >= 0 %}fin-pos{% else %}fin-neg{% endif %}{% endif %}">
-                <div class="fin-section-title">{{ '🟢' if ganancia_bob is not none and ganancia_bob >= 0 else '🔴' if ganancia_bob is not none else '⚪' }} Ganancia</div>
-                {% if ganancia_bob is not none %}
-                <div class="fin-ganancia-val {% if ganancia_bob >= 0 %}fin-green{% else %}fin-red{% endif %}">
-                    {{ '+' if ganancia_bob >= 0 else '' }}Bs {{ "%.2f"|format(ganancia_bob) }}
+            <div class="fin-section fin-section--ganancia {% if ganancia is not none %}{% if ganancia >= 0 %}fin-pos{% else %}fin-neg{% endif %}{% endif %}">
+                <div class="fin-section-title">{{ '🟢' if ganancia is not none and ganancia >= 0 else '🔴' if ganancia is not none else '⚪' }} Ganancia</div>
+                {% if ganancia is not none %}
+                <div class="fin-ganancia-val {% if ganancia >= 0 %}fin-green{% else %}fin-red{% endif %}">
+                    {{ '+' if ganancia >= 0 else '' }}US$ {{ "%.2f"|format(ganancia) }}
                 </div>
-                <div class="fin-ganancia-lbl">ingresos − costos (en Bs)</div>
+                <div class="fin-ganancia-lbl">ingresos − costos</div>
                 {% else %}
                 <div class="fin-empty" style="margin-top:.75rem">Registrá ingresos y costos para ver la ganancia</div>
                 {% endif %}
             </div>
 
         </div>
-
-        {% if ingreso_usd_en_bob > 0 or costo_usd_en_bob > 0 %}
-        <p class="fin-nota">* "≈ convertido": el monto en dólares convertido a Bs usando la tasa de cambio registrada en cada transacción al momento de la operación.</p>
-        {% endif %}
 
         <!-- Ventas por mes -->
         <div class="chart-card">
@@ -359,14 +304,8 @@
                     <div class="mes-nombre">{{ m.mes }}</div>
                     {% if m.n > 0 %}
                     <div class="mes-n">{{ m.n }} <span style="font-size:.65rem;font-weight:500;color:#a3e635">venta{{ 's' if m.n != 1 }}</span></div>
-                    {% if m.bob > 0 %}
-                    <div class="mes-bob">Bs {{ "%.0f"|format(m.bob) }}</div>
-                    {% endif %}
                     {% if m.usd > 0 %}
                     <div class="mes-usd">US$ {{ "%.0f"|format(m.usd) }}</div>
-                    {% endif %}
-                    {% if m.total_bob > 0 %}
-                    <div class="mes-total">= Bs {{ "%.0f"|format(m.total_bob) }}</div>
                     {% endif %}
                     {% else %}
                     <div class="mes-n mes-vacio">—</div>

@@ -395,43 +395,20 @@
                 <!-- Sección 3: Valor -->
                 <div class="form-section">
                     <h2 class="form-section-title">Valor económico</h2>
-                    {% set vc = coin.value_currency if coin and coin.value_currency else 'BOB' %}
-                    <div style="margin-bottom:1rem">
-                        <label class="filter-label" style="margin-bottom:.5rem;display:block">Moneda</label>
-                        <input type="hidden" name="value_currency" id="valueCurrencyInput" value="{{ vc }}">
-                        <div class="curr-toggle" id="valueCurrencyToggle">
-                            <button type="button" class="curr-btn" id="vcBOB" data-cur="BOB">Bs (BOB)</button>
-                            <button type="button" class="curr-btn" id="vcUSD" data-cur="USD">US$ (USD)</button>
-                        </div>
-                    </div>
                     <div class="form-grid">
 
                         <div class="form-group">
-                            <label for="estimated_value" id="labelEstimado">Valor estimado (Bs)</label>
+                            <label for="estimated_value">Valor estimado (US$)</label>
                             <input type="number" id="estimated_value" name="estimated_value"
                                 value="{{ coin.estimated_value if coin and coin.estimated_value else '' }}"
                                 placeholder="0.00" min="0" step="0.01">
                         </div>
 
                         <div class="form-group form-col-2">
-                            <label>Precio de compra</label>
-                            <input type="hidden" id="purchase_currency" name="purchase_currency"
-                                value="{{ coin.purchase_currency if coin and coin.purchase_currency else 'BOB' }}">
-                            <div class="curr-toggle" style="margin-bottom:.5rem;width:fit-content">
-                                <button type="button" id="pcBOB" class="curr-btn">Bs (BOB)</button>
-                                <button type="button" id="pcUSD" class="curr-btn">US$ (USD)</button>
-                            </div>
+                            <label for="purchase_price">Precio de compra (US$)</label>
                             <input type="number" id="purchase_price" name="purchase_price"
                                 value="{{ coin.purchase_price if coin and coin.purchase_price else '' }}"
                                 placeholder="0.00" min="0" step="any">
-                            <div id="usdRateGroup" class="pc-rate-row" style="display:none">
-                                <span class="pc-rate-label">1 USD =</span>
-                                <input type="number" id="purchase_usd_rate" name="purchase_usd_rate"
-                                    value="{{ coin.purchase_usd_rate|float if coin and coin.purchase_usd_rate else '' }}"
-                                    placeholder="6.96" min="0" step="0.01" class="pc-rate-input">
-                                <span class="pc-rate-label">BOB</span>
-                                <span id="purchaseEquiv" class="pc-equiv"></span>
-                            </div>
                         </div>
 
                     </div>
@@ -732,64 +709,6 @@ document.querySelectorAll('input[type=number]').forEach(function(el) {
         b.addEventListener('click', render);
     });
     render();
-})();
-
-// ── Currency toggle (BOB / USD) ──────────────────────────────
-(function() {
-    const input  = document.getElementById('valueCurrencyInput');
-    const btnBOB = document.getElementById('vcBOB');
-    const btnUSD = document.getElementById('vcUSD');
-    const lEst   = document.getElementById('labelEstimado');
-    const lCom   = document.getElementById('labelCompra');
-    if (!input) return;
-
-    function applyVC(cur) {
-        input.value = cur;
-        btnBOB.classList.toggle('active', cur === 'BOB');
-        btnUSD.classList.toggle('active', cur === 'USD');
-        const sym = cur === 'USD' ? 'US$' : 'Bs';
-        if (lEst) lEst.textContent = `Valor estimado (${sym})`;
-        if (lCom) lCom.textContent = `Precio de compra (${sym})`;
-    }
-
-    btnBOB.addEventListener('click', () => applyVC('BOB'));
-    btnUSD.addEventListener('click', () => applyVC('USD'));
-    applyVC(input.value || 'BOB');
-})();
-
-// ── Purchase currency toggle (BOB / USD) ─────────────────────
-(function() {
-    var cur = document.getElementById('purchase_currency');
-    if (!cur) return;
-
-    function setPurchaseCurrency(val) {
-        cur.value = val;
-        document.getElementById('pcBOB').classList.toggle('active', val === 'BOB');
-        document.getElementById('pcUSD').classList.toggle('active', val === 'USD');
-        var rateGroup = document.getElementById('usdRateGroup');
-        if (rateGroup) rateGroup.style.display = 'flex';
-        var rateLabel = rateGroup ? rateGroup.querySelector('.pc-rate-label') : null;
-        if (rateLabel) rateLabel.textContent = val === 'USD' ? '1 USD =' : 'Tipo de cambio ref.: 1 USD =';
-        updateEquiv();
-    }
-
-    function updateEquiv() {
-        var equiv = document.getElementById('purchaseEquiv');
-        var price = parseFloat(document.getElementById('purchase_price').value);
-        var rate  = parseFloat(document.getElementById('purchase_usd_rate').value);
-        if (equiv && !isNaN(price) && !isNaN(rate) && price > 0 && rate > 0) {
-            equiv.textContent = '≈ Bs ' + (price * rate).toFixed(2);
-        } else if (equiv) {
-            equiv.textContent = '';
-        }
-    }
-
-    document.getElementById('pcBOB').addEventListener('click', function() { setPurchaseCurrency('BOB'); });
-    document.getElementById('pcUSD').addEventListener('click', function() { setPurchaseCurrency('USD'); });
-    document.getElementById('purchase_price').addEventListener('input', updateEquiv);
-    document.getElementById('purchase_usd_rate').addEventListener('input', updateEquiv);
-
-    setPurchaseCurrency(cur.value || 'BOB');
 })();
 </script>
 {% endblock %}

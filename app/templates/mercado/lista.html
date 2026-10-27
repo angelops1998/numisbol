@@ -151,7 +151,7 @@
                     </div>
 
                     <div class="filter-group">
-                        <label class="filter-label">Precio máximo (Bs)</label>
+                        <label class="filter-label">Precio máximo (US$)</label>
                         <input type="number" name="precio_max" value="{{ filters.precio_max }}"
                             placeholder="Sin límite" min="0" class="filter-input">
                     </div>
@@ -213,7 +213,7 @@
                             </div>
                             <div class="market-card-footer">
                                 {% if l.price %}
-                                <span class="market-price">{% if l.currency == "USD" %}US${% else %}Bs{% endif %} {{ "%.2f"|format(l.price) }}</span>
+                                <span class="market-price">US$ {{ "%.2f"|format(l.price) }}</span>
                                 {% else %}
                                 <span class="market-price-trade">Solo intercambio</span>
                                 {% endif %}

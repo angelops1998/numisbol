@@ -200,7 +200,7 @@
                             </span>
                             {% endif %}
                             {% if coin.estimated_value %}
-                            <div class="coin-item-value">{{ coin.value_currency or 'BOB' }} {{ "%.2f"|format(coin.estimated_value) }}{% if coin.value_currency == 'USD' and usd_rate %} <span class="coin-item-value-conv">≈ Bs {{ "%.2f"|format(coin.estimated_value|float * usd_rate) }}</span>{% endif %}</div>
+                            <div class="coin-item-value">US$ {{ "%.2f"|format(coin.estimated_value) }}</div>
                             {% endif %}
                         </div>
                     </a>

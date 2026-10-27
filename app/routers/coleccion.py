@@ -10,7 +10,6 @@ from ..models.coin import Coin, CustomOption
 from ..models.serie import Serie, SerieVariante
 from ..auth import get_current_user, get_current_user_optional
 from ..paises import COUNTRY_INFO, CONTINENTS
-from ..tipo_cambio import get_rate, get_rate_info
 
 router = APIRouter(prefix="/coleccion", tags=["coleccion"])
 
@@ -483,7 +482,6 @@ async def coleccion(
         "countries": COUNTRIES,
         "categories": flat_categories,
         "materials": MATERIALS,
-        "usd_rate": get_rate(db),
     })
 
 
@@ -524,28 +522,13 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
     total_raw, _ = agg()
     total = total_raw or 0
 
-    # Totales por moneda separados
-    valor_rows = (db.query(Coin.value_currency, func.sum(Coin.estimated_value), func.count(Coin.id))
-                  .filter(Coin.user_id == user.id, Coin.estimated_value != None))
-    if tipo_filter:
-        valor_rows = valor_rows.filter(Coin.tipo == tipo_filter)
-    valor_rows = valor_rows.group_by(Coin.value_currency).all()
-
-    total_bob = total_usd = 0.0
-    count_con_valor = 0
-    for cur, s, n in valor_rows:
-        if cur == "USD":
-            total_usd = float(s or 0)
-        else:
-            total_bob = float(s or 0)
-        count_con_valor += n
-
-    # Tasa de cambio (automática o la configurada por admin)
-    usd_rate = get_rate(db)
-
-    # Total unificado en USD: los BOB se dividen por la tasa
-    total_usd_unificado = total_usd + (total_bob / usd_rate if usd_rate and total_bob else 0)
-    promedio_usd_unificado = total_usd_unificado / count_con_valor if count_con_valor else 0
+    total_usd, count_con_valor = (
+        db.query(func.coalesce(func.sum(Coin.estimated_value), 0), func.count(Coin.id))
+        .filter(Coin.user_id == user.id, Coin.estimated_value != None)
+        .filter(*([Coin.tipo == tipo_filter] if tipo_filter else []))
+        .one())
+    total_usd = float(total_usd)
+    promedio_usd = total_usd / count_con_valor if count_con_valor else 0
 
     por_pais      = group_count("country")
     por_material  = group_count("material")
@@ -570,22 +553,13 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
     if sin_anio:
         por_decada.append(("Sin año", sin_anio))
 
-    # Top 5 monedas más valiosas (en su moneda original)
+    # Top 5 monedas más valiosas
     top_q = (db.query(Coin)
              .filter(Coin.user_id == user.id, Coin.estimated_value != None))
     if tipo_filter:
         top_q = top_q.filter(Coin.tipo == tipo_filter)
 
-    # Ordenar en SQL usando valor unificado en USD
-    from sqlalchemy import case as sa_case
-    if usd_rate:
-        valor_usd_expr = sa_case(
-            (Coin.value_currency == "USD", Coin.estimated_value),
-            else_=Coin.estimated_value / usd_rate
-        )
-    else:
-        valor_usd_expr = Coin.estimated_value
-    top_coins = top_q.order_by(valor_usd_expr.desc()).limit(5).all()
+    top_coins = top_q.order_by(Coin.estimated_value.desc()).limit(5).all()
 
     return templates.TemplateResponse(request, "coleccion/estadisticas.html", {
         "user": user,
@@ -593,11 +567,8 @@ async def estadisticas(request: Request, tipo: str = "", db: Session = Depends(g
         "total": total,
         "total_monedas": total_monedas,
         "total_billetes": total_billetes,
-        "total_bob": total_bob,
         "total_usd": total_usd,
-        "usd_rate": usd_rate,
-        "total_usd_unificado": total_usd_unificado,
-        "promedio_usd_unificado": promedio_usd_unificado,
+        "promedio_usd": promedio_usd,
         "por_pais": por_pais,
         "por_material": por_material,
         "por_categoria": por_categoria,
@@ -769,9 +740,6 @@ async def agregar(
     category: str = Form(""),
     estimated_value: str = Form(""),
     purchase_price: str = Form(""),
-    purchase_currency: str = Form("BOB"),
-    purchase_usd_rate: str = Form(""),
-    value_currency: str = Form("BOB"),
     quantity: str = Form("1"),
     description: str = Form(""),
     is_public: str = Form(""),
@@ -802,8 +770,6 @@ async def agregar(
                                "material": material, "condition": condition,
                                "category": category, "estimated_value": estimated_value,
                                "purchase_price": purchase_price,
-                               "purchase_currency": purchase_currency,
-                               "purchase_usd_rate": purchase_usd_rate,
                                "quantity": quantity,
                                "description": description, "is_public": bool(is_public),
                            }}),
@@ -813,7 +779,6 @@ async def agregar(
     save_custom_option(db, "currency_unit", currency_unit.strip(), ALL_CURRENCY_UNITS)
 
     es_billete = tipo == "billete"
-    pc = purchase_currency if purchase_currency in ("BOB", "USD") else "BOB"
     vid = int(variante_id) if variante_id.strip().isdigit() else None
     if vid and not db.query(SerieVariante.id).filter(SerieVariante.id == vid).first():
         vid = None
@@ -832,9 +797,8 @@ async def agregar(
         category         = category or None,
         estimated_value  = to_decimal(estimated_value),
         purchase_price   = to_decimal(purchase_price),
-        purchase_currency= pc,
-        purchase_usd_rate= to_decimal(purchase_usd_rate),
-        value_currency   = value_currency if value_currency in ("BOB", "USD") else "BOB",
+        purchase_currency= "USD",
+        value_currency   = "USD",
         quantity         = max(1, to_int(quantity) or 1),
         description      = description.strip() or None,
         is_public        = bool(is_public),
@@ -877,7 +841,6 @@ async def detalle(coin_id: int, request: Request, db: Session = Depends(get_db))
 
     return templates.TemplateResponse(request, "coleccion/detalle.html", {
         "user": user, "coin": coin, "serie_info": serie_info, "es_dueno": es_dueno,
-        "rate_info": get_rate_info(db) if coin.estimated_value else None,
     })
 
 
@@ -912,9 +875,6 @@ async def editar(
     category: str = Form(""),
     estimated_value: str = Form(""),
     purchase_price: str = Form(""),
-    purchase_currency: str = Form("BOB"),
-    purchase_usd_rate: str = Form(""),
-    value_currency: str = Form("BOB"),
     quantity: str = Form("1"),
     description: str = Form(""),
     is_public: str = Form(""),
@@ -937,7 +897,6 @@ async def editar(
     save_custom_option(db, "currency_unit", currency_unit.strip(), ALL_CURRENCY_UNITS)
 
     es_billete = tipo == "billete"
-    pc = purchase_currency if purchase_currency in ("BOB", "USD") else "BOB"
     coin.tipo            = "billete" if es_billete else "moneda"
     coin.name            = name.strip()
     coin.denomination    = denomination.strip() or None
@@ -951,9 +910,8 @@ async def editar(
     coin.category        = category or None
     coin.estimated_value = to_decimal(estimated_value)
     coin.purchase_price  = to_decimal(purchase_price)
-    coin.purchase_currency = pc
-    coin.purchase_usd_rate = to_decimal(purchase_usd_rate)
-    coin.value_currency  = value_currency if value_currency in ("BOB", "USD") else "BOB"
+    coin.purchase_currency = "USD"
+    coin.value_currency  = "USD"
     coin.quantity       = max(1, to_int(quantity) or 1)
     coin.description    = description.strip() or None
     coin.is_public      = bool(is_public)

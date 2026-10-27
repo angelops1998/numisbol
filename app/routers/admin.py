@@ -8,14 +8,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case, desc
 from ..database import get_db
-from ..models.setting import AppSetting
 from ..models.user import User
 from ..models.listing import Listing
 from ..models.coin import Coin
 from ..models.pregunta import Pregunta, Respuesta
 from ..models.serie import Serie, SerieVariante, SeriePrecio
 from ..auth import get_current_user
-from .. import tipo_cambio
 
 
 def _require_admin(request: Request, db: Session = Depends(get_db)):
@@ -34,21 +32,6 @@ def require_admin(request, db):
     if not user.is_admin:
         raise HTTPException(status_code=403, detail="Acceso denegado")
     return user
-
-
-def get_setting(db: Session, key: str, default=None):
-    row = db.query(AppSetting).filter(AppSetting.key == key).first()
-    return row.value if row else default
-
-
-def set_setting(db: Session, key: str, value: str):
-    row = db.query(AppSetting).filter(AppSetting.key == key).first()
-    if row:
-        row.value = value
-    else:
-        db.add(AppSetting(key=key, value=value))
-    db.commit()
-
 
 # ── Dashboard ──────────────────────────────────────────────────────────────────
 
@@ -309,18 +292,11 @@ def _responder(request: Request, url: str, **extra):
     return RedirectResponse(url=url, status_code=302)
 
 
-def _en_usd(p: SeriePrecio, rate: float | None) -> float | None:
-    monto = float(p.monto)
-    if p.moneda == "USD":
-        return monto
-    return monto / rate if rate else None
-
-
-def _resumen_precios(precios, rate: float | None) -> dict | None:
+def _resumen_precios(precios) -> dict | None:
     """Estimativo en USD: la mediana de los precios vendidos si hay alguno
     (son el dato más fiel); si no, la de las ofertas publicadas."""
-    vendidos = [x for x in (_en_usd(p, rate) for p in precios if p.tipo == "vendido") if x is not None]
-    ofertas  = [x for x in (_en_usd(p, rate) for p in precios if p.tipo != "vendido") if x is not None]
+    vendidos = [float(p.monto) for p in precios if p.tipo == "vendido"]
+    ofertas  = [float(p.monto) for p in precios if p.tipo != "vendido"]
     base = vendidos or ofertas
     if not base:
         return None
@@ -343,14 +319,13 @@ async def admin_series(request: Request, db: Session = Depends(get_db)):
         db.query(SerieVariante.serie_id, func.count(SerieVariante.id))
         .group_by(SerieVariante.serie_id).all()
     )
-    rate = tipo_cambio.get_rate(db)
     por_serie: dict[int, list] = {}
     for p in db.query(SeriePrecio).all():
         por_serie.setdefault(p.serie_id, []).append(p)
-    resumenes = {sid: _resumen_precios(ps, rate) for sid, ps in por_serie.items()}
+    resumenes = {sid: _resumen_precios(ps) for sid, ps in por_serie.items()}
     return templates.TemplateResponse(request, "admin/series.html", {
         "user": user, "series": series, "conteos": conteos,
-        "resumenes": resumenes, "rate": rate,
+        "resumenes": resumenes,
         "total_variantes": sum(conteos.values()),
         "total_precios": sum(len(ps) for ps in por_serie.values()),
         "saved": request.query_params.get("saved"),
@@ -396,7 +371,6 @@ async def admin_serie_detalle(sid: int, request: Request, db: Session = Depends(
     anterior = db.get(Serie, ids[i - 1]) if i > 0 else None
     siguiente = db.get(Serie, ids[i + 1]) if i + 1 < len(ids) else None
 
-    rate = tipo_cambio.get_rate(db)
     precios_var: dict[int, list] = {}
     precios_generales = []
     for p in serie.precios:
@@ -417,12 +391,11 @@ async def admin_serie_detalle(sid: int, request: Request, db: Session = Depends(
         "mints_bolivia": MINTS_BOLIVIA,
         "anterior": anterior, "siguiente": siguiente,
         "posicion": i + 1, "total_series": len(ids),
-        "rate": rate,
         "precios_var": precios_var,
         "precios_generales": precios_generales,
-        "resumen_var": {vid: _resumen_precios(ps, rate) for vid, ps in precios_var.items()},
-        "resumen_serie": _resumen_precios(serie.precios, rate),
-        "resumen_generales": _resumen_precios(precios_generales, rate),
+        "resumen_var": {vid: _resumen_precios(ps) for vid, ps in precios_var.items()},
+        "resumen_serie": _resumen_precios(serie.precios),
+        "resumen_generales": _resumen_precios(precios_generales),
         "fuentes": FUENTES_PRECIO, "estados": ESTADOS_PRECIO,
         "hoy": date.today().isoformat(),
         "ultima": ultima,
@@ -555,7 +528,6 @@ async def admin_crear_precio(
     request: Request,
     variante_id: str = Form(""),
     monto: str = Form(""),
-    moneda: str = Form("USD"),
     tipo: str = Form("oferta"),
     estado: str = Form(""),
     fuente: str = Form(""),
@@ -592,7 +564,7 @@ async def admin_crear_precio(
         serie_id    = sid,
         variante_id = vid,
         monto       = valor,
-        moneda      = "BOB" if moneda == "BOB" else "USD",
+        moneda      = "USD",
         tipo        = "vendido" if tipo == "vendido" else "oferta",
         estado      = estado.strip()[:30] or None,
         fuente      = fuente.strip()[:100] or None,
@@ -615,37 +587,3 @@ async def admin_eliminar_precio(pid: int, request: Request, db: Session = Depend
     db.commit()
     destino = f"/admin/series/{sid}?saved=1" + (f"&open={vid}#v-{vid}" if vid else "#precios")
     return RedirectResponse(url=destino, status_code=302)
-
-
-# ── Configuración ──────────────────────────────────────────────────────────────
-
-@router.get("/configuracion", response_class=HTMLResponse)
-async def configuracion(request: Request, db: Session = Depends(get_db)):
-    user = require_admin(request, db)
-    return templates.TemplateResponse(request, "admin/configuracion.html", {
-        "user": user, "rate_info": tipo_cambio.get_rate_info(db),
-        "rate_mode": get_setting(db, tipo_cambio.KEY_MODE) or "auto",
-        "saved": request.query_params.get("saved"),
-        "error": request.query_params.get("error"),
-    })
-
-
-@router.post("/configuracion", response_class=HTMLResponse)
-async def configuracion_post(
-    request: Request,
-    rate_mode: str = Form("auto"),
-    usd_bob_rate: str = Form(""),
-    db: Session = Depends(get_db),
-):
-    require_admin(request, db)
-    if rate_mode == "manual":
-        try:
-            rate = float(usd_bob_rate.strip())
-            if rate <= 0:
-                raise ValueError
-            tipo_cambio.set_manual(db, rate)
-        except (ValueError, AttributeError):
-            return RedirectResponse(url="/admin/configuracion?error=tasa", status_code=302)
-    else:
-        tipo_cambio.set_auto(db)
-    return RedirectResponse(url="/admin/configuracion?saved=1", status_code=302)

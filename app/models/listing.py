@@ -27,7 +27,7 @@ class Listing(Base):
     title       = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     price       = Column(Numeric(12, 2), nullable=True)
-    currency    = Column(String(3), default="BOB", nullable=False)  # BOB o USD
+    currency    = Column(String(3), default="USD", nullable=False)  # siempre USD
     listing_type= Column(SAEnum(ListingType), default=ListingType.venta, nullable=False)
     status      = Column(SAEnum(ListingStatus), default=ListingStatus.activo, nullable=False)
 
@@ -42,11 +42,8 @@ class Listing(Base):
     image_url   = Column(String(500), nullable=True)
     image_back_url = Column(String(500), nullable=True)
 
-    usd_rate          = Column(Numeric(10, 4), nullable=True)  # tasa BOB/USD al momento de publicar
-
     cost              = Column(Numeric(12, 2), nullable=True)   # costo de adquisición
-    cost_currency     = Column(String(3), default="BOB", nullable=True)
-    cost_usd_rate     = Column(Numeric(10, 4), nullable=True)   # tasa si el costo fue en USD
+    cost_currency     = Column(String(3), default="USD", nullable=True)
 
     sale_notes        = Column(Text, nullable=True)
     sale_price_actual = Column(Numeric(12, 2), nullable=True)

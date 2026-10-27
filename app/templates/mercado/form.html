@@ -3,13 +3,6 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{{ static_v('css/mercado.css') }}">
 <link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">
-<style>
-#currencyToggle { display:flex !important; border:1px solid var(--border) !important; border-radius:8px !important; overflow:hidden !important; flex-shrink:0 !important; background:var(--bg-2) !important; }
-.curr-btn { padding:.55rem 1rem !important; font-size:.85rem !important; font-weight:700 !important; border:none !important; cursor:pointer !important; background:transparent !important; color:var(--text-dim) !important; font-family:inherit !important; line-height:1 !important; transition:background .15s,color .15s !important; }
-.curr-btn:hover { color:var(--text-primary) !important; }
-.curr-btn[data-active="1"] { background:#2563eb !important; color:#fff !important; box-shadow:inset 0 0 0 2px rgba(255,255,255,.15) !important; }
-.curr-btn[data-active="0"] { background:transparent !important; color:var(--text-dim) !important; }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -96,50 +89,18 @@
                         </div>
 
                         <div class="form-group" id="price-group">
-                            <label for="price">Precio</label>
-                            <div style="display:flex;gap:.6rem;align-items:center">
-                                <div id="currencyToggle" style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg-2)">
-                                    <button type="button" id="btnBOB" onclick="setCurrency('BOB')" class="curr-btn">Bs</button>
-                                    <button type="button" id="btnUSD" onclick="setCurrency('USD')" class="curr-btn">USD</button>
-                                </div>
-                                <input type="hidden" name="currency" id="currencyInput"
-                                    value="{{ listing.currency if listing and listing.currency else 'BOB' }}">
-                                <input type="number" id="price" name="price"
-                                    value="{{ listing.price if listing and listing.price else '' }}"
-                                    placeholder="0.00" min="0" step="0.01" style="flex:1">
-                            </div>
-                            <div id="usdRateGroup" style="display:none;margin-top:.4rem;align-items:center;gap:.5rem;flex-wrap:wrap">
-                                <span id="rateLabel" style="font-size:.83rem;color:var(--text-dim)">1 USD =</span>
-                                <input type="number" id="usdRateInput" name="usd_rate"
-                                    value="{{ listing.usd_rate|float if listing and listing.usd_rate else '' }}"
-                                    placeholder="6.96" min="0" step="0.01" style="width:90px">
-                                <span style="font-size:.83rem;color:var(--text-dim)">BOB</span>
-                                <span id="usdEquiv" style="font-size:.8rem;color:var(--accent)"></span>
-                            </div>
+                            <label for="price">Precio (US$)</label>
+                            <input type="number" id="price" name="price"
+                                value="{{ listing.price if listing and listing.price else '' }}"
+                                placeholder="0.00" min="0" step="0.01">
                             <small>Dejá vacío si es solo intercambio</small>
                         </div>
 
                         <div class="form-group">
-                            <label for="cost">Costo <span style="font-weight:400;color:var(--text-dim)">(privado)</span></label>
-                            {% set cc = listing.cost_currency if listing and listing.cost_currency else 'BOB' %}
-                            <div style="display:flex;gap:.6rem;align-items:center">
-                                <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg-2)" id="costCurrencyToggle">
-                                    <button type="button" id="ccBtnBOB" onclick="setCostCurrency('BOB')" class="curr-btn">Bs</button>
-                                    <button type="button" id="ccBtnUSD" onclick="setCostCurrency('USD')" class="curr-btn">USD</button>
-                                </div>
-                                <input type="hidden" name="cost_currency" id="costCurrencyInput" value="{{ cc }}">
-                                <input type="number" id="cost" name="cost"
-                                    value="{{ listing.cost if listing and listing.cost else '' }}"
-                                    placeholder="0.00" min="0" step="0.01" style="flex:1">
-                            </div>
-                            <div id="costRateGroup" style="display:none;margin-top:.4rem;align-items:center;gap:.5rem;flex-wrap:wrap">
-                                <span style="font-size:.83rem;color:var(--text-dim)">1 USD =</span>
-                                <input type="number" id="costRateInput" name="cost_usd_rate"
-                                    value="{{ listing.cost_usd_rate|float if listing and listing.cost_usd_rate else '' }}"
-                                    placeholder="6.96" min="0" step="0.01" style="width:90px">
-                                <span style="font-size:.83rem;color:var(--text-dim)">BOB</span>
-                                <span id="costEquiv" style="font-size:.8rem;color:var(--accent)"></span>
-                            </div>
+                            <label for="cost">Costo (US$) <span style="font-weight:400;color:var(--text-dim)">(privado)</span></label>
+                            <input type="number" id="cost" name="cost"
+                                value="{{ listing.cost if listing and listing.cost else '' }}"
+                                placeholder="0.00" min="0" step="0.01">
                             <small>No aparece en el anuncio</small>
                         </div>
 
@@ -478,44 +439,7 @@
 /* ── Searchable select ───────────────────────────────── */
 initSearchableSelects();
 
-/* ── Toggle moneda ───────────────────────────────────── */
-function setCurrency(val) {
-    document.getElementById('currencyInput').value = val;
-    const btnBOB = document.getElementById('btnBOB');
-    const btnUSD = document.getElementById('btnUSD');
-    if (!btnBOB || !btnUSD) return;
-    btnBOB.dataset.active = val === 'BOB' ? '1' : '0';
-    btnUSD.dataset.active = val === 'USD' ? '1' : '0';
-
-    const rateGroup = document.getElementById('usdRateGroup');
-    const rateLabel = document.getElementById('rateLabel');
-    if (rateGroup) rateGroup.style.display = 'flex';
-    if (rateLabel) rateLabel.textContent = val === 'USD' ? '1 USD =' : 'Tipo de cambio ref.: 1 USD =';
-}
-setCurrency(document.getElementById('currencyInput')?.value || 'BOB');
-
-/* ── Equivalente BOB precio en tiempo real ───────────── */
-(function () {
-    const priceInput = document.getElementById('price');
-    const rateInput  = document.getElementById('usdRateInput');
-    const equiv      = document.getElementById('usdEquiv');
-    const currInput  = document.getElementById('currencyInput');
-    if (!priceInput || !rateInput || !equiv) return;
-    function update() {
-        const p = parseFloat(priceInput.value), r = parseFloat(rateInput.value);
-        if (!(p > 0 && r > 0)) { equiv.textContent = ''; return; }
-        const cur = currInput ? currInput.value : 'BOB';
-        equiv.textContent = cur === 'USD'
-            ? `≈ Bs ${(p * r).toFixed(2)}`
-            : `≈ USD ${(p / r).toFixed(2)}`;
-    }
-    priceInput.addEventListener('input', update);
-    rateInput.addEventListener('input', update);
-    if (currInput) currInput.addEventListener('change', update);
-    update();
-})();
-
-/* ── Limitar 2 decimales en inputs de tasa y precio ─── */
+/* ── Limitar 2 decimales en inputs de precio ─── */
 document.querySelectorAll('input[type=number]').forEach(function(el) {
     el.addEventListener('input', function() {
         if (this.value.includes('.')) {
@@ -524,43 +448,6 @@ document.querySelectorAll('input[type=number]').forEach(function(el) {
         }
     });
 });
-
-/* ── Toggle moneda costo ─────────────────────────────── */
-function setCostCurrency(val) {
-    document.getElementById('costCurrencyInput').value = val;
-    const b = document.getElementById('ccBtnBOB');
-    const u = document.getElementById('ccBtnUSD');
-    if (!b || !u) return;
-    b.dataset.active = val === 'BOB' ? '1' : '0';
-    u.dataset.active = val === 'USD' ? '1' : '0';
-    const rg = document.getElementById('costRateGroup');
-    if (rg) rg.style.display = 'flex';
-    const lbl = rg ? rg.querySelector('span') : null;
-    if (lbl) lbl.textContent = val === 'USD' ? '1 USD =' : 'Tipo de cambio ref.: 1 USD =';
-}
-setCostCurrency(document.getElementById('costCurrencyInput')?.value || 'BOB');
-
-/* ── Equivalente BOB costo en tiempo real ────────────── */
-(function () {
-    const costInput = document.getElementById('cost');
-    const rateInput = document.getElementById('costRateInput');
-    const equiv     = document.getElementById('costEquiv');
-    const currInput = document.getElementById('costCurrencyInput');
-    if (!costInput || !rateInput || !equiv) return;
-    function update() {
-        const p = parseFloat(costInput.value), r = parseFloat(rateInput.value);
-        if (!(p > 0 && r > 0)) { equiv.textContent = ''; return; }
-        const cur = currInput ? currInput.value : 'BOB';
-        equiv.textContent = cur === 'USD'
-            ? `≈ Bs ${(p * r).toFixed(2)}`
-            : `≈ USD ${(p / r).toFixed(2)}`;
-    }
-    costInput.addEventListener('input', update);
-    rateInput.addEventListener('input', update);
-    if (currInput) currInput.addEventListener('change', update);
-    update();
-})();
-
 
 /* ── Toggle moneda / billete ─────────────────────────── */
 function applyTipo(tipo) {

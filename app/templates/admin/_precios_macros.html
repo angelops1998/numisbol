@@ -4,25 +4,23 @@
 {%- else -%}{{ ('%.2f'|format(x)).replace('.', ',').replace(',00', '') }}{%- endif -%}
 {%- endmacro %}
 
-{# Estimativo compacto: "US$ 120 · Bs 835" + rango #}
-{% macro estimado(r, rate, rango=true) -%}
+{# Estimativo compacto: "US$ 120" + rango #}
+{% macro estimado(r, rango=true) -%}
 {%- if r -%}
 <span class="pz-est" title="Mediana de {{ r.n_base }} precio{{ 's' if r.n_base != 1 }} {{ 'vendido' if r.base == 'vendido' else 'ofertado' }}{{ 's' if r.n_base != 1 }}">
-    <b>US$ {{ monto(r.estimado) }}</b>{% if rate %} <span class="pz-bs">Bs {{ monto(r.estimado * rate) }}</span>{% endif %}
+    <b>US$ {{ monto(r.estimado) }}</b>
 </span>
 {%- if rango and r.n > 1 %}<span class="pz-rango">{{ monto(r.min) }}–{{ monto(r.max) }} · {{ r.n }} precios</span>{% elif rango %}<span class="pz-rango">1 precio</span>{% endif -%}
 {%- else -%}<span class="pz-vacio">—</span>{%- endif -%}
 {%- endmacro %}
 
 {# Lista de precios cargados. Se importa "with context" por csrf_input/request. #}
-{% macro lista_precios(precios, rate) -%}
+{% macro lista_precios(precios) -%}
 {% if precios %}
 <ul class="pz-lista">
     {% for p in precios %}
     <li class="pz-item">
-        <span class="pz-monto">{{ 'US$' if p.moneda == 'USD' else 'Bs' }} {{ monto(p.monto|float) }}</span>
-        {% if p.moneda == 'BOB' and rate %}<span class="pz-conv">≈ US$ {{ monto(p.monto|float / rate) }}</span>
-        {% elif p.moneda == 'USD' and rate %}<span class="pz-conv">≈ Bs {{ monto(p.monto|float * rate) }}</span>{% endif %}
+        <span class="pz-monto">US$ {{ monto(p.monto|float) }}</span>
         <span class="pz-tag pz-tag--{{ p.tipo }}">{{ 'Vendido' if p.tipo == 'vendido' else 'Ofertado' }}</span>
         {% if p.estado %}<span class="pz-tag">{{ p.estado }}</span>{% endif %}
         <span class="pz-meta">
@@ -61,10 +59,6 @@
         <span>Precio *</span>
         <span class="pz-monto-input">
             <input type="text" name="monto" class="form-input" inputmode="decimal" required placeholder="120" autocomplete="off">
-            <select name="moneda" class="form-input" aria-label="Moneda">
-                <option value="USD">US$</option>
-                <option value="BOB">Bs</option>
-            </select>
         </span>
     </label>
     <label class="pz-campo">

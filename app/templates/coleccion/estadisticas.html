@@ -93,9 +93,9 @@
                     <span class="stat-card-label">Materiales</span>
                 </div>
                 {% endif %}
-                {% if total_usd_unificado %}
+                {% if total_usd %}
                 <div class="stat-card stat-card--full">
-                    <span class="stat-card-value">US$ {{ "%.2f"|format(total_usd_unificado) }}</span>
+                    <span class="stat-card-value">US$ {{ "%.2f"|format(total_usd) }}</span>
                     <span class="stat-card-label">Valor total estimado</span>
                 </div>
                 {% endif %}
@@ -131,8 +131,7 @@
                             <span class="top-coin-meta">{{ coin.year or '—' }} · {{ coin.country or '—' }}</span>
                         </div>
                         <span class="top-coin-value">
-                            {% if coin.value_currency == 'USD' %}US$ {{ "%.2f"|format(coin.estimated_value) }}
-                            {% else %}Bs {{ "%.0f"|format(coin.estimated_value) }}{% endif %}
+                            US$ {{ "%.2f"|format(coin.estimated_value) }}
                         </span>
                     </a>
                     {% endfor %}
@@ -140,23 +139,6 @@
             </div>
             {% endif %}
         </div>
-
-        {% if total_usd_unificado and (total_bob or total_usd) %}
-        <p style="font-size:.8rem;color:var(--text-dim);margin-top:1rem;max-width:var(--container-width,1100px);margin-left:auto;margin-right:auto;padding:0 1.5rem;text-align:center">
-            {% if total_bob and total_usd and usd_rate %}
-                El valor total estimado incluye US$ {{ "%.2f"|format(total_usd) }} en monedas valuadas en dólares,
-                más Bs {{ "%.0f"|format(total_bob) }} en monedas valuadas en bolivianos
-                convertidos usando la tasa 1 USD = Bs {{ "%.2f"|format(usd_rate) }}
-                (= US$ {{ "%.2f"|format(total_bob / usd_rate) }}).
-            {% elif total_usd and not total_bob %}
-                Todas las monedas valuadas en dólares. Total directo sin conversión.
-            {% elif total_bob and not total_usd and usd_rate %}
-                Todas las monedas valuadas en bolivianos, convertidas a dólares usando la tasa 1 USD = Bs {{ "%.2f"|format(usd_rate) }}.
-            {% elif total_bob and not usd_rate %}
-                ⚠ Hay Bs {{ "%.0f"|format(total_bob) }} en monedas valuadas en bolivianos que no se pudieron convertir porque no hay tasa de cambio configurada.
-            {% endif %}
-        </p>
-        {% endif %}
 
         {% endif %}
     </div>

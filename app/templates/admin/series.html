@@ -100,7 +100,7 @@
                         <td class="sx-col-num">
                             {% if nv %}{{ nv }}{% else %}<span class="sx-falta">0</span>{% endif %}
                         </td>
-                        <td class="sx-col-precio">{{ estimado(r, rate) }}</td>
+                        <td class="sx-col-precio">{{ estimado(r) }}</td>
                         <td class="sx-col-acc">
                             <a href="/admin/series/{{ s.id }}" class="btn btn-outline btn-sm">Abrir →</a>
                         </td>
@@ -112,7 +112,7 @@
         </div>
         <p class="sx-hint" style="margin-top:.75rem">
             El número de orden se guarda solo al cambiarlo. Los precios se estiman con la mediana de lo vendido
-            (o, si no hay ventas cargadas, de lo ofertado){% if rate %}; dólar a Bs {{ '%.2f'|format(rate) }}{% endif %}.
+            (o, si no hay ventas cargadas, de lo ofertado).
         </p>
         {% else %}
         <div class="empty-state">

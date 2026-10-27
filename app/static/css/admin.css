@@ -356,7 +356,6 @@
 /* Precio estimado (compartido) */
 .pz-est { white-space: nowrap; }
 .pz-est b { color: #4ade80; font-size: .88rem; }
-.pz-bs { color: var(--text-dim); font-size: .76rem; margin-left: .2rem; }
 .pz-rango { display: block; font-size: .7rem; color: var(--text-faint); margin-top: .1rem; white-space: nowrap; }
 .pz-vacio { color: var(--text-faint); font-size: .8rem; }
 
@@ -442,7 +441,6 @@
     padding: .45rem .6rem; font-size: .82rem;
 }
 .pz-monto { font-weight: 800; color: var(--text-primary); }
-.pz-conv { color: var(--text-faint); font-size: .74rem; }
 .pz-tag {
     font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
     padding: .12rem .45rem; border-radius: 99px; background: rgba(156,163,175,.1); color: var(--text-muted);
@@ -462,9 +460,8 @@
 .pz-campo { display: flex; flex-direction: column; gap: .25rem; min-width: 0; margin: 0; }
 .pz-campo > span:first-child { font-size: .68rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
 .pz-campo--ancho { grid-column: span 2; }
-.pz-monto-input { display: flex; gap: .3rem; }
+.pz-monto-input { display: flex; }
 .pz-monto-input input { flex: 1; min-width: 0; }
-.admin-main .pz-monto-input select { width: 70px; flex-shrink: 0; }
 .pz-submit { align-self: end; justify-self: start; height: 2.3rem; }
 
 /* Nueva variante */
