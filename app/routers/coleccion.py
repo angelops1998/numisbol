@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Request, Form, UploadFile, File, HTTPExc
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
+from ..cambio import a_usd, tasa
 from ..database import get_db
 from ..models.coin import Coin, CustomOption
 from ..models.serie import Serie, SerieVariante
@@ -691,6 +692,7 @@ def _form_ctx(db: Session, extra: dict) -> dict:
     """Contexto base para el formulario de moneda."""
     series = db.query(Serie).filter(Serie.activo == True).order_by(Serie.orden, Serie.nombre).all()
     return {
+        "usd_bob_rate": tasa(),
         "conditions": CONDITIONS,
         "assayer_groups": ASSAYER_GROUPS,
         "category_groups": CATEGORY_GROUPS,
@@ -739,7 +741,9 @@ async def agregar(
     condition: str = Form(""),
     category: str = Form(""),
     estimated_value: str = Form(""),
+    value_currency: str = Form("USD"),
     purchase_price: str = Form(""),
+    purchase_currency: str = Form("USD"),
     quantity: str = Form("1"),
     description: str = Form(""),
     is_public: str = Form(""),
@@ -770,6 +774,8 @@ async def agregar(
                                "material": material, "condition": condition,
                                "category": category, "estimated_value": estimated_value,
                                "purchase_price": purchase_price,
+                               "value_currency": value_currency,
+                               "purchase_currency": purchase_currency,
                                "quantity": quantity,
                                "description": description, "is_public": bool(is_public),
                            }}),
@@ -795,8 +801,8 @@ async def agregar(
         material         = None if es_billete else (material.strip() or None),
         condition        = condition or None,
         category         = category or None,
-        estimated_value  = to_decimal(estimated_value),
-        purchase_price   = to_decimal(purchase_price),
+        estimated_value  = a_usd(to_decimal(estimated_value), value_currency),
+        purchase_price   = a_usd(to_decimal(purchase_price), purchase_currency),
         purchase_currency= "USD",
         value_currency   = "USD",
         quantity         = max(1, to_int(quantity) or 1),
@@ -874,7 +880,9 @@ async def editar(
     condition: str = Form(""),
     category: str = Form(""),
     estimated_value: str = Form(""),
+    value_currency: str = Form("USD"),
     purchase_price: str = Form(""),
+    purchase_currency: str = Form("USD"),
     quantity: str = Form("1"),
     description: str = Form(""),
     is_public: str = Form(""),
@@ -908,8 +916,8 @@ async def editar(
     coin.material        = None if es_billete else (material.strip() or None)
     coin.condition       = condition or None
     coin.category        = category or None
-    coin.estimated_value = to_decimal(estimated_value)
-    coin.purchase_price  = to_decimal(purchase_price)
+    coin.estimated_value = a_usd(to_decimal(estimated_value), value_currency)
+    coin.purchase_price  = a_usd(to_decimal(purchase_price), purchase_currency)
     coin.purchase_currency = "USD"
     coin.value_currency  = "USD"
     coin.quantity       = max(1, to_int(quantity) or 1)
