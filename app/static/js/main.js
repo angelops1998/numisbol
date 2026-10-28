@@ -52,3 +52,11 @@ document.querySelectorAll('.flash').forEach(el => {
         setTimeout(() => el.remove(), 400);
     }, 4000);
 });
+
+// Menú: se compacta y toma fondo al bajar
+const navbar = document.querySelector('.navbar');
+if (navbar) {
+    const onScrollNav = () => navbar.classList.toggle('scrolled', window.scrollY > 12);
+    window.addEventListener('scroll', onScrollNav, { passive: true });
+    onScrollNav();
+}

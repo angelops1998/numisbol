@@ -1465,3 +1465,114 @@ input[type=number] { -moz-appearance: textfield; }
 .modal-close:hover { color:var(--text-primary); background:rgba(255,255,255,.07); }
 .modal-body { padding:1.25rem 1.5rem; display:flex; flex-direction:column; gap:1rem; }
 .modal-footer { display:flex; gap:.75rem; justify-content:flex-end; padding:1rem 1.5rem; border-top:1px solid var(--border); }
+
+/* ============================================================
+   Menú y pie — estilo "Casa de Moneda" (oct 2026)
+   Reemplaza el aspecto del navbar y del footer en todo el sitio;
+   la estructura y el JS del menú siguen siendo los mismos.
+   ============================================================ */
+:root {
+    --cm-ink:    #f3f0ea;
+    --cm-muted:  #b6bbc4;
+    --cm-line:   #4d5562;
+    --cm-copper: #e8a872;
+    --cm-gold:   #efcd82;
+    --cm-wide:   "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --cm-ease:   cubic-bezier(0.23, 1, 0.32, 1);
+}
+.navbar {
+    background: transparent;
+    border-bottom: 1px solid transparent;
+    transition: background-color 300ms var(--cm-ease), border-color 300ms var(--cm-ease);
+}
+.navbar.scrolled {
+    background: rgba(32, 36, 43, .82);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    border-bottom-color: var(--cm-line);
+}
+.nav-container { max-width: 1200px; padding: 0 2rem; height: 68px; transition: height 300ms var(--cm-ease); }
+.navbar.scrolled .nav-container { height: 60px; }
+
+.logo-coin {
+    width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto; display: inline-block;
+    background: conic-gradient(from 200deg, #8e97a3, #f4f6f9, #9ca5b1, #e9edf2, #8e97a3);
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,.18);
+    animation: cm-logo-spin 5s linear infinite;
+}
+@keyframes cm-logo-spin { to { transform: rotateY(360deg); } }
+.logo-text {
+    font: 800 19px/1 var(--cm-wide); font-stretch: 125%;
+    letter-spacing: -0.02em; text-transform: uppercase; color: var(--cm-ink);
+}
+.logo-text em { color: var(--cm-ink); }
+
+.nav-link {
+    position: relative; color: var(--cm-muted); background: none;
+    font-family: var(--cm-wide); font-size: 15px; font-weight: 500;
+    padding: .45rem .7rem; border-radius: 0;
+}
+.nav-link::after {
+    content: ""; position: absolute; left: .7rem; right: .7rem; bottom: .2rem; height: 1px;
+    background: var(--cm-copper); transform: scaleX(0); transform-origin: right;
+    transition: transform 300ms var(--cm-ease);
+}
+.nav-link:hover { color: var(--cm-ink); background: none; }
+.nav-link:hover::after { transform: scaleX(1); transform-origin: left; }
+.nav-link-locked::after { display: none; }
+.nav-divider { background: var(--cm-line); }
+
+.navbar .btn {
+    border-radius: 999px; height: 40px; padding: 0 18px;
+    font-family: var(--cm-wide); font-stretch: 110%; font-weight: 650; font-size: 14px;
+    transition: transform 160ms var(--cm-ease), background-color 200ms var(--cm-ease), border-color 200ms var(--cm-ease);
+}
+.navbar .btn:active { transform: scale(.97); }
+.navbar .btn-outline { background: transparent; color: var(--cm-ink); border-color: var(--cm-line); }
+.navbar .btn-outline:hover { border-color: var(--cm-muted); color: var(--cm-ink); background: transparent; }
+.navbar .btn-primary { background: var(--cm-copper); color: #2a1a0e; border-color: transparent; }
+.navbar .btn-primary:hover { background: var(--cm-gold); color: #2a1a0e; border-color: transparent; }
+
+.nav-username {
+    background: transparent; border-color: var(--cm-line); color: var(--cm-ink);
+    font-family: var(--cm-wide);
+}
+.nav-user.open .nav-username, .nav-user:focus-within .nav-username { border-color: var(--cm-muted); background: rgba(255,255,255,.04); }
+.nav-dropdown, .nav-tooltip { background: #323843; border-color: var(--cm-line); border-radius: 14px; }
+.nav-tooltip::before { background: #323843; border-color: var(--cm-line); }
+.nav-dropdown a { border-bottom-color: var(--cm-line); }
+.nav-toggle { border-color: var(--cm-line); color: var(--cm-ink); border-radius: 10px; }
+
+.footer {
+    background: transparent;
+    border-top: 1px solid var(--cm-line);
+    padding: 1.6rem 2rem calc(1.6rem + env(safe-area-inset-bottom, 0px));
+}
+.footer-inner { max-width: 1200px; gap: .75rem 2rem; }
+.footer-brand {
+    gap: 10px; color: var(--cm-ink); text-decoration: none;
+    font: 800 16px/1 var(--cm-wide); font-stretch: 125%; text-transform: uppercase; letter-spacing: -0.02em;
+}
+.footer-brand:hover { color: var(--cm-ink); }
+.footer-brand .logo-coin { width: 18px; height: 18px; }
+.footer-links { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-right: auto; }
+.footer-links a { color: var(--cm-muted); font-size: 14px; }
+.footer-links a:hover { color: var(--cm-ink); }
+.footer-copy { font: 400 12px/1.6 "JetBrains Mono", ui-monospace, Menlo, monospace; color: var(--cm-muted); }
+
+@media (max-width: 1080px) {
+    .nav-container { padding: 0 1rem; }
+    .nav-links { top: 100%; background: #2b3039; border-bottom-color: var(--cm-line); }
+    .nav-links .nav-link { color: var(--cm-ink); padding: .85rem 1.5rem; }
+    .nav-links .nav-link::after { display: none; }
+    .nav-links .nav-divider + * { border-top-color: var(--cm-line); }
+    .nav-user { border-top-color: var(--cm-line); }
+    .nav-links .btn { height: 46px; }
+    .nav-username { border-color: transparent; }
+}
+@media (max-width: 640px) {
+    .footer-links { margin-right: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .logo-coin { animation: none; }
+}

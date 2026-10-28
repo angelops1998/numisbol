@@ -8,15 +8,18 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/img/icons/favicon-32-white.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/static/img/icons/favicon-512-white.png">
     <link rel="apple-touch-icon" href="/static/img/icons/apple-touch-icon-white.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;500&display=swap">
     <link rel="stylesheet" href="{{ static_v('css/main.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 
     <nav class="navbar">
         <div class="nav-container">
             <a href="/" class="nav-logo">
-                <img class="logo-icon" src="{{ static_v('img/icons/favicon-512-white.png') }}" alt="" width="28" height="28">
+                <span class="logo-coin" aria-hidden="true"></span>
                 <span class="logo-text">Numis<em>Bol</em></span>
             </a>
 
@@ -97,11 +100,14 @@
     {% if not hide_footer %}
     <footer class="footer">
         <div class="footer-inner">
-            <div class="footer-brand">
-                <span>🪙</span>
-                <span>NumisBol</span>
-            </div>
-            <p class="footer-copy">© 2026 NumisBol — La comunidad numismática de Bolivia</p>
+            <a href="/" class="footer-brand"><span class="logo-coin" aria-hidden="true"></span>NumisBol</a>
+            <nav class="footer-links" aria-label="Pie de página">
+                <a href="/monedas">Monedas públicas</a>
+                <a href="/mercado">Mercado</a>
+                <a href="/blog">Blog</a>
+                <a href="/preguntas">Preguntas</a>
+            </nav>
+            <p class="footer-copy">© 2026 NumisBol · La comunidad numismática de Bolivia</p>
         </div>
     </footer>
     {% endif %}

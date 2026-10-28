@@ -1,99 +1,349 @@
 {% extends "base.html" %}
 {% block title %}NumisBol — La comunidad numismática de Bolivia{% endblock %}
+{% block body_class %}page-home{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ static_v('css/home.css') }}">
+{% endblock %}
+
+{% macro medalla(m, i) -%}
+<svg viewBox="0 0 200 200" aria-hidden="true">
+  <defs>
+    <radialGradient id="mg{{ i }}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f3f5f8"/><stop offset=".5" stop-color="#b7bec8"/><stop offset="1" stop-color="#6e7682"/></radialGradient>
+    <path id="mp{{ i }}" d="M100,100 m-72,0 a72,72 0 1,1 144,0"/>
+  </defs>
+  <circle cx="100" cy="100" r="98" fill="url(#mg{{ i }})"/>
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#5d6571" stroke-width="1.5" stroke-dasharray="2 3"/>
+  <circle cx="100" cy="100" r="58" fill="none" stroke="#7a828e" stroke-width="1"/>
+  <text font-family="Archivo, sans-serif" font-size="13" font-weight="700" letter-spacing="3" fill="#4a515c"><textPath href="#mp{{ i }}" startOffset="50%" text-anchor="middle">{{ m[2] }}</textPath></text>
+  <text x="100" y="108" text-anchor="middle" font-family="Archivo, sans-serif" font-stretch="125%" font-size="{{ 26 if m[0]|length > 4 else 38 }}" font-weight="900" fill="#3e444e">{{ m[0] }}</text>
+  <text x="100" y="134" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#4a515c">{{ m[1] }}</text>
+  <text x="100" y="172" text-anchor="middle" font-size="12" fill="#5d6571">★ ★ ★</text>
+</svg>
+{%- endmacro %}
+
+{% macro miles(n) -%}{{ "{:,}".format(n).replace(",", ".") }}{%- endmacro %}
 
 {% block content %}
+<div class="cm" id="cm"
+     data-img-sol_a="{{ static_v('img/home/sol_a.webp') }}"
+     data-img-sol_r="{{ static_v('img/home/sol_r.webp') }}"
+     data-img-cuartillo_a="{{ static_v('img/home/cuartillo_a.webp') }}"
+     data-img-cuartillo_r="{{ static_v('img/home/cuartillo_r.webp') }}"
+     data-img-cincuenta="{{ static_v('img/home/cincuenta.webp') }}"
+     data-img-peso1980="{{ static_v('img/home/peso1980.webp') }}"
+     data-img-republica="{{ static_v('img/home/republica.webp') }}"
+     data-img-escudo="{{ static_v('img/home/escudo.webp') }}"
+     data-img-bolivar_plata="{{ static_v('img/home/bolivar_plata.webp') }}">
+<script>
+(function () {
+  var r = document.getElementById('cm');
+  if (document.visibilityState === 'visible' && !matchMedia('(prefers-reduced-motion: reduce)').matches) r.classList.add('anim');
+  setTimeout(function () { r.classList.add('settled'); }, 2600);
+})();
+</script>
 
-<!-- ── Hero ─────────────────────────────────────────────── -->
-<section class="hero">
-    <div class="container">
-        <div class="hero-content">
-            <span class="hero-eyebrow">Plataforma numismática</span>
-            <h1 class="hero-title">
-                Organiza y comparte
-                <span>tu colección de monedas</span>
-            </h1>
-            <p class="hero-subtitle">
-                NumisBol es la plataforma para coleccionistas bolivianos.
-                Registra tus monedas, compra y vende con otros coleccionistas,
-                y mantente informado sobre el mundo numismático.
-            </p>
-            <div class="hero-cta">
-                {% if user %}
-                    <a href="/coleccion" class="btn btn-primary btn-lg">Ver mi colección</a>
-                    <a href="/mercado"   class="btn btn-outline btn-lg">Explorar mercado</a>
-                {% else %}
-                    <a href="/auth/registro" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
-                    <a href="/auth/login"    class="btn btn-outline btn-lg">Iniciar sesión</a>
-                {% endif %}
-            </div>
+  <!-- ── Hero: prensa de volante ─────────────────────────── -->
+  <section class="cm-hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow fade" style="--i:0">Comunidad numismática de Bolivia</span>
+        <h1 class="wide">
+          <span class="line"><span style="--i:0">Doscientos años</span></span>
+          <span class="line"><span style="--i:1">de <span class="silver">plata</span></span></span>
+          <span class="line"><span style="--i:2"><span class="silver">boliviana,</span></span></span>
+          <span class="line"><span style="--i:3">catalogados.</span></span>
+        </h1>
+        <p class="lede fade" style="--i:5">Registra tu colección contra las series reales del país, compra y vende entre coleccionistas, y consulta cecas, ensayadores y rarezas en un solo lugar.</p>
+        <div class="ctas fade" style="--i:6">
+          {% if user %}
+          <a class="cm-btn cm-btn-copper magnet" href="/coleccion">Ver mi colección <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="cm-btn cm-btn-ghost magnet" href="/mercado">Explorar mercado</a>
+          {% else %}
+          <a class="cm-btn cm-btn-copper magnet" href="/auth/registro">Crear cuenta gratis <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="cm-btn cm-btn-ghost magnet" href="#catalogo">Ver el catálogo</a>
+          {% endif %}
         </div>
+      </div>
 
-        <!-- Lado derecho: anuncios si hay, collage si no -->
-        {% if anuncios %}
-        <div class="hero-anuncios">
-            <div class="hero-anuncios-label">
-                <span>📢</span> Eventos y anuncios
+      <div class="press glow fade" style="--i:3" id="press">
+        <div class="press-top"><span class="live"><i></i><span class="lbl">Prensa de volante</span></span><span id="pressCount">Pieza 1 de 4</span></div>
+        <div class="stage" id="stage">
+          <span class="die" id="die" aria-hidden="true"></span>
+          <span class="ring" id="ring" aria-hidden="true"></span>
+          <div class="coinwrap idle" id="coinwrap">
+            <div class="coin3d" id="coin3d">
+              <span class="blank" id="blank"></span>
+              <img id="coinImg" src="{{ static_v('img/home/sol_a.webp') }}" alt="8 Soles 1841, anverso con el busto de Bolívar" draggable="false" width="300" height="300">
+              <span class="shine" aria-hidden="true"></span>
+              <span class="cm-flash" id="flash" aria-hidden="true"></span>
             </div>
-            <div class="hero-anuncios-track" id="heroTrack">
-                {% for a in anuncios %}
-                <div class="hero-anuncio-slide anuncio-card" data-index="{{ loop.index0 }}">
-                    <div class="anuncio-img-wrap">
-                        <img src="{{ a.imagen_url }}" alt="{{ a.titulo }}" loading="lazy">
-                        <div class="anuncio-overlay"><span class="anuncio-zoom-icon">🔍</span></div>
-                    </div>
-                    {% if a.titulo and a.titulo != 'Sin título' %}
-                    <div class="anuncio-caption">
-                        <span class="anuncio-title">{{ a.titulo }}</span>
-                        {% if a.descripcion %}<span class="anuncio-desc">{{ a.descripcion }}</span>{% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-                {% if anuncios | length > 1 %}
-                <button class="hero-arrow hero-arrow-prev" id="heroArrowPrev" aria-label="Anterior">&#8249;</button>
-                <button class="hero-arrow hero-arrow-next" id="heroArrowNext" aria-label="Siguiente">&#8250;</button>
-                {% endif %}
+          </div>
+          <span class="anvil" aria-hidden="true"></span>
+        </div>
+        <dl class="readout" aria-live="polite">
+          <div><dt>Moneda</dt><dd data-k="den">8 Soles</dd></div>
+          <div><dt>Año</dt><dd data-k="year">1841</dd></div>
+          <div><dt>Ceca</dt><dd data-k="mint">Potosí</dd></div>
+          <div><dt>Dato</dt><dd data-k="note">1.396.550 piezas</dd></div>
+        </dl>
+        <div class="press-foot">
+          <div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <button class="cm-btn cm-btn-ghost strike-btn" type="button" id="strike">Acuñar la siguiente <span class="arrow" aria-hidden="true">↓</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track" id="ticker"></div>
+  </div>
+
+  <div class="wrap">
+    <div class="counters" aria-label="El catálogo hoy">
+      <div class="counter reveal"><span class="odo" data-to="{{ stats.series }}">{{ stats.series }}</span><p>series en el catálogo</p></div>
+      <div class="counter reveal" style="--rd:80ms"><span class="odo" data-to="{{ stats.variantes }}">{{ stats.variantes }}</span><p>variantes catalogadas</p></div>
+      <div class="counter reveal" style="--rd:160ms"><span class="odo" data-to="{{ stats.coleccionistas }}">{{ stats.coleccionistas }}</span><p>coleccionistas</p></div>
+      <div class="counter reveal" style="--rd:240ms"><span class="odo" data-to="{{ stats.monedas }}">{{ stats.monedas }}</span><p>monedas registradas</p></div>
+    </div>
+  </div>
+
+  {% if anuncios %}
+  <!-- ── Eventos y anuncios ─────────────────────────── -->
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="head reveal">
+        <div>
+          <span class="eyebrow">Eventos y anuncios</span>
+          <h2 class="wide">Lo que pasa en la comunidad</h2>
+        </div>
+        <p>Ferias, exposiciones y novedades. Toca una imagen para verla en grande.</p>
+      </div>
+      <div class="events reveal">
+        {% for a in anuncios %}
+        <button type="button" class="event anuncio-card" data-index="{{ loop.index0 }}" aria-label="Ver {{ a.titulo }} en grande">
+          <span class="ph"><img src="{{ a.imagen_url }}" alt="{{ a.titulo }}" loading="lazy"></span>
+          {% if a.titulo and a.titulo != 'Sin título' %}
+          <span class="cap">
+            <span class="anuncio-title">{{ a.titulo }}</span>
+            {% if a.descripcion %}<span class="desc">{{ a.descripcion }}</span>{% endif %}
+          </span>
+          {% endif %}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- ── Capítulos del catálogo ─────────────────────────── -->
+  {% set epocas = catalogo.epocas %}
+  <section class="epochs" id="catalogo" style="--n:{{ epocas|length + 1 }}">
+    <div class="epochs-sticky">
+      <div class="wrap" style="width:100%">
+        <div class="epochs-head">
+          <div>
+            <span class="eyebrow">El catálogo</span>
+            <h2 class="wide">La historia, capítulo por capítulo</h2>
+          </div>
+          <p>Las {{ stats.series }} series del catálogo agrupadas en {{ epocas|length }} épocas{% if epocas %}, de {{ epocas[0].cuando.split('–')[0] }} a {{ epocas[-1].cuando.split('–')[-1] }}{% endif %}.</p>
+        </div>
+      </div>
+      <div class="wrap" style="width:100%">
+        <div class="rail" id="rail">
+          {% for e in epocas %}<button type="button" data-i="{{ loop.index0 }}">{{ e.desde }}<span>{{ e.titulo }}</span></button>{% endfor %}
+          <button type="button" data-i="{{ epocas|length }}">Hoy<span>Continuará</span></button>
+        </div>
+      </div>
+      <div class="wrap" style="width:100%; overflow: visible">
+        <div class="epochs-track" id="etrack">
+          {% for e in epocas %}
+          <article class="epoch">
+            <span class="yrs" aria-hidden="true">{{ e.desde }}</span>
+            <div class="medal">
+              {% if e.img %}<img src="{{ static_v(e.img) }}" alt="{{ e.alt }}" loading="lazy">{% else %}{{ medalla(e.medal, loop.index0) }}{% endif %}
             </div>
-            {% if anuncios | length > 1 %}
-            <div class="hero-anuncios-dots" id="heroDots">
-                {% for a in anuncios %}
-                <button class="hero-dot {% if loop.first %}hero-dot-active{% endif %}"
-                        data-idx="{{ loop.index0 }}" aria-label="Anuncio {{ loop.index }}"></button>
-                {% endfor %}
+            <div>
+              <div class="when">{{ e.cuando }}</div>
+              <h3>{{ e.titulo }}</h3>
+              <p>{{ e.texto }}</p>
+              <div class="facts">
+                <div><b>{{ e.series }}</b><span>{{ 'serie' if e.series == 1 else 'series' }}</span></div>
+                <div><b>{{ e.vars }}</b><span>variantes</span></div>
+              </div>
+            </div>
+          </article>
+          {% endfor %}
+          <article class="epoch end">
+            <div>
+              <div class="when">Continuará</div>
+              <h3>El catálogo crece capítulo por capítulo</h3>
+              <p>Las series se cargan desde el libro de referencia, en orden. Cada capítulo nuevo aparece aquí con sus variantes y rarezas.</p>
+              <a class="cm-btn cm-btn-copper" href="{{ '/coleccion/series' if user else '/auth/registro' }}">{{ 'Ver el catálogo completo' if user else 'Crear cuenta para verlo' }} <span class="arrow" aria-hidden="true">→</span></a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Herramientas ─────────────────────────── -->
+  <section class="section" id="herramientas">
+    <div class="wrap">
+      <div class="head reveal">
+        <div>
+          <span class="eyebrow">Para coleccionistas</span>
+          <h2 class="wide">Tres herramientas, un solo catálogo</h2>
+        </div>
+        <p>Una moneda que registras ya sabe a qué serie pertenece, qué ensayador la firmó y qué tan difícil es de conseguir.</p>
+      </div>
+      <div class="stack" id="stack">
+        <article class="card glow" style="--k:0">
+          <div>
+            <span class="eyebrow">Mi colección</span>
+            <h3 class="wide">Un inventario que entiende de monedas</h3>
+            <p>Año, ceca, ensayador, estado y valor en dólares. Si pagaste en bolivianos, lo conviertes al cargarla.</p>
+            <a class="more" href="{{ '/coleccion' if user else '/auth/registro' }}">Empezar mi inventario <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="mock">
+            <span class="ex">Ejemplo</span>
+            <div class="eyebrow">Valor estimado</div>
+            <div class="total"><span class="countup" data-to="1240">1.240</span><small>US$ · 41 piezas</small></div>
+            <div class="inv">
+              <div class="inv-row"><img src="{{ static_v('img/home/cuartillo_r.webp') }}" alt="" loading="lazy"><div style="min-width:0"><div class="t">1/4 Sol 1852, tipo llamita</div><div class="s">Potosí · VF</div></div><span class="usd">US$ 95</span></div>
+              <div class="inv-row"><img src="{{ static_v('img/home/republica.webp') }}" alt="" loading="lazy"><div style="min-width:0"><div class="t">República de Bolivia, cerro y llama</div><div class="s">Potosí · XF</div></div><span class="usd">US$ 18</span></div>
+              <div class="inv-row"><img src="{{ static_v('img/home/peso1980.webp') }}" alt="" loading="lazy"><div style="min-width:0"><div class="t">1 Peso boliviano 1980</div><div class="s">Circulación · UNC</div></div><span class="usd">US$ 2</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card glow" style="--k:1">
+          <div>
+            <span class="eyebrow">Mercado</span>
+            <h3 class="wide">Duplicados que buscan dueño</h3>
+            <p>Publica lo que te sobra y encuentra lo que te falta, con fotos reales y precio claro, entre coleccionistas del país.</p>
+            <a class="more" href="{{ '/mercado' if user else '/auth/registro' }}">Explorar el mercado <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="mock">
+            {% if listing %}
+            <span class="ex">Lo último publicado</span>
+            <div class="listing">
+              <img class="photo" src="{{ listing.image_url }}" alt="{{ listing.title }}" loading="lazy">
+              <div style="min-width:0">
+                <span class="pill">{{ listing.listing_type.value|capitalize }}</span>
+                {% if listing.price %}<div class="price">US$ {{ miles(listing.price|round|int) }}</div>{% endif %}
+                <div class="seller">{{ listing.title }}{% if listing.coin_condition %} · {{ listing.coin_condition }}{% endif %}<br>Publicado por {{ listing.seller.username }}</div>
+                <a class="go" href="/mercado/{{ listing.id }}">Ver publicación →</a>
+              </div>
+            </div>
+            {% elif user %}
+            <span class="ex">Mercado</span>
+            <p class="empty">Todavía no hay publicaciones activas. Puedes ser el primero en publicar una moneda.</p>
+            {% else %}
+            <span class="ex">Ejemplo</span>
+            <div class="listing">
+              <img src="{{ static_v('img/home/cuartillo_a.webp') }}" alt="" loading="lazy">
+              <div>
+                <span class="pill">Rara</span>
+                <div class="price">US$ 110</div>
+                <div class="seller">1/4 Sol 1852 · Potosí · VF<br>Publicado en Cochabamba</div>
+              </div>
             </div>
             {% endif %}
-        </div>
+          </div>
+        </article>
 
-        {% else %}
-        <div class="hero-collage">
-            <div class="collage-grid">
-                <div class="collage-item collage-large">
-                    <img src="/static/img/coins/coin1.jpg" alt="Moneda 1" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                    <div class="collage-placeholder">🪙</div>
-                </div>
-                <div class="collage-item collage-small">
-                    <img src="/static/img/coins/coin2.jpg" alt="Moneda 2" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                    <div class="collage-placeholder">🪙</div>
-                </div>
-                <div class="collage-item collage-small">
-                    <img src="/static/img/coins/coin3.jpg" alt="Moneda 3" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                    <div class="collage-placeholder">🪙</div>
-                </div>
-                <div class="collage-item collage-wide">
-                    <img src="/static/img/coins/coin4.jpg" alt="Moneda 4" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                    <div class="collage-placeholder">🪙</div>
-                </div>
-                <div class="collage-item collage-small">
-                    <img src="/static/img/coins/coin5.jpg" alt="Moneda 5" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                    <div class="collage-placeholder">🪙</div>
-                </div>
+        <article class="card glow" style="--k:2">
+          <div>
+            <span class="eyebrow">Preguntas y blog</span>
+            <h3 class="wide">Lo que el libro no explica</h3>
+            <p>Pregunta por una variante dudosa, comparte un hallazgo o escribe sobre una ceca. Las respuestas quedan para el siguiente coleccionista.</p>
+            <a class="more" href="{{ '/preguntas' if user else '/auth/registro' }}">Ver preguntas <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="mock">
+            {% if pregunta %}
+            <span class="ex">Última pregunta</span>
+            <div class="thread">
+              <a class="q" href="/preguntas/{{ pregunta.id }}">{{ pregunta.titulo }}</a>
+              <div class="a"><span class="av">{{ respuesta.autor.username[:2]|upper }}</span><div class="body"><strong>{{ respuesta.autor.username }}</strong> · {{ respuesta.cuerpo|truncate(220) }}</div></div>
             </div>
+            {% elif user %}
+            <span class="ex">Preguntas</span>
+            <p class="empty">Todavía no hay preguntas respondidas. Haz la primera.</p>
+            {% else %}
+            <span class="ex">Ejemplo</span>
+            <div class="thread">
+              <div class="q">¿Cómo distingo un 8 Soles 1841 “mula” de uno de llama pequeña?</div>
+              <div class="a"><span class="av">RM</span><div class="body"><strong>Respuesta</strong> · Fíjate en el reverso: la mula tiene llamas grandes y la otra variante, llamas pequeñas. Es la primera diferencia que anota el catálogo.</div></div>
+            </div>
+            {% endif %}
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Rareza ─────────────────────────── -->
+  <section class="section">
+    <div class="wrap rarity">
+      <div class="intro reveal">
+        <span class="eyebrow">Escala de rareza</span>
+        <h2 class="wide">Una sola escala para toda la comunidad</h2>
+        <p>Cada variante lleva la rareza del catálogo de referencia. Una “Muy rara” significa lo mismo en tu inventario, en el mercado y en una respuesta del foro.</p>
+      </div>
+      <div class="reveal" style="--rd:120ms">
+        <ul class="scale pending" id="scale">
+          {% for r in catalogo.rarezas %}
+          <li><span class="code">{{ r.code }}</span><span class="name">{{ r.name }}</span><span class="bar"><span style="--w:{{ r.pct }}%; --rd:{{ loop.index0 * 90 }}ms"></span></span><span class="n">{{ r.n or '—' }}</span></li>
+          {% endfor %}
+        </ul>
+        <p class="scale-note">Variantes por grado sobre {{ stats.variantes }} cargadas.{% if catalogo.sin_grado %} {{ catalogo.sin_grado }} sin grado asignado.{% endif %}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Vitrina 3D ─────────────────────────── -->
+  <section class="section" id="vitrina">
+    <div class="wrap">
+      <div class="head reveal">
+        <div>
+          <span class="eyebrow">Vitrina de la comunidad</span>
+          <h2 class="wide">Piezas que subieron los coleccionistas</h2>
+        </div>
+        <p>Arrastra para girar la vitrina. La moneda que queda al frente muestra su ficha.</p>
+      </div>
+      <div class="carousel reveal" id="carousel" tabindex="0" aria-label="Vitrina giratoria, usa las flechas para girar">
+        <span class="carousel-hint">Arrastra · ← →</span>
+        <div class="carousel-floor"></div>
+        <div class="carousel-ring" id="cring"></div>
+        <div class="carousel-cap" id="ccap" aria-live="polite"><b>1/4 Sol</b><span>1852 · Potosí</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cierre ─────────────────────────── -->
+  <section class="closing" id="cerrar">
+    <div class="wrap">
+      <div class="closing-box glow reveal">
+        {% if user %}
+        <div>
+          <h2 class="wide">Tu colección, <span class="silver">siempre a mano</span></h2>
+          <p>Registra la próxima moneda y mira cómo crece tu gabinete.</p>
+          <div class="ctas"><a class="cm-btn cm-btn-copper magnet" href="/coleccion/agregar">Agregar una moneda <span class="arrow" aria-hidden="true">→</span></a></div>
+        </div>
+        {% else %}
+        <div>
+          <h2 class="wide">Tu colección merece <span class="silver">un catálogo</span></h2>
+          <p>Crear la cuenta es gratis. Empiezas con una sola moneda y el catálogo hace el resto.</p>
+          <div class="ctas"><a class="cm-btn cm-btn-copper magnet" href="/auth/registro">Crear cuenta gratis <span class="arrow" aria-hidden="true">→</span></a></div>
         </div>
         {% endif %}
+        <div class="edge-coin" aria-hidden="true"><div class="in"><img class="a" src="{{ static_v('img/home/cuartillo_a.webp') }}" alt="" loading="lazy"><img class="b" src="{{ static_v('img/home/cuartillo_r.webp') }}" alt="" loading="lazy"></div></div>
+      </div>
     </div>
-</section>
+  </section>
+</div>
 
-<!-- Lightbox (siempre presente si hay anuncios) -->
 {% if anuncios %}
 <div class="anuncio-lightbox" id="lightbox" role="dialog" aria-modal="true">
     <button class="lightbox-close" id="lightboxClose" aria-label="Cerrar">✕</button>
@@ -113,108 +363,20 @@
     </div>
 </div>
 {% endif %}
-
-<!-- ── Estadísticas ──────────────────────────────────────── -->
-<div class="stats-bar">
-    <div class="stats-grid">
-        <div class="stat-item">
-            <span class="stat-number">{{ stats.monedas }}</span>
-            <span class="stat-label">Monedas registradas</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">{{ stats.coleccionistas }}</span>
-            <span class="stat-label">Coleccionistas</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">{{ stats.en_venta }}</span>
-            <span class="stat-label">En venta ahora</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">{{ stats.articulos }}</span>
-            <span class="stat-label">Artículos publicados</span>
-        </div>
-    </div>
-</div>
-
-<!-- ── Features ─────────────────────────────────────────── -->
-<section class="features">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Todo lo que necesitas en un solo lugar</h2>
-            <p class="section-subtitle">
-                Herramientas diseñadas especialmente para el coleccionista boliviano.
-            </p>
-        </div>
-
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon-wrap">📦</div>
-                <h3>Inventario de colección</h3>
-                <p>Registra cada moneda con fotos, descripción, año, ceca, estado de conservación y valor estimado. Tu colección siempre ordenada.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon-wrap">🛒</div>
-                <h3>Mercado entre coleccionistas</h3>
-                <p>Ofrece tus duplicados y encuentra las piezas que te faltan. Compra y vende directamente con otros coleccionistas de Bolivia.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon-wrap">📰</div>
-                <h3>Blog y noticias</h3>
-                <p>Comparte tus conocimientos, escribe sobre tus hallazgos y sigue las novedades del mundo numismático nacional e internacional.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon-wrap">👥</div>
-                <h3>Comunidad boliviana</h3>
-                <p>Conecta con otros coleccionistas de todo el país. Intercambia experiencias, consejos y amplía tu red de contactos.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ static_v('js/home.js') }}"></script>
 {% if anuncios %}
 <script src="{{ static_v('js/lightbox-zoom.js') }}"></script>
 <script>
-(function () {
-    // ── Carrusel hero ─────────────────────────────────────
-    const slides = Array.from(document.querySelectorAll('.hero-anuncio-slide'));
-    const dots   = Array.from(document.querySelectorAll('.hero-dot'));
-    let active = 0, timer = null;
-
-    // El primer slide siempre debe verse (con uno solo no hay carrusel)
-    slides[0]?.classList.add('slide-active');
-    dots[0]?.classList.add('hero-dot-active');
-
-    function goTo(idx) {
-        if (slides.length <= 1) return;
-        slides[active].classList.remove('slide-active');
-        dots[active]?.classList.remove('hero-dot-active');
-        active = (idx + slides.length) % slides.length;
-        slides[active].classList.add('slide-active');
-        dots[active]?.classList.add('hero-dot-active');
-    }
-
-    function stopAuto()  { clearInterval(timer); timer = null; }
-    function startAuto() { if (slides.length <= 1) return; stopAuto(); timer = setInterval(() => goTo(active + 1), 4500); }
-
-    dots.forEach(d => d.addEventListener('click', () => { stopAuto(); goTo(+d.dataset.idx); startAuto(); }));
-    document.getElementById('heroArrowPrev')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); goTo(active - 1); startAuto(); });
-    document.getElementById('heroArrowNext')?.addEventListener('click', e => { e.stopPropagation(); stopAuto(); goTo(active + 1); startAuto(); });
-    startAuto();
-
-    // ── Lightbox con zoom ─────────────────────────────────
-    window.initLightboxZoom({
-        lb: 'lightbox', wrap: 'lightboxWrap', img: 'lightboxImg',
-        label: 'lbAnuncioZoomLabel', caption: 'lightboxCaption', captionFrom: '.anuncio-title',
-        close: 'lightboxClose', prev: 'lightboxPrev', next: 'lightboxNext',
-        zoomIn: 'lbAnuncioZoomIn', zoomOut: 'lbAnuncioZoomOut', zoomReset: 'lbAnuncioZoomReset',
-        triggers: '.anuncio-card',
-        onOpen:  i => { stopAuto(); goTo(i); },
-        onClose: () => startAuto()
-    });
-})();
+window.initLightboxZoom({
+    lb: 'lightbox', wrap: 'lightboxWrap', img: 'lightboxImg',
+    label: 'lbAnuncioZoomLabel', caption: 'lightboxCaption', captionFrom: '.anuncio-title',
+    close: 'lightboxClose', prev: 'lightboxPrev', next: 'lightboxNext',
+    zoomIn: 'lbAnuncioZoomIn', zoomOut: 'lbAnuncioZoomOut', zoomReset: 'lbAnuncioZoomReset',
+    triggers: '.anuncio-card'
+});
 </script>
 {% endif %}
 {% endblock %}
