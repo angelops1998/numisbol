@@ -119,7 +119,7 @@
         </div>
         <p>Ferias, exposiciones y novedades. Toca una imagen para verla en grande.</p>
       </div>
-      <div class="events reveal">
+      <div class="events{{ " solo" if anuncios|length == 1 else "" }} reveal">
         {% for a in anuncios %}
         <button type="button" class="event anuncio-card" data-index="{{ loop.index0 }}" aria-label="Ver {{ a.titulo }} en grande">
           <span class="ph"><img src="{{ a.imagen_url }}" alt="{{ a.titulo }}" loading="lazy"></span>

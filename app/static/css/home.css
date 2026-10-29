@@ -338,9 +338,9 @@ body.page-home { background: #2b3039; }
 }
 
 /* Eventos y anuncios (cargados desde el admin) */
-.cm .events { display: flex; gap: var(--s5); overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: var(--s4); scrollbar-width: thin; }
+.cm .events { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--s5); align-items: start; }
 .cm .event {
-  all: unset; box-sizing: border-box; cursor: zoom-in; flex: 0 0 auto; width: min(420px, 82vw); scroll-snap-align: start; align-self: flex-start;
+  all: unset; box-sizing: border-box; cursor: zoom-in; display: block; min-width: 0;
   border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: var(--panel);
   transition: transform 300ms var(--ease-out), border-color 300ms var(--ease-out);
 }
@@ -350,7 +350,18 @@ body.page-home { background: #2b3039; }
 .cm .event .cap { display: block; padding: var(--s4) var(--s5) var(--s5); }
 .cm .event .anuncio-title { display: block; font: 700 17px/1.3 var(--f-display); font-stretch: 105%; color: var(--ink); }
 .cm .event .desc { display: block; margin-top: 6px; font-size: 14px; color: var(--muted); }
-@media (hover: hover) { .cm .event:hover { transform: translateY(-4px); border-color: var(--muted); } .cm .event:hover img { transform: scale(1.04); } }
+/* Un solo anuncio: afiche a la izquierda y texto a la derecha */
+.cm .events.solo { grid-template-columns: minmax(0, 1fr); }
+.cm .events.solo .event { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); align-items: center; gap: var(--s7); padding-right: var(--s7); }
+.cm .events.solo .event .cap { padding: var(--s6) 0; }
+.cm .events.solo .event .anuncio-title { font-size: clamp(24px, 3vw, 38px); line-height: 1.1; font-weight: 800; font-stretch: 125%; text-transform: uppercase; }
+.cm .events.solo .event .desc { margin-top: var(--s4); font-size: 17px; max-width: 46ch; }
+.cm .events.solo .event .cap::after { content: "Ver afiche en grande →"; display: block; margin-top: var(--s5); font-weight: 650; color: var(--gold); font-size: 15px; }
+@media (hover: hover) { .cm .event:hover { transform: translateY(-4px); border-color: var(--muted); } .cm .event:hover img { transform: scale(1.03); } }
+@media (max-width: 760px) {
+  .cm .events.solo .event { grid-template-columns: minmax(0, 1fr); gap: 0; padding-right: 0; }
+  .cm .events.solo .event .cap { padding: var(--s5); }
+}
 
 /* Publicación real del mercado: la foto no siempre es una moneda recortada */
 .cm .listing img.photo { border-radius: 18px; object-fit: cover; animation: none; }
