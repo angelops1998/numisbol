@@ -472,7 +472,15 @@ async def coleccion(
 
     flat_categories = [c for _, items in CATEGORY_GROUPS for c in items]
 
+    # Resumen de toda la colección (sin filtros) para la cabecera.
+    valor_total, n_paises = db.query(
+        func.coalesce(func.sum(Coin.estimated_value * Coin.quantity), 0),
+        func.count(func.distinct(Coin.country)),
+    ).filter(Coin.user_id == user.id).one()
+
     return templates.TemplateResponse(request, "coleccion/lista.html", {
+        "valor_total": float(valor_total or 0),
+        "n_paises": n_paises,
         "user": user,
         "coins": coins,
         "total": total_col,

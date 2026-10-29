@@ -1,30 +1,40 @@
 {% extends "base.html" %}
 {% block title %}Mi Colección — NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
+{% block body_class %}page-cl{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/coleccion-lista.css') }}">{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
+<div class="page-wrapper cl" id="cl">
+<script>(function(){var r=document.getElementById('cl');if(document.visibilityState==='visible'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)r.classList.add('anim');setTimeout(function(){r.classList.add('settled')},2200);})();</script>
 
-    <!-- Encabezado de página -->
-    <div class="page-header">
+    <!-- Encabezado: resumen de la colección -->
+    <header class="cl-head">
         <div class="container">
-            <div class="page-header-inner">
-                <div>
-                    <h1 class="page-title">Mi Colección</h1>
-                    <p class="page-subtitle">
-                        {{ total }} moneda{{ 's' if total != 1 else '' }} en tu colección
-                        {% if total_filtrado != total %} &nbsp;·&nbsp; {{ total_filtrado }} resultado{{ 's' if total_filtrado != 1 else '' }}{% endif %}
-                    </p>
+            <div class="cl-head-row">
+                <div class="cl-head-text">
+                    <span class="cl-eyebrow rise" style="--i:0">Tu gabinete</span>
+                    <h1 class="cl-title rise" style="--i:1">Mi colección</h1>
+                    {% if total_filtrado != total %}
+                    <p class="cl-sub rise" style="--i:2">{{ total_filtrado }} resultado{{ 's' if total_filtrado != 1 else '' }} con los filtros actuales</p>
+                    {% endif %}
                 </div>
-                <div style="display:flex;gap:.75rem;flex-wrap:wrap">
-                    <a href="/coleccion/estadisticas" class="btn btn-outline">📊 Estadísticas</a>
-                    <a href="/coleccion/paises" class="btn btn-outline">🌍 Países</a>
-                    <a href="/coleccion/series" class="btn btn-outline">📚 Series</a>
-                    <a href="/coleccion/agregar" class="btn btn-primary btn-lg">+ Agregar moneda/billete</a>
+                <div class="cl-actions rise" style="--i:2">
+                    <a href="/coleccion/agregar" class="cl-btn cl-btn-copper">Agregar moneda o billete <span class="arrow" aria-hidden="true">→</span></a>
+                    <nav class="cl-links" aria-label="Vistas de la colección">
+                        <a href="/coleccion/estadisticas">Estadísticas</a>
+                        <a href="/coleccion/paises">Países</a>
+                        <a href="/coleccion/series">Series</a>
+                    </nav>
                 </div>
             </div>
+            <dl class="cl-stats rise" style="--i:3">
+                <div><dt>Piezas</dt><dd>{{ total }}</dd></div>
+                <div><dt>Valor estimado</dt><dd><small>US$</small> {{ "{:,.0f}".format(valor_total).replace(",", ".") }}</dd></div>
+                <div><dt>Países</dt><dd>{{ n_paises }}</dd></div>
+            </dl>
         </div>
-    </div>
+    </header>
 
     <div class="container">
         <!-- Botón toggle filtros (solo mobile) -->
@@ -41,7 +51,7 @@
 
             <!-- Panel de filtros -->
             <aside class="filters-panel" id="filtersPanel">
-                <form method="get" action="/coleccion" id="filterForm">
+                <form method="get" action="/coleccion" id="filterForm" class="filters-form">
                     <div class="filters-header">
                         <span class="filters-title">Filtros</span>
                         <div style="display:flex;align-items:center;gap:.75rem;">
@@ -50,7 +60,8 @@
                         </div>
                     </div>
 
-                    <div class="filter-group">
+                    <div class="filters-body">
+                    <div class="filter-group fg-search">
                         <label class="filter-label">Buscar</label>
                         <input type="search" name="q" value="{{ filters.q }}"
                             placeholder="Nombre, ceca, país, material..."
@@ -130,7 +141,7 @@
                     </div>
 
                     <div class="filter-group">
-                        <label class="filter-label">Año (desde — hasta)</label>
+                        <label class="filter-label">Año</label>
                         <div class="filter-row">
                             <input type="number" name="anio_desde" value="{{ filters.anio_desde }}"
                                 placeholder="1800" min="1" max="2100" class="filter-input filter-half">
@@ -141,7 +152,7 @@
 
                     <div class="filter-group">
                         <label class="filter-label">Ordenar por</label>
-                        <div class="searchable-select ss-dropup" data-name="orden">
+                        <div class="searchable-select" data-name="orden">
                             <input type="hidden" name="orden" value="{{ filters.orden or 'reciente' }}">
                             <div class="ss-display" tabindex="0">
                                 <span class="ss-value">
@@ -165,43 +176,42 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-full">Aplicar filtros</button>
+                    </div>
+                    <div class="filters-footer">
+                        <button type="submit" class="cl-btn cl-btn-copper cl-btn-full">Aplicar</button>
+                    </div>
                 </form>
             </aside>
 
             <!-- Grilla de monedas -->
             <main class="coins-area">
                 {% if coins %}
-                <div class="coins-grid">
+                <div class="cl-grid">
                     {% for coin in coins %}
-                    <a href="/coleccion/{{ coin.id }}" class="coin-item">
-                        <div class="coin-item-img">
+                    <a href="/coleccion/{{ coin.id }}" class="cl-card" style="--i:{{ loop.index0 }}">
+                        <div class="cl-well">
                             {% if coin.image_url %}
                                 <img src="{{ coin.image_url }}" alt="{{ coin.name }}" loading="lazy">
                             {% else %}
-                                <div class="coin-item-no-img">🪙</div>
+                                <span class="cl-blank" aria-hidden="true"></span>
                             {% endif %}
+                            {% if coin.quantity and coin.quantity > 1 %}<span class="cl-qty">×{{ coin.quantity }}</span>{% endif %}
                         </div>
-                        <div class="coin-item-body">
-                            <div class="coin-item-name">{{ coin.name }}</div>
-                            <div class="coin-item-meta">
-                                {% if coin.year %}{{ coin.year }}{% endif %}
-                                {% if coin.year and coin.country %} · {% endif %}
-                                {% if coin.country %}{{ coin.country }}{% endif %}
+                        <div class="cl-body">
+                            <div class="cl-name">{{ coin.name }}</div>
+                            <div class="cl-meta">
+                                {% if coin.year %}{{ coin.year }}{% endif %}{% if coin.year and coin.country %} · {% endif %}{% if coin.country %}{{ coin.country }}{% endif %}{% if coin.material %} · {{ coin.material }}{% endif %}
                             </div>
-                            {% if coin.material %}
-                            <div class="coin-item-material">{{ coin.material }}</div>
-                            {% endif %}
-                            {% if coin.condition %}
-                            {% set cond_parts = coin.condition.split(' – ') %}
-                            {% set cond_num = cond_parts[0] | int(default=0) %}
-                            <span class="coin-condition-badge {% if cond_num >= 60 %}cond-mint{% elif cond_num >= 40 %}cond-au{% elif cond_num >= 20 %}cond-vf{% else %}cond-circ{% endif %}">
-                                {{ cond_parts[0] }} – {{ cond_parts[1].split(' → ')[0] if cond_parts|length > 1 else '' }}
-                            </span>
-                            {% endif %}
-                            {% if coin.estimated_value %}
-                            <div class="coin-item-value">US$ {{ "%.2f"|format(coin.estimated_value) }}</div>
-                            {% endif %}
+                            <div class="cl-foot">
+                                {% if coin.condition %}
+                                {% set cond_parts = coin.condition.split(' – ') %}
+                                {% set cond_num = cond_parts[0] | int(default=0) %}
+                                <span class="cl-grade {% if cond_num >= 60 %}g-mint{% elif cond_num >= 40 %}g-au{% elif cond_num >= 20 %}g-vf{% else %}g-circ{% endif %}" title="{{ coin.condition }}">{{ cond_parts[0] }}{% if cond_parts|length > 1 %} · {{ cond_parts[1].split(' → ')[0] }}{% endif %}</span>
+                                {% endif %}
+                                {% if coin.estimated_value %}
+                                <span class="cl-value">US$ {{ "%.2f"|format(coin.estimated_value) }}</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </a>
                     {% endfor %}
@@ -236,15 +246,15 @@
 
                 {% else %}
                 <div class="empty-state">
-                    <div class="empty-icon">🔍</div>
+                    <span class="cl-blank cl-blank-lg" aria-hidden="true"></span>
                     {% if filters.q or filters.categoria or filters.pais or filters.material %}
                         <h3>Sin resultados</h3>
                         <p>No se encontraron monedas con esos filtros.<br>Intentá con otros criterios.</p>
-                        <a href="/coleccion" class="btn btn-outline">Limpiar filtros</a>
+                        <a href="/coleccion" class="cl-btn cl-btn-ghost">Limpiar filtros</a>
                     {% else %}
                         <h3>Tu colección está vacía</h3>
                         <p>Comenzá agregando tu primera moneda.</p>
-                        <a href="/coleccion/agregar" class="btn btn-primary btn-lg">+ Agregar primera moneda</a>
+                        <a href="/coleccion/agregar" class="cl-btn cl-btn-copper">Agregar mi primera moneda <span class="arrow" aria-hidden="true">→</span></a>
                     {% endif %}
                 </div>
                 {% endif %}
