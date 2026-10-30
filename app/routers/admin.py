@@ -14,6 +14,7 @@ from ..models.coin import Coin
 from ..models.pregunta import Pregunta, Respuesta
 from ..models.serie import Serie, SerieVariante, SeriePrecio
 from ..auth import get_current_user
+from ..cambio import tasa as tasa_cambio
 
 
 def _require_admin(request: Request, db: Session = Depends(get_db)):
@@ -292,6 +293,31 @@ def _responder(request: Request, url: str, **extra):
     return RedirectResponse(url=url, status_code=302)
 
 
+def _fecha_precio(p) -> date:
+    return p.fecha or (p.created_at.date() if p.created_at else date.today())
+
+
+def _tendencia(precios) -> dict | None:
+    """Compara la mediana de los últimos 12 meses con la de los 12 anteriores,
+    en US$. Usa vendidos si los dos períodos tienen; si no, ofertas."""
+    hoy = date.today()
+    recientes, previos = [], []
+    for p in precios:
+        dias = (hoy - _fecha_precio(p)).days
+        if dias <= 365:
+            recientes.append(p)
+        elif dias <= 730:
+            previos.append(p)
+    for tipo in ("vendido", "oferta"):
+        a = [float(p.monto) for p in recientes if (p.tipo == "vendido") == (tipo == "vendido")]
+        b = [float(p.monto) for p in previos if (p.tipo == "vendido") == (tipo == "vendido")]
+        if a and b:
+            ahora, antes = median(a), median(b)
+            return {"pct": round((ahora - antes) / antes * 100), "ahora": ahora, "antes": antes,
+                    "base": tipo, "n_ahora": len(a), "n_antes": len(b)}
+    return None
+
+
 def _resumen_precios(precios) -> dict | None:
     """Estimativo en USD: la mediana de los precios vendidos si hay alguno
     (son el dato más fiel); si no, la de las ofertas publicadas."""
@@ -308,6 +334,7 @@ def _resumen_precios(precios) -> dict | None:
         "n": len(todos),
         "min": min(todos),
         "max": max(todos),
+        "tendencia": _tendencia(precios),
     }
 
 
@@ -398,6 +425,7 @@ async def admin_serie_detalle(sid: int, request: Request, db: Session = Depends(
         "resumen_generales": _resumen_precios(precios_generales),
         "fuentes": FUENTES_PRECIO, "estados": ESTADOS_PRECIO,
         "hoy": date.today().isoformat(),
+        "tasa_bs": round(tasa_cambio(), 2),
         "ultima": ultima,
         "abierta": request.query_params.get("open"),
         "saved": request.query_params.get("saved"),
@@ -522,12 +550,28 @@ async def admin_eliminar_variante(vid: int, request: Request, db: Session = Depe
     return RedirectResponse(url=f"/admin/series/{sid}?saved=1#variantes", status_code=302)
 
 
+def _parse_monto(texto: str) -> Decimal | None:
+    """Acepta "1.250,50", "1250.50" y "1,250.50"."""
+    m = texto.strip().replace(" ", "")
+    if "," in m and "." in m:
+        m = m.replace(".", "").replace(",", ".") if m.rfind(",") > m.rfind(".") else m.replace(",", "")
+    else:
+        m = m.replace(",", ".")
+    try:
+        d = Decimal(m)
+    except (InvalidOperation, ValueError):
+        return None
+    return d if d.is_finite() else None
+
+
 @router.post("/series/{sid}/precios")
 async def admin_crear_precio(
     sid: int,
     request: Request,
     variante_id: str = Form(""),
     monto: str = Form(""),
+    moneda: str = Form("USD"),
+    tasa: str = Form(""),
     tipo: str = Form("oferta"),
     estado: str = Form(""),
     fuente: str = Form(""),
@@ -544,27 +588,27 @@ async def admin_crear_precio(
     if vid and not db.query(SerieVariante).filter(SerieVariante.id == vid, SerieVariante.serie_id == sid).first():
         vid = None
     destino = f"/admin/series/{sid}?saved=1" + (f"&open={vid}#v-{vid}" if vid else "#precios")
-    try:
-        # Acepta "1.250,50", "1250.50" y "1,250.50"
-        m = monto.strip().replace(" ", "")
-        if "," in m and "." in m:
-            m = m.replace(".", "").replace(",", ".") if m.rfind(",") > m.rfind(".") else m.replace(",", "")
-        else:
-            m = m.replace(",", ".")
-        valor = Decimal(m)
-    except (InvalidOperation, ValueError):
+    valor = _parse_monto(monto)
+    if valor is None or valor <= 0:
         return RedirectResponse(url=destino, status_code=302)
-    if valor <= 0:
-        return RedirectResponse(url=destino, status_code=302)
+    original = tasa_usada = None
+    if moneda == "BOB":
+        tasa_usada = _parse_monto(tasa)
+        if tasa_usada is None or not (1 < tasa_usada < 100):
+            tasa_usada = Decimal(str(tasa_cambio()))
+        original = valor
+        valor = (original / tasa_usada).quantize(Decimal("0.01"))
     try:
-        f = date.fromisoformat(fecha) if fecha else None
+        f = date.fromisoformat(fecha) if fecha else date.today()
     except ValueError:
-        f = None
+        f = date.today()
     db.add(SeriePrecio(
         serie_id    = sid,
         variante_id = vid,
         monto       = valor,
-        moneda      = "USD",
+        moneda      = "BOB" if original is not None else "USD",
+        monto_original = original,
+        tasa        = tasa_usada,
         tipo        = "vendido" if tipo == "vendido" else "oferta",
         estado      = estado.strip()[:30] or None,
         fuente      = fuente.strip()[:100] or None,

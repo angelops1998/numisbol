@@ -59,14 +59,18 @@ class SeriePrecio(Base):
 
     Solo sirve para armar un estimativo; no es un precio de la plataforma.
     Si variante_id es NULL, el precio vale para la serie en general.
+    El monto se guarda en US$ (el mercado de estas monedas cotiza en dólares);
+    si se vio en Bs, quedan el monto original y la tasa usada.
     """
     __tablename__ = "serie_precios"
 
     id          = Column(Integer, primary_key=True, index=True)
     serie_id    = Column(Integer, ForeignKey("series.id", ondelete="CASCADE"), nullable=False, index=True)
     variante_id = Column(Integer, ForeignKey("serie_variantes.id", ondelete="CASCADE"), nullable=True, index=True)
-    monto       = Column(Numeric(12, 2), nullable=False)
-    moneda      = Column(String(3), nullable=False, default="USD", server_default="USD")
+    monto       = Column(Numeric(12, 2), nullable=False)   # siempre en US$
+    moneda      = Column(String(3), nullable=False, default="USD", server_default="USD")  # en qué se vio: USD | BOB
+    monto_original = Column(Numeric(12, 2), nullable=True)  # lo que decía la publicación, si era en Bs
+    tasa        = Column(Numeric(10, 4), nullable=True)     # Bs por US$ usados para convertir
     tipo        = Column(String(10), nullable=False, default="oferta", server_default="oferta")  # oferta | vendido
     estado      = Column(String(30), nullable=True)    # conservación: "MBC", "XF", "MS63"…
     fuente      = Column(String(100), nullable=True)   # "eBay", "MercadoLibre", "Facebook"…

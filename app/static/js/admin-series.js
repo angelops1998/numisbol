@@ -197,6 +197,13 @@
         [/numista\./, 'Numista'], [/ha\.com|heritage/, 'Heritage Auctions'],
         [/sixbid|numisbids|acsearch|catawiki|delcampe|vcoins|ma-shops/, null],
     ];
+    // Precio en Bs: mostrar el tipo de cambio que se va a usar
+    $$('.pz-moneda').forEach(function (sel) {
+        var tasa = sel.form.querySelector('.pz-tasa');
+        if (!tasa) return;
+        sel.addEventListener('change', function () { tasa.hidden = sel.value !== 'BOB'; });
+    });
+
     $$('.pz-url').forEach(function (url) {
         url.addEventListener('change', function () {
             var fuente = url.form.querySelector('.pz-fuente');

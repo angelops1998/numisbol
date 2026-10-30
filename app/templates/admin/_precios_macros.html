@@ -11,6 +11,12 @@
     <b>US$ {{ monto(r.estimado) }}</b>
 </span>
 {%- if rango and r.n > 1 %}<span class="pz-rango">{{ monto(r.min) }}–{{ monto(r.max) }} · {{ r.n }} precios</span>{% elif rango %}<span class="pz-rango">1 precio</span>{% endif -%}
+{%- set t = r.tendencia -%}
+{%- if t %}
+<span class="pz-tend pz-tend--{{ 'sube' if t.pct > 0 else 'baja' if t.pct < 0 else 'igual' }}"
+      title="Mediana {{ 'vendidos' if t.base == 'vendido' else 'ofertas' }} en US$: últimos 12 meses {{ monto(t.ahora) }} ({{ t.n_ahora }}) vs 12 meses anteriores {{ monto(t.antes) }} ({{ t.n_antes }})">
+    {{ '▲' if t.pct > 0 else '▼' if t.pct < 0 else '=' }} {{ t.pct|abs }}% en 1 año</span>
+{%- endif -%}
 {%- else -%}<span class="pz-vacio">—</span>{%- endif -%}
 {%- endmacro %}
 
@@ -21,6 +27,7 @@
     {% for p in precios %}
     <li class="pz-item">
         <span class="pz-monto">US$ {{ monto(p.monto|float) }}</span>
+        {% if p.moneda == 'BOB' and p.monto_original %}<span class="pz-orig" title="Monto publicado y tipo de cambio usado">{{ monto(p.monto_original|float) }} Bs · a {{ ('%.2f'|format(p.tasa|float)).replace('.', ',') }}</span>{% endif %}
         <span class="pz-tag pz-tag--{{ p.tipo }}">{{ 'Vendido' if p.tipo == 'vendido' else 'Ofertado' }}</span>
         {% if p.estado %}<span class="pz-tag">{{ p.estado }}</span>{% endif %}
         <span class="pz-meta">
@@ -58,8 +65,16 @@
     <label class="pz-campo pz-campo--monto">
         <span>Precio *</span>
         <span class="pz-monto-input">
+            <select name="moneda" class="form-input pz-moneda" aria-label="Moneda">
+                <option value="USD">US$</option>
+                <option value="BOB">Bs</option>
+            </select>
             <input type="text" name="monto" class="form-input" inputmode="decimal" required placeholder="120" autocomplete="off">
         </span>
+    </label>
+    <label class="pz-campo pz-tasa" hidden>
+        <span>Bs por US$</span>
+        <input type="text" name="tasa" class="form-input" inputmode="decimal" value="{{ ('%.2f'|format(tasa_bs)).replace('.', ',') }}" autocomplete="off">
     </label>
     <label class="pz-campo">
         <span>Tipo</span>
