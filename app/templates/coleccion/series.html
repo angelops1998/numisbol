@@ -539,6 +539,12 @@
             });
         }, { rootMargin: '0px 0px -40px 0px' });
         grid.querySelectorAll('.serie-tarjeta').forEach(c => io.observe(c));
+        // Respaldo: si el observador no avisó (pestaña sin pintar), lo que ya está en pantalla se muestra igual.
+        setTimeout(() => {
+            grid.querySelectorAll('.serie-tarjeta:not(.in)').forEach(c => {
+                if (c.getBoundingClientRect().top < innerHeight) { io.unobserve(c); c.classList.add('in'); }
+            });
+        }, 1500);
     }
 
     // Al cambiar filtro u orden, las tarjetas visibles se reacomodan en cascada.
@@ -571,6 +577,8 @@
                 nodo.textContent = Math.round(fin * e) + resto;
                 if (x < 1) requestAnimationFrame(paso);
             })(performance.now());
+            // Si la pestaña está en segundo plano no hay cuadros: el número final igual.
+            setTimeout(() => { nodo.textContent = fin + resto; }, 2600);
         });
     }
 })();

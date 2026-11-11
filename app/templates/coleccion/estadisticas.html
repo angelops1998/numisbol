@@ -1,46 +1,74 @@
 {% extends "base.html" %}
 {% block title %}Estadísticas — NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
+{% block body_class %}page-cl{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/coleccion-lista.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/coleccion-estadisticas.css') }}">{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-    <div class="page-header">
+<div class="page-wrapper cl ce" id="cl">
+<script>(function(){var r=document.getElementById('cl');if(document.visibilityState==='visible'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)r.classList.add('anim');setTimeout(function(){r.classList.add('settled')},2200);})();</script>
+
+    <header class="cl-head">
         <div class="container">
-            <div class="page-header-inner">
-                <div>
-                    <p class="page-breadcrumb"><a href="/coleccion">Mi Colección</a> / Estadísticas</p>
-                    <h1 class="page-title">Estadísticas</h1>
-                    <p class="page-subtitle">Resumen de tu colección de {{ total }} ítem{{ 's' if total != 1 else '' }}</p>
+            <div class="cl-head-row">
+                <div class="cl-head-text">
+                    <span class="cl-eyebrow rise" style="--i:0">Tu gabinete</span>
+                    <h1 class="cl-title rise" style="--i:1">Estadísticas</h1>
+                    <p class="cl-sub rise" style="--i:2">Resumen de {{ total }} {{ 'moneda' if tipo == 'moneda' else ('billete' if tipo == 'billete' else 'ítem') }}{{ 's' if total != 1 else '' }} de tu colección</p>
                 </div>
-                <a href="/coleccion" class="btn btn-outline">← Volver</a>
+                <div class="cl-actions rise" style="--i:2">
+                    <nav class="ce-tipo" aria-label="Filtrar por tipo">
+                        <a href="/coleccion/estadisticas" {% if not tipo %}aria-current="page"{% endif %}>Todos</a>
+                        <a href="/coleccion/estadisticas?tipo=moneda" {% if tipo == 'moneda' %}aria-current="page"{% endif %}>Monedas</a>
+                        <a href="/coleccion/estadisticas?tipo=billete" {% if tipo == 'billete' %}aria-current="page"{% endif %}>Billetes</a>
+                    </nav>
+                    <nav class="cl-links" aria-label="Vistas de la colección">
+                        <a href="/coleccion">Mi colección</a>
+                        <a href="/coleccion/estadisticas" aria-current="page">Estadísticas</a>
+                        <a href="/coleccion/paises">Países</a>
+                        <a href="/coleccion/series">Series</a>
+                    </nav>
+                </div>
             </div>
+            {% if total %}
+            <dl class="cl-stats ce-stats rise" style="--i:3">
+                {% if not tipo %}
+                <div><dt>Monedas</dt><dd data-count="{{ total_monedas }}">{{ total_monedas }}</dd></div>
+                <div><dt>Billetes</dt><dd data-count="{{ total_billetes }}">{{ total_billetes }}</dd></div>
+                {% else %}
+                <div><dt>{{ 'Monedas' if tipo == 'moneda' else 'Billetes' }}</dt><dd data-count="{{ total }}">{{ total }}</dd></div>
+                {% endif %}
+                <div><dt>Países</dt><dd data-count="{{ por_pais | length }}">{{ por_pais | length }}</dd></div>
+                {% if tipo != 'billete' %}
+                <div><dt>Materiales</dt><dd data-count="{{ por_material | length }}">{{ por_material | length }}</dd></div>
+                {% endif %}
+                {% if total_usd %}
+                <div><dt>Valor estimado</dt><dd><small>US$</small> <span data-count="{{ total_usd | round | int }}">{{ "{:,.0f}".format(total_usd).replace(",", ".") }}</span></dd></div>
+                {% endif %}
+            </dl>
+            {% endif %}
         </div>
-    </div>
+    </header>
 
     <div class="container">
 
-        <!-- Filtro tipo -->
-        <div class="world-view-toggle" style="margin-bottom:1rem;margin-left:auto;margin-right:auto;width:fit-content">
-            <a href="/coleccion/estadisticas" class="world-view-btn {% if not tipo %}active{% endif %}">Todos</a>
-            <a href="/coleccion/estadisticas?tipo=moneda" class="world-view-btn {% if tipo == 'moneda' %}active{% endif %}">🪙 Monedas</a>
-            <a href="/coleccion/estadisticas?tipo=billete" class="world-view-btn {% if tipo == 'billete' %}active{% endif %}">💵 Billetes</a>
-        </div>
-
         {% if total == 0 %}
         <div class="empty-state">
-            <div class="empty-icon">📊</div>
+            <span class="cl-blank cl-blank-lg" aria-hidden="true"></span>
             <h3>Sin datos todavía</h3>
             <p>Agregá monedas o billetes a tu colección para ver las estadísticas.</p>
-            <a href="/coleccion/agregar" class="btn btn-primary btn-lg">+ Agregar</a>
+            <a href="/coleccion/agregar" class="cl-btn cl-btn-copper">Agregar <span class="arrow" aria-hidden="true">→</span></a>
         </div>
         {% else %}
 
-        {% macro stats_block(title, items, color_class, section_class="", badge=true) %}
+        {% macro stats_block(title, items, color, section_class="", badge=true, link=none) %}
         {% if items %}
-        <div class="stats-section {{ section_class }}">
-            <h2 class="stats-section-title">
+        <section class="ce-card {{ section_class }}" style="--c:{{ color }}">
+            <h2 class="ce-card-title">
                 {{ title }}
-                {% if badge %}<span class="stats-count-badge">{{ items | length }}</span>{% endif %}
+                {% if badge %}<span class="ce-badge">{{ items | length }}</span>{% endif %}
+                {% if link %}<a href="{{ link[0] }}" class="ce-card-link">{{ link[1] }} <span aria-hidden="true">→</span></a>{% endif %}
             </h2>
             {% set max_val = items[0][1] %}
             {% set uid = title | replace(' ', '_') | lower %}
@@ -50,7 +78,7 @@
                      {% if loop.index > 10 %}style="display:none"{% endif %}>
                     <span class="stats-bar-label">{{ label }}</span>
                     <div class="stats-bar-track">
-                        <div class="stats-bar-fill {{ color_class }}" style="width:{{ (cnt / max_val * 100) | round }}%"></div>
+                        <div class="stats-bar-fill" style="width:{{ (cnt / max_val * 100) | round }}%;--k:{{ [loop.index0, 10] | min }}"></div>
                     </div>
                     <span class="stats-bar-count">{{ cnt }}</span>
                 </div>
@@ -61,82 +89,47 @@
                 Ver {{ items | length - 10 }} más ▾
             </button>
             {% endif %}
-        </div>
+        </section>
         {% endif %}
         {% endmacro %}
 
-        <div class="stats-grid">
-            <!-- Resumen — ocupa las dos columnas -->
-            <div class="stats-summary">
-                {% if not tipo %}
-                <div class="stat-card">
-                    <span class="stat-card-value">{{ total_monedas }}</span>
-                    <span class="stat-card-label">🪙 Monedas</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-card-value">{{ total_billetes }}</span>
-                    <span class="stat-card-label">💵 Billetes</span>
-                </div>
-                {% else %}
-                <div class="stat-card">
-                    <span class="stat-card-value">{{ total }}</span>
-                    <span class="stat-card-label">{{ '🪙 Monedas' if tipo == 'moneda' else '💵 Billetes' }}</span>
-                </div>
-                {% endif %}
-                <div class="stat-card">
-                    <span class="stat-card-value">{{ por_pais | length }}</span>
-                    <span class="stat-card-label">Países</span>
-                </div>
-                {% if tipo != 'billete' %}
-                <div class="stat-card">
-                    <span class="stat-card-value">{{ por_material | length }}</span>
-                    <span class="stat-card-label">Materiales</span>
-                </div>
-                {% endif %}
-                {% if total_usd %}
-                <div class="stat-card stat-card--full">
-                    <span class="stat-card-value">US$ {{ "%.2f"|format(total_usd) }}</span>
-                    <span class="stat-card-label">Valor total estimado</span>
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="stats-section {{ 'stats-section--full' if tipo == 'billete' else '' }}">
-                <h2 class="stats-section-title">Por país</h2>
-                <a href="/coleccion/paises" class="btn btn-outline" style="width:100%;text-align:center">Ver distribución por país →</a>
-            </div>
-            {% if tipo != 'billete' %}
-            {{ stats_block("Por material", por_material, "stats-bar-fill--mat") }}
-            {% endif %}
-            {{ stats_block("Por estado de conservación", por_condicion, "stats-bar-fill--cond", badge=false) }}
-            {% if tipo != 'billete' %}
-            {{ stats_block("Por ceca", por_ceca, "stats-bar-fill--ceca") }}
-            {% endif %}
-            {{ stats_block("Por década", por_decada, "stats-bar-fill--siglo", badge=false, section_class="stats-section--full") }}
-            {{ stats_block("Por categoría", por_categoria, "stats-bar-fill--cat", section_class="stats-section--full") }}
+        <div class="ce-grid">
+            {# Tarjetas de media columna: si quedan en número impar, la última va
+               a lo ancho para que no quede un hueco al lado. #}
+            {% set mitades = [("Por país", por_pais, "#9fd6ea", true, ("/coleccion/paises", "Ver mapa"))] %}
+            {% if tipo != 'billete' and por_material %}{% set _ = mitades.append(("Por material", por_material, "#e8a872", true, none)) %}{% endif %}
+            {% if por_condicion %}{% set _ = mitades.append(("Por estado de conservación", por_condicion, "#9fe0bf", false, none)) %}{% endif %}
+            {% if tipo != 'billete' and por_ceca %}{% set _ = mitades.append(("Por ceca", por_ceca, "#efcd82", true, none)) %}{% endif %}
+            {% if not por_pais %}{% set mitades = mitades[1:] %}{% endif %}
+            {% for t, items, color, badge, link in mitades %}
+            {{ stats_block(t, items, color, badge=badge, link=link,
+                           section_class="ce-card--full" if loop.last and mitades|length is odd else "") }}
+            {% endfor %}
+            {{ stats_block("Por década", por_decada, "#c9b3e8", badge=false, section_class="ce-card--full") }}
+            {{ stats_block("Por categoría", por_categoria, "#eba3a3", section_class="ce-card--full") }}
 
             {% if top_coins %}
-            <div class="stats-section stats-section--full">
-                <h2 class="stats-section-title">Top 5 más valiosas</h2>
-                <div class="top-coins-list">
+            <section class="ce-card ce-card--full">
+                <h2 class="ce-card-title">Las 5 más valiosas</h2>
+                <ol class="ce-top">
                     {% for coin in top_coins %}
-                    <a href="/coleccion/{{ coin.id }}" class="top-coin-row">
-                        {% if coin.image_url %}
-                        <img src="{{ coin.image_url }}" class="top-coin-img" alt="">
-                        {% else %}
-                        <div class="top-coin-img top-coin-img--placeholder">{{ '🪙' if coin.tipo == 'moneda' else '💵' }}</div>
-                        {% endif %}
-                        <div class="top-coin-info">
-                            <span class="top-coin-name">{{ coin.name }}</span>
-                            <span class="top-coin-meta">{{ coin.year or '—' }} · {{ coin.country or '—' }}</span>
-                        </div>
-                        <span class="top-coin-value">
-                            US$ {{ "%.2f"|format(coin.estimated_value) }}
-                        </span>
-                    </a>
+                    <li>
+                        <a href="/coleccion/{{ coin.id }}" class="ce-top-row">
+                            <span class="ce-top-n">{{ loop.index }}</span>
+                            <span class="ce-top-img">
+                                {% if coin.image_url %}<img src="{{ coin.image_url }}" alt="" loading="lazy">
+                                {% else %}<span class="cl-blank" aria-hidden="true"></span>{% endif %}
+                            </span>
+                            <span class="ce-top-info">
+                                <span class="ce-top-name">{{ coin.name }}</span>
+                                <span class="ce-top-meta">{{ coin.year or '—' }} · {{ coin.country or '—' }}</span>
+                            </span>
+                            <span class="ce-top-value">US$ {{ "%.2f"|format(coin.estimated_value) }}</span>
+                        </a>
+                    </li>
                     {% endfor %}
-                </div>
-            </div>
+                </ol>
+            </section>
             {% endif %}
         </div>
 
@@ -158,7 +151,7 @@ document.querySelectorAll('.stats-show-more').forEach(function(btn) {
             list.style.overflowY = '';
             list.style.paddingRight = '';
         } else {
-            list.querySelectorAll('[style="display:none"]').forEach(function(row) { row.style.display = ''; });
+            hidden.forEach(function(row) { row.style.display = ''; });
             btn.textContent = 'Ver menos ▴';
             btn.classList.add('expanded');
             if (parseInt(btn.dataset.total) > 20) {
@@ -169,5 +162,47 @@ document.querySelectorAll('.stats-show-more').forEach(function(btn) {
         }
     });
 });
+
+// ── Animaciones: tarjetas que aparecen al hacer scroll y contadores ──
+(function () {
+    var root = document.getElementById('cl');
+    if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    if ('IntersectionObserver' in window) {
+        root.classList.add('reveal');
+        var io = new IntersectionObserver(function (entries) {
+            var n = 0;
+            entries.forEach(function (e) {
+                if (!e.isIntersecting) return;
+                io.unobserve(e.target);
+                e.target.style.setProperty('--d', Math.min(n++, 4) * 90 + 'ms');
+                e.target.classList.add('in');
+            });
+        }, { rootMargin: '0px 0px -40px 0px' });
+        root.querySelectorAll('.ce-card').forEach(function (c) { io.observe(c); });
+        // Respaldo: si el observador no avisó (pestaña sin pintar), lo que ya está en pantalla se muestra igual.
+        setTimeout(function () {
+            root.querySelectorAll('.ce-card:not(.in)').forEach(function (c) {
+                if (c.getBoundingClientRect().top < innerHeight) { io.unobserve(c); c.classList.add('in'); }
+            });
+        }, 1500);
+    }
+
+    if (!root.classList.contains('anim')) return;
+    var miles = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); };
+    root.querySelectorAll('[data-count]').forEach(function (el, i) {
+        var fin = parseInt(el.dataset.count, 10);
+        if (!fin) return;
+        var dur = 1100, t0 = performance.now() + 250 + i * 90;
+        el.textContent = '0';
+        (function paso(t) {
+            var x = Math.min(Math.max((t - t0) / dur, 0), 1);
+            el.textContent = miles(Math.round(fin * (1 - Math.pow(1 - x, 3))));
+            if (x < 1) requestAnimationFrame(paso);
+        })(performance.now());
+        // Si la pestaña está en segundo plano no hay cuadros: el número final igual.
+        setTimeout(function () { el.textContent = miles(fin); }, 2600);
+    });
+})();
 </script>
 {% endblock %}

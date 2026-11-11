@@ -1,0 +1,110 @@
+/* ============================================================
+   NumisBol — Estadísticas (/coleccion/estadisticas), estilo "Casa de Moneda"
+   Se apoya en coleccion-lista.css (.cl, cabecera, botones, franja de números).
+   ============================================================ */
+
+.cl .cl-links a[aria-current="page"] { color: var(--ink); }
+.cl .cl-links a[aria-current="page"]::after { transform: scaleX(1); }
+
+/* Franja de números: la cantidad de casillas cambia según el tipo. */
+.ce-stats { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.ce-stats dd { white-space: nowrap; overflow-wrap: normal; font-size: clamp(22px, 2.8vw, 38px); }
+.ce-stats div { padding-inline: 1.1rem; }
+
+/* Selector Todos / Monedas / Billetes */
+.ce-tipo { display: inline-flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-2); }
+.ce-tipo a {
+  padding: 8px 16px; border-radius: 999px; color: var(--muted); text-decoration: none;
+  font: 600 14px/1 var(--f-wide); transition: background-color 200ms var(--ease), color 200ms var(--ease);
+}
+.ce-tipo a:hover { color: var(--ink); }
+.ce-tipo a[aria-current="page"] { background: var(--copper); color: #2a1a0e; }
+
+/* ── Tarjetas ─────────────────────────────────────────────── */
+.ce-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; padding-bottom: 3rem; }
+.ce-card {
+  --c: var(--copper);
+  min-width: 0; padding: 1.4rem 1.5rem 1.5rem;
+  background: linear-gradient(165deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--line); border-radius: 20px;
+}
+.ce-card--full { grid-column: 1 / -1; }
+.ce-card-title {
+  display: flex; align-items: center; gap: .7rem; margin: 0 0 1.2rem;
+  font: 500 12px/1 var(--f-data); letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.ce-card-title::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+.ce-badge { font: 500 11px/1 var(--f-data); letter-spacing: 0; padding: 4px 8px; border-radius: 999px; background: var(--bg-2); color: var(--ink); }
+.ce-card-link { margin-left: auto; color: var(--copper); text-decoration: none; letter-spacing: .08em; white-space: nowrap; }
+.ce-card-link:hover { color: var(--gold); }
+.ce-card-link span { display: inline-block; transition: transform 220ms var(--ease); }
+.ce-card-link:hover span { transform: translateX(3px); }
+
+/* Barras */
+.ce .stats-bar-list { gap: .7rem; }
+.ce .stats-bar-row { grid-template-columns: minmax(0, 11rem) 1fr 2.5rem; gap: .5rem .9rem; font-size: 14px; }
+.ce .stats-bar-label { color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.ce .stats-bar-track { height: 8px; background: var(--bg-2); border-radius: 999px; }
+.ce .stats-bar-fill { background: var(--c); border-radius: inherit; transform-origin: left center; transition: none; }
+.ce .stats-bar-count { font: 500 13px/1 var(--f-data); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ce .stats-bar-row:hover .stats-bar-label, .ce .stats-bar-row:hover .stats-bar-count { color: var(--c); }
+.ce .stats-show-more {
+  margin-top: 1rem; height: 40px; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: 600 14px/1 var(--f-wide); background: transparent;
+}
+.ce .stats-show-more:hover { border-color: var(--muted); color: var(--ink); }
+.ce .stats-bar-list::-webkit-scrollbar { width: 8px; }
+.ce .stats-bar-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+
+/* Las más valiosas */
+.ce-top { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+.ce-top-row {
+  display: flex; align-items: center; gap: 1rem; padding: .7rem 1rem .7rem .8rem;
+  background: var(--bg-2); border: 1px solid transparent; border-radius: 16px; color: var(--ink); text-decoration: none;
+  transition: border-color 250ms var(--ease), transform 250ms var(--ease);
+}
+.ce-top-row:hover { color: var(--ink); border-color: var(--line); }
+@media (hover: hover) { .ce-top-row:hover { transform: translateX(4px); } }
+.ce-top-n { font: 800 22px/1 var(--f-wide); font-stretch: 125%; color: var(--copper); width: 1.4rem; text-align: center; flex: none; }
+.ce-top-img { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex: none; display: grid; place-items: center; background: radial-gradient(70% 70% at 50% 40%, var(--panel-2), var(--bg) 85%); }
+.ce-top-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--ease); }
+.ce-top-img .cl-blank { width: 60%; }
+@media (hover: hover) { .ce-top-row:hover .ce-top-img img { transform: scale(1.08) rotate(-6deg); } }
+.ce-top-info { display: flex; flex-direction: column; gap: .25rem; flex: 1; min-width: 0; }
+.ce-top-name { font-weight: 700; font-size: 15px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ce-top-meta { font: 400 12px/1.3 var(--f-data); color: var(--muted); }
+.ce-top-value { font: 600 15px/1 var(--f-data); color: var(--gold); white-space: nowrap; }
+
+/* ── Animaciones (solo transform/opacity) ─────────────────── */
+.ce.reveal .ce-card:not(.in) { opacity: 0; }
+.ce .ce-card.in { animation: ce-in 650ms var(--ease) backwards; animation-delay: var(--d, 0ms); }
+.ce .ce-card.in .stats-bar-fill { animation: ce-fill 1000ms var(--ease) backwards; animation-delay: calc(var(--d, 0ms) + 200ms + var(--k, 0) * 45ms); }
+.ce .ce-card.in .ce-top li { animation: ce-in 550ms var(--ease) backwards; }
+.ce .ce-card.in .ce-top li:nth-child(2) { animation-delay: 80ms; }
+.ce .ce-card.in .ce-top li:nth-child(3) { animation-delay: 160ms; }
+.ce .ce-card.in .ce-top li:nth-child(4) { animation-delay: 240ms; }
+.ce .ce-card.in .ce-top li:nth-child(5) { animation-delay: 320ms; }
+@keyframes ce-in { from { opacity: 0; transform: translateY(22px) scale(.98); } }
+@keyframes ce-fill { from { transform: scaleX(0); } }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .ce-grid { grid-template-columns: minmax(0, 1fr); gap: .9rem; }
+}
+@media (max-width: 760px) {
+  .ce-stats { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ce-stats div:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .ce-stats div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .ce-stats div:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .ce-stats dd { font-size: 26px; }
+}
+@media (max-width: 640px) {
+  .ce-card { padding: 1.1rem 1rem 1.2rem; border-radius: 18px; }
+  .ce .stats-bar-row { grid-template-columns: minmax(0, 1fr) 2.5rem; gap: .35rem .75rem; }
+  .ce .stats-bar-label { grid-column: 1; grid-row: 1; white-space: nowrap; font-size: 14px; }
+  .ce .stats-bar-track { grid-column: 1; grid-row: 2; }
+  .ce .stats-bar-count { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+  .ce-top-row { gap: .7rem; padding: .6rem .75rem .6rem .6rem; }
+  .ce-top-img { width: 44px; height: 44px; }
+  .ce-top-value { font-size: 13px; }
+}
