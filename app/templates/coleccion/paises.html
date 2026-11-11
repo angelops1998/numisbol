@@ -1,119 +1,135 @@
 {% extends "base.html" %}
 {% block title %}Países del Mundo — NumisBol{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">{% endblock %}
+{% block body_class %}page-cl{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/coleccion-lista.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/coleccion-paises.css') }}">{% endblock %}
 
 {% block content %}
 {% set pct = (tienen_count / total_paises * 100) if total_paises else 0 %}
-<div class="page-wrapper">
-    <div class="page-header">
+<div class="page-wrapper cl cp" id="cl">
+<script>(function(){var r=document.getElementById('cl');if(document.visibilityState==='visible'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)r.classList.add('anim');setTimeout(function(){r.classList.add('settled')},2200);})();</script>
+
+    <header class="cl-head">
         <div class="container">
-            <div class="page-header-inner">
-                <div>
-                    <p class="page-breadcrumb"><a href="/coleccion">Mi Colección</a> / Países</p>
-                    <h1 class="page-title">Países del Mundo</h1>
-                    <p class="page-subtitle">
-                        Tenés piezas de <strong>{{ tienen_count }}</strong> de <strong>{{ total_paises }}</strong> países
-                    </p>
+            <div class="cl-head-row">
+                <div class="cl-head-text">
+                    <span class="cl-eyebrow rise" style="--i:0">Tu gabinete</span>
+                    <h1 class="cl-title rise" style="--i:1">Países</h1>
+                    <p class="cl-sub rise" style="--i:2">Tenés piezas de <b>{{ tienen_count }}</b> de los {{ total_paises }} países del mundo.</p>
                 </div>
-                <a href="/coleccion" class="btn btn-outline">← Volver</a>
+                <div class="cl-actions rise" style="--i:2">
+                    <nav class="cl-links" aria-label="Vistas de la colección">
+                        <a href="/coleccion">Mi colección</a>
+                        <a href="/coleccion/estadisticas">Estadísticas</a>
+                        <a href="/coleccion/paises" aria-current="page">Países</a>
+                        <a href="/coleccion/series">Series</a>
+                    </nav>
+                </div>
             </div>
+            <dl class="cl-stats cp-stats rise" style="--i:3">
+                <div><dt>Países</dt><dd><span data-count="{{ tienen_count }}">{{ tienen_count }}</span> <small>de {{ total_paises }}</small></dd></div>
+                <div><dt>Del mundo</dt><dd><span data-count="{{ '%.1f' | format(pct) }}" data-dec="1">{{ ('%.1f' | format(pct)).replace('.', ',') }}</span><small>%</small></dd></div>
+                <div><dt>Continentes</dt><dd><span data-count="{{ continentes_con }}">{{ continentes_con }}</span> <small>de {{ grupos | length }}</small></dd></div>
+                <div><dt>Monedas</dt><dd><span data-count="{{ total_monedas }}">{{ total_monedas }}</span></dd></div>
+                <div><dt>Billetes</dt><dd><span data-count="{{ total_billetes }}">{{ total_billetes }}</span></dd></div>
+            </dl>
         </div>
-    </div>
+    </header>
 
     <div class="container">
 
-        <!-- Resumen: anillo de progreso + continentes -->
-        <section class="world-hero">
-            <div class="world-hero-main">
-                <div class="world-ring">
-                    <svg viewBox="0 0 120 120" aria-hidden="true">
-                        <circle class="world-ring-track" cx="60" cy="60" r="52" pathLength="100"></circle>
-                        <circle class="world-ring-fill" cx="60" cy="60" r="52" pathLength="100"
-                                stroke-dasharray="{{ '%.2f' | format(pct) }} 100"></circle>
-                    </svg>
-                    <div class="world-ring-center">
-                        <span class="world-ring-pct">{{ ('%.1f' | format(pct)).replace('.', ',') }}%</span>
-                        <span class="world-ring-sub">del mundo</span>
-                    </div>
-                </div>
-                <div class="world-stats">
-                    <div class="world-stat">
-                        <span class="world-stat-value">{{ tienen_count }}<small>/{{ total_paises }}</small></span>
-                        <span class="world-stat-label">Países</span>
-                    </div>
-                    <div class="world-stat">
-                        <span class="world-stat-value">{{ continentes_con }}<small>/{{ grupos | length }}</small></span>
-                        <span class="world-stat-label">Continentes</span>
-                    </div>
-                    <div class="world-stat">
-                        <span class="world-stat-value">{{ total_monedas }}</span>
-                        <span class="world-stat-label">Monedas</span>
-                    </div>
-                    <div class="world-stat">
-                        <span class="world-stat-value">{{ total_billetes }}</span>
-                        <span class="world-stat-label">Billetes</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="world-continents">
+        <!-- ── Mapa ─────────────────────────────────────────── -->
+        <section class="cp-map rise" style="--i:4" aria-label="Mapa de tu colección">
+            <div class="cp-conts" role="tablist" aria-label="Continente">
+                <button type="button" class="cp-cont" role="tab" data-cont="" aria-selected="true">
+                    <span class="cp-cont-name">Mundo</span>
+                    <span class="cp-cont-num">{{ tienen_count }}<small>/{{ total_paises }}</small></span>
+                    <span class="cp-cont-bar"><span style="width:{{ '%.1f' | format(pct) }}%"></span></span>
+                </button>
                 {% for g in grupos %}
                 {% set gpct = (g.tienen / (g.paises | length) * 100) if g.paises else 0 %}
-                <a href="#cont-{{ loop.index }}" class="world-cont {% if g.tienen %}world-cont--on{% endif %}">
-                    <span class="world-cont-name">{{ g.nombre }}</span>
-                    <span class="world-cont-track"><span class="world-cont-fill" style="width: {{ '%.1f' | format(gpct) }}%"></span></span>
-                    <span class="world-cont-count"><strong>{{ g.tienen }}</strong> / {{ g.paises | length }}</span>
-                </a>
+                <button type="button" class="cp-cont" role="tab" data-cont="{{ g.nombre }}" aria-selected="false">
+                    <span class="cp-cont-name">{{ g.nombre }}</span>
+                    <span class="cp-cont-num">{{ g.tienen }}<small>/{{ g.paises | length }}</small></span>
+                    <span class="cp-cont-bar"><span style="width:{{ '%.1f' | format(gpct) }}%"></span></span>
+                </button>
                 {% endfor %}
+            </div>
+
+            <div class="cp-stage" id="cpStage">
+                <div class="cp-svg" id="cpSvg" data-src="{{ static_v('img/mundo.svg') }}"></div>
+                <div class="cp-tip" id="cpTip" hidden>
+                    <img class="cp-tip-flag" alt="" width="32" height="24">
+                    <div class="cp-tip-text">
+                        <b class="cp-tip-name"></b>
+                        <span class="cp-tip-meta"></span>
+                    </div>
+                    <a class="cp-tip-link" hidden>Ver piezas <span aria-hidden="true">→</span></a>
+                </div>
+                <div class="cp-legend" aria-hidden="true">
+                    <span><i class="lv0"></i>Falta</span>
+                    <span><i class="lv1"></i>1</span>
+                    <span><i class="lv2"></i>2–4</span>
+                    <span><i class="lv3"></i>5–9</span>
+                    <span><i class="lv4"></i>10+</span>
+                </div>
+                <button type="button" class="cp-reset" id="cpReset" hidden aria-label="Ver el mundo entero">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg>
+                    Mundo
+                </button>
             </div>
         </section>
 
-        <!-- Buscador + filtro -->
-        <div class="world-toolbar">
-            <div class="world-search">
-                <svg class="world-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-                <input type="search" id="countrySearch" class="filter-input" placeholder="Buscar país..." autocomplete="off">
+        <!-- ── Buscador + filtro ────────────────────────────── -->
+        <div class="cp-toolbar">
+            <div class="cp-search">
+                <svg class="cp-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg>
+                <label for="countrySearch" class="visually-hidden">Buscar país</label>
+                <input type="search" id="countrySearch" placeholder="Buscar país…" autocomplete="off">
             </div>
-            <div class="world-view-toggle" role="group" aria-label="Filtrar países">
-                <button type="button" class="world-view-btn active" id="btnAll" onclick="setFilter('all')">Todos <span>{{ total_paises }}</span></button>
-                <button type="button" class="world-view-btn" id="btnHave" onclick="setFilter('have')">Tenés <span>{{ tienen_count }}</span></button>
-                <button type="button" class="world-view-btn" id="btnMiss" onclick="setFilter('miss')">Te faltan <span>{{ total_paises - tienen_count }}</span></button>
+            <div class="cp-seg" role="group" aria-label="Filtrar países">
+                <button type="button" data-f="all" aria-pressed="true">Todos <span>{{ total_paises }}</span></button>
+                <button type="button" data-f="have" aria-pressed="false">Tenés <span>{{ tienen_count }}</span></button>
+                <button type="button" data-f="miss" aria-pressed="false">Te faltan <span>{{ total_paises - tienen_count }}</span></button>
             </div>
         </div>
 
-        <!-- Países agrupados por continente -->
+        <!-- ── Países por continente ────────────────────────── -->
         {% for g in grupos %}
-        <section class="world-section" id="cont-{{ loop.index }}">
-            <h2 class="world-section-title">
-                {{ g.nombre }}
-                <span class="world-section-count">{{ g.tienen }} de {{ g.paises | length }}</span>
-            </h2>
-            <div class="world-grid">
+        {% set gpct = (g.tienen / (g.paises | length) * 100) if g.paises else 0 %}
+        <section class="cp-sec" data-cont="{{ g.nombre }}" id="cont-{{ loop.index }}">
+            <header class="cp-sec-head">
+                <h2 class="cp-sec-title">{{ g.nombre }}</h2>
+                <span class="cp-sec-count"><b>{{ g.tienen }}</b> de {{ g.paises | length }}</span>
+                <span class="cp-sec-bar" aria-hidden="true"><span style="width:{{ '%.1f' | format(gpct) }}%"></span></span>
+            </header>
+            <div class="cp-grid">
                 {% for country in g.paises %}
                 {% set info = tienen.get(country, {}) %}
                 {% set total_c = info.get('total', 0) %}
                 {% set monedas_c = info.get('moneda', 0) %}
                 {% set billetes_c = info.get('billete', 0) %}
-                {% set flag = static_v('img/flags/' ~ country_info[country][0] ~ '.png') %}
+                {% set iso = country_info[country][0] %}
+                {% set flag = static_v('img/flags/' ~ iso ~ '.png') %}
                 {% if total_c > 0 %}
-                <a href="/coleccion?pais={{ country | urlencode }}" class="world-country world-country--have"
-                   data-country="{{ country | lower }}" data-state="have">
-                    <img class="world-flag" src="{{ flag }}" alt="" width="40" height="30" loading="lazy">
-                    <span class="world-country-text">
-                        <span class="world-country-name">{{ country }}</span>
-                        <span class="world-country-meta">
+                <a href="/coleccion?pais={{ country | urlencode }}" class="cp-c cp-c--have"
+                   data-country="{{ country | lower }}" data-iso="{{ iso }}" data-state="have">
+                    <img class="cp-flag" src="{{ flag }}" alt="" width="40" height="30" loading="lazy">
+                    <span class="cp-c-text">
+                        <span class="cp-c-name">{{ country }}</span>
+                        <span class="cp-c-meta">
                             {%- if monedas_c %}{{ monedas_c }} moneda{{ 's' if monedas_c != 1 }}{% endif -%}
                             {%- if monedas_c and billetes_c %} · {% endif -%}
                             {%- if billetes_c %}{{ billetes_c }} billete{{ 's' if billetes_c != 1 }}{% endif -%}
                         </span>
                     </span>
+                    <span class="cp-c-n">{{ total_c }}</span>
                 </a>
                 {% else %}
-                <div class="world-country world-country--miss" data-country="{{ country | lower }}" data-state="miss">
-                    <img class="world-flag" src="{{ flag }}" alt="" width="40" height="30" loading="lazy">
-                    <span class="world-country-text">
-                        <span class="world-country-name">{{ country }}</span>
-                    </span>
+                <div class="cp-c cp-c--miss" data-country="{{ country | lower }}" data-iso="{{ iso }}" data-state="miss">
+                    <img class="cp-flag" src="{{ flag }}" alt="" width="40" height="30" loading="lazy">
+                    <span class="cp-c-text"><span class="cp-c-name">{{ country }}</span></span>
                 </div>
                 {% endif %}
                 {% endfor %}
@@ -121,47 +137,271 @@
         </section>
         {% endfor %}
 
-        <p class="world-empty-msg" id="emptyMsg" style="display:none">
-            No hay países que coincidan con tu búsqueda.
-        </p>
-
+        <div class="cp-empty" id="emptyMsg" hidden>
+            <span class="cl-blank cl-blank-lg" aria-hidden="true"></span>
+            <h3>Sin resultados</h3>
+            <p>No hay países que coincidan con tu búsqueda.</p>
+        </div>
     </div>
 </div>
 
+<script id="cpData" type="application/json">{{ mapa | tojson }}</script>
 <script>
-function norm(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+(function () {
+    var root   = document.getElementById('cl');
+    var DATA   = JSON.parse(document.getElementById('cpData').textContent);
+    var FLAGS  = '/static/img/flags/XX.png';
+    var quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Encuadre de cada continente en el lienzo del mapa (x, y, ancho, alto).
+    var VISTAS = {
+        '':        [0, 0, 1000, 444],
+        'América': [28, 15, 417, 417],
+        'Europa':  [436, 18, 178, 100],
+        'Asia':    [554, 48, 363, 234],
+        'África':  [447, 105, 194, 267],
+        'Oceanía': [756, 234, 244, 176]
+    };
 
-var currentFilter = 'all';
-var currentSearch = '';
+    var TILDES = new RegExp('[\\u0300-\\u036f]', 'g');
+    function norm(s) { return (s || '').normalize('NFD').replace(TILDES, '').toLowerCase(); }
+    function nivel(n) { return n >= 10 ? 4 : n >= 5 ? 3 : n >= 2 ? 2 : n >= 1 ? 1 : 0; }
+    function piezas(m, b) {
+        var p = [];
+        if (m) p.push(m + ' moneda' + (m !== 1 ? 's' : ''));
+        if (b) p.push(b + ' billete' + (b !== 1 ? 's' : ''));
+        return p.join(' · ');
+    }
 
-function setFilter(f) {
-    currentFilter = f;
-    document.getElementById('btnAll').classList.toggle('active', f==='all');
-    document.getElementById('btnHave').classList.toggle('active', f==='have');
-    document.getElementById('btnMiss').classList.toggle('active', f==='miss');
-    applyFilters();
-}
+    var stage  = document.getElementById('cpStage');
+    var holder = document.getElementById('cpSvg');
+    var tip    = document.getElementById('cpTip');
+    var tipImg = tip.querySelector('.cp-tip-flag');
+    var tipNom = tip.querySelector('.cp-tip-name');
+    var tipMet = tip.querySelector('.cp-tip-meta');
+    var tipLnk = tip.querySelector('.cp-tip-link');
+    var reset  = document.getElementById('cpReset');
+    var conts  = [].slice.call(document.querySelectorAll('.cp-cont'));
+    var input  = document.getElementById('countrySearch');
+    var segs   = [].slice.call(document.querySelectorAll('.cp-seg button'));
+    var secs   = [].slice.call(document.querySelectorAll('.cp-sec'));
+    var cards  = [].slice.call(document.querySelectorAll('.cp-c'));
+    var empty  = document.getElementById('emptyMsg');
 
-document.getElementById('countrySearch').addEventListener('input', function(){
-    currentSearch = norm(this.value);
-    applyFilters();
-});
+    var svg = null, formas = {}, puntos = [], vista = VISTAS[''].slice(), fijo = null;
+    var estado = { cont: '', f: 'all', q: '' };
 
-function applyFilters(){
-    var visible = 0;
-    document.querySelectorAll('.world-section').forEach(function(sec){
-        var inSection = 0;
-        sec.querySelectorAll('.world-country').forEach(function(el){
-            var nameMatch = !currentSearch || norm(el.dataset.country).includes(currentSearch);
-            var stateMatch = currentFilter === 'all' || el.dataset.state === currentFilter;
-            var show = nameMatch && stateMatch;
-            el.style.display = show ? '' : 'none';
-            if(show) inSection++;
+    // ── Mapa ──────────────────────────────────────────────────
+    fetch(holder.dataset.src).then(function (r) { return r.text(); }).then(function (txt) {
+        holder.innerHTML = txt;
+        svg = holder.querySelector('svg');
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        var anim = !quieto;
+        puntos = [].slice.call(svg.querySelectorAll('circle'));
+        [].forEach.call(svg.querySelectorAll('[data-iso]'), function (el) {
+            var iso = el.dataset.iso, d = DATA[iso];
+            (formas[iso] = formas[iso] || []).push(el);
+            if (!d) { el.classList.add('x'); return; }
+            var n = d[2] + d[3];
+            el.classList.add(n ? 'on' : 'off');
+            el.setAttribute('data-lv', nivel(n));
+            if (n && anim) {
+                // Se encienden de oeste a este, como un amanecer.
+                var b = el.getBBox();
+                el.style.setProperty('--d', Math.round(300 + (b.x + b.width / 2) * 1.1) + 'ms');
+            }
         });
-        sec.style.display = inSection ? '' : 'none';
-        visible += inSection;
+        svg.classList.add(quieto ? 'listo' : 'enciende');
+        aplicar();
+    }).catch(function () { stage.classList.add('cp-stage--error'); });
+
+    function vbSet(v) {
+        vista = v;
+        svg.setAttribute('viewBox', v.map(function (n) { return n.toFixed(1); }).join(' '));
+        // Los puntos de islas no crecen con el zoom.
+        var r = (2.6 * Math.pow(v[2] / 1000, .85)).toFixed(2);
+        puntos.forEach(function (c) { c.setAttribute('r', r); });
+    }
+    function irA(dest) {
+        if (!svg) return;
+        if (quieto) { vbSet(dest.slice()); return; }
+        var desde = vista.slice(), t0 = performance.now(), dur = 850;
+        (function paso(t) {
+            var x = Math.min((t - t0) / dur, 1);
+            var e = x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+            vbSet(desde.map(function (a, i) { return a + (dest[i] - a) * e; }));
+            if (x < 1) requestAnimationFrame(paso);
+        })(t0);
+        setTimeout(function () { vbSet(dest.slice()); }, dur + 400);   // pestaña en segundo plano
+    }
+
+    function mostrarTip(iso, cx, cy, conLink) {
+        var d = DATA[iso]; if (!d) return;
+        var n = d[2] + d[3];
+        tipImg.src = FLAGS.replace('XX', iso);
+        tipNom.textContent = d[0];
+        tipMet.textContent = n ? piezas(d[2], d[3]) : 'Todavía no tenés piezas';
+        tip.classList.toggle('cp-tip--on', !!n);
+        tipLnk.hidden = !(n && conLink);
+        if (n) tipLnk.href = '/coleccion?pais=' + encodeURIComponent(d[0]);
+        tip.hidden = false;
+        var r = stage.getBoundingClientRect();
+        var w = tip.offsetWidth, h = tip.offsetHeight;
+        var x = Math.min(Math.max(cx - r.left - w / 2, 8), r.width - w - 8);
+        var y = cy - r.top - h - 16;
+        if (y < 8) y = cy - r.top + 18;
+        tip.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    }
+    function ocultarTip() { if (!fijo) tip.hidden = true; }
+
+    function resaltar(iso, on) {
+        (formas[iso] || []).forEach(function (el) {
+            el.classList.toggle('hl', on);
+            if (on && el.parentNode) el.parentNode.appendChild(el);   // al frente, para que se vea el borde
+        });
+    }
+
+    holder.addEventListener('pointermove', function (e) {
+        if (fijo || e.pointerType !== 'mouse') return;
+        var el = e.target.closest('[data-iso]');
+        var iso = el && !el.classList.contains('x') ? el.dataset.iso : null;
+        if (holder._iso && holder._iso !== iso) resaltar(holder._iso, false);
+        holder._iso = iso;
+        if (iso) { resaltar(iso, true); mostrarTip(iso, e.clientX, e.clientY, false); }
+        else ocultarTip();
     });
-    document.getElementById('emptyMsg').style.display = visible === 0 ? '' : 'none';
-}
+    holder.addEventListener('pointerleave', function () {
+        if (holder._iso) resaltar(holder._iso, false);
+        holder._iso = null; ocultarTip();
+    });
+    holder.addEventListener('click', function (e) {
+        var el = e.target.closest('[data-iso]');
+        if (fijo) { resaltar(fijo, false); fijo = null; tip.hidden = true; }
+        if (!el || el.classList.contains('x')) return;
+        var iso = el.dataset.iso, d = DATA[iso], n = d[2] + d[3];
+        if (n && e.pointerType === 'mouse') { location.href = '/coleccion?pais=' + encodeURIComponent(d[0]); return; }
+        if (!n && e.pointerType === 'mouse') { irATarjeta(iso); return; }
+        // Táctil: el primer toque fija la etiqueta con su enlace.
+        fijo = iso; resaltar(iso, true);
+        mostrarTip(iso, e.clientX, e.clientY, true);
+    });
+    document.addEventListener('click', function (e) {
+        if (fijo && !stage.contains(e.target)) { resaltar(fijo, false); fijo = null; tip.hidden = true; }
+    });
+
+    function irATarjeta(iso) {
+        var c = document.querySelector('.cp-c[data-iso="' + iso + '"]');
+        if (!c) return;
+        if (c.hidden || c.closest('.cp-sec').hidden) { input.value = ''; estado.q = ''; elegirSeg('all'); elegirCont(''); }
+        c.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'center' });
+        c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+    }
+
+    // Lista ↔ mapa: pasar por una tarjeta ilumina el país.
+    cards.forEach(function (c) {
+        c.addEventListener('mouseenter', function () { resaltar(c.dataset.iso, true); });
+        c.addEventListener('mouseleave', function () { resaltar(c.dataset.iso, false); });
+    });
+
+    // ── Filtros ───────────────────────────────────────────────
+    function aplicar() {
+        var q = norm(estado.q), visibles = 0, match = {};
+        secs.forEach(function (sec) {
+            var enCont = !estado.cont || sec.dataset.cont === estado.cont, n = 0;
+            [].forEach.call(sec.querySelectorAll('.cp-c'), function (c) {
+                var ok = enCont && (!q || norm(c.dataset.country).indexOf(q) !== -1)
+                         && (estado.f === 'all' || c.dataset.state === estado.f);
+                c.hidden = !ok;
+                if (ok) { n++; match[c.dataset.iso] = 1; }
+            });
+            sec.hidden = !n;
+            visibles += n;
+        });
+        empty.hidden = visibles > 0;
+        if (!svg) return;
+        // En el mapa se apaga lo que no entra en el filtro.
+        var filtra = q || estado.f !== 'all' || estado.cont;
+        svg.classList.toggle('filtrado', !!filtra);
+        Object.keys(formas).forEach(function (iso) {
+            formas[iso].forEach(function (el) { el.classList.toggle('m', !!match[iso]); });
+        });
+    }
+
+    function elegirCont(c) {
+        estado.cont = c;
+        conts.forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.cont === c)); });
+        reset.hidden = !c;
+        irA(VISTAS[c] || VISTAS['']);
+        aplicar();
+        animarLista();
+    }
+    function elegirSeg(f) {
+        estado.f = f;
+        segs.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.f === f)); });
+        aplicar();
+    }
+    conts.forEach(function (b) { b.addEventListener('click', function () { elegirCont(b.dataset.cont); }); });
+    reset.addEventListener('click', function () { elegirCont(''); });
+    segs.forEach(function (b) { b.addEventListener('click', function () { elegirSeg(b.dataset.f); animarLista(); }); });
+    input.addEventListener('input', function () { estado.q = input.value; aplicar(); });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && fijo) { resaltar(fijo, false); fijo = null; tip.hidden = true; }
+    });
+
+    // ── Animaciones de la lista ───────────────────────────────
+    function animarLista() {
+        if (quieto) return;
+        secs.forEach(function (sec) {
+            if (sec.hidden || !sec.classList.contains('in')) return;
+            var k = 0;
+            [].forEach.call(sec.querySelectorAll('.cp-c:not([hidden])'), function (c) {
+                c.classList.remove('pop'); void c.offsetWidth;
+                c.style.setProperty('--k', Math.min(k++, 24));
+                c.classList.add('pop');
+            });
+        });
+    }
+    if ('IntersectionObserver' in window && !quieto) {
+        root.classList.add('reveal');
+        var io = new IntersectionObserver(function (es) {
+            es.forEach(function (e) {
+                if (!e.isIntersecting) return;
+                io.unobserve(e.target);
+                var k = 0;
+                [].forEach.call(e.target.querySelectorAll('.cp-c'), function (c) {
+                    c.style.setProperty('--k', Math.min(k++, 24));
+                });
+                e.target.classList.add('in');
+            });
+        }, { rootMargin: '0px 0px -60px 0px' });
+        secs.forEach(function (s) { io.observe(s); });
+        setTimeout(function () {
+            secs.forEach(function (s) {
+                if (!s.classList.contains('in') && s.getBoundingClientRect().top < innerHeight) { io.unobserve(s); s.classList.add('in'); }
+            });
+        }, 1500);
+    }
+    // Al terminar su entrada, la tarjeta queda quieta (y lista para reacomodarse).
+    document.addEventListener('animationend', function (e) {
+        var c = e.target;
+        if (c.classList && c.classList.contains('cp-c')) { c.classList.add('done'); c.classList.remove('pop'); }
+    });
+
+    // ── Contadores ────────────────────────────────────────────
+    if (root.classList.contains('anim')) {
+        [].forEach.call(root.querySelectorAll('[data-count]'), function (el, i) {
+            var fin = parseFloat(el.dataset.count), dec = +(el.dataset.dec || 0);
+            if (!fin) return;
+            var fmt = function (v) { return v.toFixed(dec).replace('.', ','); };
+            var dur = 1200, t0 = performance.now() + 250 + i * 90;
+            el.textContent = fmt(0);
+            (function paso(t) {
+                var x = Math.min(Math.max((t - t0) / dur, 0), 1);
+                el.textContent = fmt(fin * (1 - Math.pow(1 - x, 3)));
+                if (x < 1) requestAnimationFrame(paso);
+            })(performance.now());
+            setTimeout(function () { el.textContent = fmt(fin); }, 2800);
+        });
+    }
+})();
 </script>
 {% endblock %}

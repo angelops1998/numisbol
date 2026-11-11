@@ -622,6 +622,11 @@ async def paises(request: Request, db: Session = Depends(get_db)):
         "total_monedas": sum(i["moneda"] for i in tienen.values()),
         "total_billetes": sum(i["billete"] for i in tienen.values()),
         "continentes_con": sum(1 for g in grupos if g["tienen"]),
+        # Para el mapa: iso → [nombre, continente, monedas, billetes]
+        "mapa": {COUNTRY_INFO[c][0]: [c, COUNTRY_INFO[c][1],
+                                      tienen.get(c, {}).get("moneda", 0),
+                                      tienen.get(c, {}).get("billete", 0)]
+                 for c in COUNTRIES},
     })
 
 
