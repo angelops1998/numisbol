@@ -1,0 +1,142 @@
+/* ============================================================
+   NumisBol — Series (/coleccion/series), estilo "Casa de Moneda"
+   Se apoya en coleccion-lista.css (.cl, cabecera, botones, stats).
+   Todo va dentro de .cs: la ficha de moneda que reusa las variantes
+   no cambia.
+   ============================================================ */
+.cs { --ok: #9fe0bf; --ok-bg: rgba(125,212,168,.13); --ok-line: rgba(125,212,168,.42); }
+
+.cs.anim .serie-tarjeta { animation: cl-rise 600ms var(--ease) both; animation-delay: calc(120ms + min(var(--i, 0), 12) * 40ms); }
+.cs.settled .serie-tarjeta { animation: none; }
+
+.cs .cl-links a[aria-current="page"] { color: var(--ink); }
+.cs .cl-links a[aria-current="page"]::after { transform: scaleX(1); }
+
+/* Barra de avance */
+.cs-bar { display: block; height: 6px; border-radius: 999px; background: var(--bg-2); overflow: hidden; }
+.cs-bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--copper), var(--gold)); }
+.cs-bar--stat { margin-top: .75rem; max-width: 220px; }
+
+/* ── Barra de búsqueda (pegajosa) ─────────────────────────── */
+.cs .series-toolbar {
+  top: 68px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 20px;
+  padding: 1rem 1.25rem; margin: 0 0 .5rem;
+  box-shadow: 0 18px 30px -24px rgba(0,0,0,.8);
+}
+.cs .filter-input, .cs .filter-select {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; color: var(--ink);
+  min-height: 46px; font-family: var(--f-wide);
+}
+.cs .filter-input::placeholder { color: var(--muted); opacity: .8; }
+.cs .filter-input:focus, .cs .filter-select:focus { border-color: var(--copper); outline: none; box-shadow: none; }
+.cs .series-search-icon { color: var(--muted); display: block; }
+.cs .series-search-clear { color: var(--muted); }
+.cs .series-search-clear:hover { color: var(--ink); background: var(--panel-2); }
+
+.cs .series-chip {
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  padding: .5rem 1rem; font: 600 14px/1 var(--f-wide);
+}
+.cs .series-chip:hover { color: var(--ink); border-color: var(--muted); }
+.cs .series-chip[aria-pressed="true"] { background: var(--copper); border-color: var(--copper); color: #2a1a0e; }
+.cs .series-chip-count { font: 500 12px/1 var(--f-data); margin-left: .25rem; }
+
+.cs .series-meta { font: 400 12px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 1.25rem 0 1rem; }
+
+/* ── Tarjetas de serie ─────────────────────────────────────── */
+.cs .series-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; padding-bottom: 3rem; }
+.cs .serie-tarjeta {
+  background: linear-gradient(165deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--line); border-radius: 20px; padding: 1.25rem 1.3rem 1.2rem; gap: .7rem;
+  color: var(--ink); transition: transform 300ms var(--ease), border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+}
+.cs .serie-tarjeta:hover, .cs .serie-tarjeta:focus-visible { color: var(--ink); border-color: var(--line); transform: none; box-shadow: none; }
+@media (hover: hover) {
+  .cs .serie-tarjeta:hover { transform: translateY(-5px); border-color: var(--muted); box-shadow: 0 24px 40px -24px rgba(0,0,0,.7); }
+}
+.cs .serie-tarjeta--completa { border-color: var(--ok-line); }
+.cs .serie-tarjeta--completa:hover { border-color: var(--ok); }
+.cs .serie-tarjeta-nombre { font: 700 17px/1.3 var(--f-wide); color: var(--ink); letter-spacing: 0; }
+.cs .serie-tarjeta-desc { color: var(--muted); font-size: 14px; }
+
+.cs .serie-estado { font: 500 11px/1 var(--f-data); padding: 5px 9px; border-radius: 999px; border: 0; letter-spacing: .04em; }
+.cs .serie-estado--empezada { background: rgba(232,168,114,.15); color: var(--copper); }
+.cs .serie-estado--completa { background: var(--ok-bg); color: var(--ok); }
+.cs .serie-estado--vacia    { background: var(--bg-2); color: var(--muted); }
+
+.cs .serie-barra { height: 6px; background: var(--bg-2); border-radius: 999px; }
+.cs .serie-barra span { background: linear-gradient(90deg, var(--copper), var(--gold)); border-radius: inherit; }
+.cs .serie-barra--completa span { background: var(--ok); }
+
+.cs .serie-tarjeta-pie { font: 400 12px/1 var(--f-data); color: var(--muted); }
+.cs .serie-fraccion { font: 800 22px/1 var(--f-wide); font-stretch: 125%; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cs .serie-fraccion small { font: 500 12px/1 var(--f-data); color: var(--muted); font-stretch: normal; }
+.cs .serie-faltan { color: var(--muted); }
+.cs .serie-hits { background: rgba(239,205,130,.15); color: var(--gold); border: 0; font: 500 11px/1 var(--f-data); padding: 5px 9px; }
+
+/* ── Vacío ─────────────────────────────────────────────────── */
+.cs .series-vacio { color: var(--muted); padding: 4rem 1rem; display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+.cs .series-vacio h3 { font: 800 26px/1.1 var(--f-wide); font-stretch: 125%; text-transform: uppercase; color: var(--ink); }
+.cs .series-vacio p { margin: 0 0 .5rem; }
+
+/* ── Modal de la serie ─────────────────────────────────────── */
+.cs .serie-panel-fondo { background: rgba(20,22,27,.75); }
+.cs .serie-panel { background: var(--bg-2); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 40px 80px -30px rgba(0,0,0,.9); color: var(--ink); }
+.cs .serie-panel-head { background: linear-gradient(180deg, rgba(232,168,114,.08), transparent); padding: 1.6rem 1.75rem 0; }
+.cs .serie-panel--completa .serie-panel-head { background: linear-gradient(180deg, rgba(125,212,168,.1), transparent); }
+.cs .serie-panel-titulo { font: 800 clamp(22px, 2.8vw, 30px)/1.05 var(--f-wide); font-stretch: 125%; letter-spacing: -0.01em; text-transform: uppercase; color: var(--ink); }
+.cs .serie-panel-cerrar, .cs .serie-panel-flecha { border-color: var(--line); color: var(--muted); background: transparent; }
+.cs .serie-panel-cerrar { width: 40px; height: 40px; }
+.cs .serie-panel-flecha { border-radius: 999px; min-width: 40px; min-height: 36px; }
+.cs .serie-panel-cerrar:hover, .cs .serie-panel-flecha:hover:not(:disabled) { color: var(--ink); border-color: var(--muted); background: var(--panel); }
+.cs .serie-panel-chip { background: rgba(232,168,114,.15); border: 0; color: var(--copper); font: 500 12px/1 var(--f-data); padding: 7px 11px; }
+.cs .serie-panel--completa .serie-panel-chip { background: var(--ok-bg); color: var(--ok); border: 0; }
+.cs .serie-toggle { color: var(--muted); }
+.cs .serie-toggle:hover { color: var(--ink); }
+.cs .serie-toggle input { accent-color: var(--copper); }
+.cs .serie-panel-barra { background: var(--panel); }
+.cs .serie-panel-barra span { background: linear-gradient(90deg, var(--copper), var(--gold)); }
+.cs .serie-panel-barra--completa span { background: var(--ok); }
+.cs .serie-panel-body { padding-left: 1.75rem; padding-right: 1.75rem; scrollbar-color: var(--line) transparent; }
+.cs .serie-panel-body::-webkit-scrollbar-thumb { background: var(--line); border-color: var(--bg-2); }
+.cs .serie-panel-aviso { background: var(--panel); border-bottom-color: var(--line); color: var(--muted); }
+.cs .serie-panel-vacio { color: var(--muted); }
+.cs .cs-btn-sm { height: 34px; padding: 0 14px; font-size: 13px; }
+
+.cs .serie-panel-desc { background: var(--panel); border-color: var(--line); border-radius: 14px; }
+.cs .serie-panel-desc-btn { color: var(--copper); font-family: var(--f-wide); }
+.cs .serie-panel-desc:hover .serie-panel-desc-btn { color: var(--gold); }
+.cs .serie-panel-desc-txt { color: var(--ink); }
+
+/* Fichas de variantes */
+.cs .vficha { background: var(--panel); border-color: var(--line); border-radius: 16px; }
+.cs .vficha:hover { border-color: var(--muted); }
+.cs .vficha--tengo { background: linear-gradient(160deg, rgba(125,212,168,.12), rgba(125,212,168,.03) 60%, var(--panel)); border-color: var(--ok-line); }
+.cs .vficha--tengo:hover { border-color: var(--ok); }
+.cs .vficha-anio { font: 800 24px/1 var(--f-wide); font-stretch: 125%; letter-spacing: -0.01em; color: var(--ink); }
+.cs .vficha-anio a { color: var(--ok); border-bottom-color: var(--ok-line); }
+.cs .vficha-anio a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+.cs .vficha-marca--si { background: var(--ok); color: #12291e; }
+.cs .vficha-marca--no { border-color: var(--line); }
+.cs .vficha-label { color: var(--muted); font-family: var(--f-data); letter-spacing: .08em; }
+.cs .vficha-valor { color: var(--ink); }
+.cs .vficha-cod { color: var(--gold); background: rgba(239,205,130,.12); border-color: rgba(239,205,130,.3); font-family: var(--f-data); }
+.cs .vficha-ens { color: var(--muted); }
+.cs .vficha-nota { border-top-color: var(--line); color: var(--muted); }
+.cs .vficha-nota--rara { color: var(--gold); }
+
+@media (max-width: 900px) {
+  .cs .series-grid { grid-template-columns: 1fr; gap: .9rem; }
+}
+@media (max-width: 620px) {
+  /* Tres renglones pegados arriba se comen media pantalla: en el celular no es pegajosa. */
+  .cs .series-toolbar { position: static; border-radius: 16px; padding: .75rem; }
+  .cs .series-toolbar-row { gap: .6rem; }
+  .cs .series-search, .cs .series-sort { flex: 1 1 100%; width: 100%; }
+  .cs .series-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -.75rem; padding-inline: .75rem; }
+  .cs .series-chips::-webkit-scrollbar { display: none; }
+  .cs .serie-tarjeta { padding: 1.05rem 1.1rem; }
+  .cs .serie-panel { border-radius: 0; border: 0; }
+  .cs .serie-panel-head, .cs .serie-panel-body { padding-left: 1.1rem; padding-right: 1.1rem; }
+  .cs .cl-links { flex-wrap: wrap; gap: .5rem 1.1rem; }
+}

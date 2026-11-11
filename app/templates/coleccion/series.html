@@ -1,55 +1,56 @@
 {% extends "base.html" %}
 {% block title %}Series — Mi Colección — NumisBol{% endblock %}
-{% block extra_head %}
-<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">
-{% endblock %}
+{% block body_class %}page-cl{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static_v('css/coleccion.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/coleccion-lista.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/coleccion-series.css') }}">{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-    <div class="page-header">
+<div class="page-wrapper cl cs" id="cl">
+<script>(function(){var r=document.getElementById('cl');if(document.visibilityState==='visible'&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!/^#serie-/.test(location.hash))r.classList.add('anim');setTimeout(function(){r.classList.add('settled')},2200);})();</script>
+
+    <header class="cl-head">
         <div class="container">
-            <div class="page-header-inner">
-                <div>
-                    <p class="page-breadcrumb"><a href="/coleccion">Mi Colección</a> / Series</p>
-                    <h1 class="page-title">Series numismáticas</h1>
-                    <p class="page-subtitle">Buscá una serie y tocála para ver todas sus variantes y cuáles te faltan.</p>
+            <div class="cl-head-row">
+                <div class="cl-head-text">
+                    <span class="cl-eyebrow rise" style="--i:0">Tu gabinete</span>
+                    <h1 class="cl-title rise" style="--i:1">Series</h1>
+                    <p class="cl-sub rise" style="--i:2">Tocá una serie para ver todas sus variantes y cuáles te faltan.</p>
                 </div>
-                <a href="/coleccion" class="btn btn-outline">← Volver a mi colección</a>
+                <div class="cl-actions rise" style="--i:2">
+                    <nav class="cl-links" aria-label="Vistas de la colección">
+                        <a href="/coleccion">Mi colección</a>
+                        <a href="/coleccion/estadisticas">Estadísticas</a>
+                        <a href="/coleccion/paises">Países</a>
+                        <a href="/coleccion/series" aria-current="page">Series</a>
+                    </nav>
+                </div>
             </div>
+            {% if progreso %}
+            <dl class="cl-stats rise" style="--i:3">
+                <div><dt>Completas</dt><dd>{{ resumen.completas }} <small>de {{ resumen.series }}</small></dd></div>
+                <div><dt>Variantes</dt><dd>{{ resumen.variantes_tengo }} <small>de {{ resumen.variantes }}</small></dd></div>
+                <div><dt>Avance</dt><dd>{{ resumen.pct }}<small>%</small></dd>
+                    <span class="cs-bar cs-bar--stat" aria-hidden="true"><span style="width:{{ resumen.pct }}%"></span></span></div>
+            </dl>
+            {% endif %}
         </div>
-    </div>
+    </header>
 
     <div class="container">
 
         {% if not progreso %}
         <div class="series-vacio">
-            <div class="series-vacio-icono">📚</div>
+            <span class="cl-blank cl-blank-lg" aria-hidden="true"></span>
             <p>Todavía no hay series en el catálogo.</p>
         </div>
         {% else %}
-
-        <!-- ── Resumen ─────────────────────────────────────── -->
-        <div class="series-resumen">
-            <div class="series-stat">
-                <div class="series-stat-label">Series completas</div>
-                <div class="series-stat-value">{{ resumen.completas }} <small>de {{ resumen.series }}</small></div>
-            </div>
-            <div class="series-stat">
-                <div class="series-stat-label">Variantes conseguidas</div>
-                <div class="series-stat-value">{{ resumen.variantes_tengo }} <small>de {{ resumen.variantes }}</small></div>
-            </div>
-            <div class="series-stat">
-                <div class="series-stat-label">Avance total</div>
-                <div class="series-stat-value">{{ resumen.pct }}%</div>
-                <div class="serie-barra" style="margin-top:.4rem"><span style="width:{{ resumen.pct }}%"></span></div>
-            </div>
-        </div>
 
         <!-- ── Buscador y filtros ──────────────────────────── -->
         <div class="series-toolbar">
             <div class="series-toolbar-row">
                 <div class="series-search">
-                    <span class="series-search-icon">🔍</span>
+                    <svg class="series-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg>
                     <label for="serieSearch" class="visually-hidden">Buscar serie</label>
                     <input type="search" id="serieSearch" class="filter-input" autocomplete="off"
                            placeholder="Buscar serie, año, ensayador, ceca o nota…">
@@ -89,7 +90,7 @@
             {% for p in progreso %}
             {% set estado = 'completa' if p.total and p.pct == 100 else ('vacia' if p.tenidas == 0 else 'empezada') %}
             <a href="#serie-{{ p.serie.id }}"
-                    class="serie-tarjeta serie-tarjeta--{{ estado }}"
+                    class="serie-tarjeta serie-tarjeta--{{ estado }}" style="--i:{{ loop.index0 }}"
                     data-serie-id="{{ p.serie.id }}"
                     data-serie="{{ p.serie.nombre }}"
                     data-estado="{{ estado }}"
@@ -100,7 +101,7 @@
                 <div class="serie-tarjeta-top">
                     <h2 class="serie-tarjeta-nombre">{{ p.serie.nombre }}</h2>
                     <span class="serie-estado serie-estado--{{ estado }}">
-                        {% if estado == 'completa' %}Completa 🏆{% elif estado == 'vacia' %}Sin empezar{% else %}{{ p.pct }}%{% endif %}
+                        {% if estado == 'completa' %}Completa{% elif estado == 'vacia' %}Sin empezar{% else %}{{ p.pct }}%{% endif %}
                     </span>
                 </div>
 
@@ -113,7 +114,7 @@
                 </div>
 
                 <div class="serie-tarjeta-pie">
-                    <span class="serie-fraccion">{{ p.tenidas }} / {{ p.total }} <small>variantes</small></span>
+                    <span class="serie-fraccion">{{ p.tenidas }}<small> / {{ p.total }} variantes</small></span>
                     {% if p.total - p.tenidas > 0 %}
                     <span class="serie-faltan">te faltan {{ p.total - p.tenidas }}</span>
                     {% endif %}
@@ -124,13 +125,12 @@
         </div>
 
         <div class="series-vacio" id="serieNoResults" hidden>
-            <div class="series-vacio-icono">🔍</div>
+            <h3>Sin resultados</h3>
             <p>Ninguna serie coincide con tu búsqueda.</p>
-            <p><button type="button" class="btn btn-outline btn-sm" id="serieResetBtn">Limpiar filtros</button></p>
+            <p><button type="button" class="cl-btn cl-btn-ghost" id="serieResetBtn">Limpiar filtros</button></p>
         </div>
         {% endif %}
     </div>
-</div>
 
 <!-- ── Detalles (se mueven al panel al abrir una serie) ────── -->
 <div id="serieDetalles" hidden>
@@ -173,7 +173,7 @@
 
     <p class="serie-panel-aviso" id="seriePanelAviso" hidden>
         <span id="seriePanelAvisoTexto"></span>
-        <button type="button" class="btn btn-outline btn-sm" id="seriePanelVerTodas">Ver todas</button>
+        <button type="button" class="cl-btn cl-btn-ghost cs-btn-sm" id="seriePanelVerTodas">Ver todas</button>
     </p>
 
     <div class="serie-panel-body" id="seriePanelBody"></div>
@@ -185,6 +185,7 @@
     </div>
     <p class="serie-panel-vacio" id="seriePanelSinFilas" hidden></p>
 </aside>
+</div>
 
 <script>
 (function () {
