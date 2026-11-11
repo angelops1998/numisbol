@@ -6,8 +6,41 @@
    ============================================================ */
 .cs { --ok: #9fe0bf; --ok-bg: rgba(125,212,168,.13); --ok-line: rgba(125,212,168,.42); }
 
-.cs.anim .serie-tarjeta { animation: cl-rise 600ms var(--ease) both; animation-delay: calc(120ms + min(var(--i, 0), 12) * 40ms); }
-.cs.settled .serie-tarjeta { animation: none; }
+/* ── Animaciones ───────────────────────────────────────────
+   Solo transform/opacity. Las tarjetas aparecen al entrar en pantalla (JS les
+   pone .in y .cs-in); la animación usa "backwards" y se quita al terminar, así
+   no pisa el hover. Sin JS o con movimiento reducido, todo se ve quieto. */
+.cs.reveal .serie-tarjeta:not(.in) { opacity: 0; }
+.cs .serie-tarjeta.cs-in { animation: cs-in 650ms var(--ease) backwards; animation-delay: var(--d, 0ms); }
+@keyframes cs-in { from { opacity: 0; transform: translateY(22px) scale(.98); } }
+
+/* Barras que se llenan */
+.cs .serie-barra span, .cs-bar > span { transform-origin: left center; }
+.cs .serie-tarjeta.cs-in .serie-barra span { animation: cs-fill 1000ms var(--ease) backwards; animation-delay: calc(var(--d, 0ms) + 250ms); }
+.cs.anim .cs-bar--stat > span { animation: cs-fill 1300ms var(--ease) backwards; animation-delay: 500ms; }
+@keyframes cs-fill { from { transform: scaleX(0); } }
+
+/* Brillo que cruza la barra al pasar el mouse */
+.cs .serie-barra span { position: relative; overflow: hidden; }
+.cs .serie-barra span::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+}
+@media (hover: hover) { .cs .serie-tarjeta:hover .serie-barra span::after { animation: cs-sheen 900ms var(--ease); } }
+@keyframes cs-sheen { to { transform: translateX(100%); } }
+
+/* Chip de estado: pulso suave en las completas */
+.cs .serie-estado--completa { animation: cs-glow 2.8s ease-in-out infinite; }
+@keyframes cs-glow { 50% { box-shadow: 0 0 0 4px rgba(125,212,168,.12); } }
+
+/* Modal: fichas en cascada y barra que se llena */
+.cs .serie-panel.abierto .vficha { animation: cs-in 480ms var(--ease) backwards; animation-delay: calc(90ms + min(var(--j, 0), 16) * 32ms); }
+.cs .serie-panel-barra span { transition: width 900ms var(--ease) 120ms; }
+.cs .serie-panel.abierto .serie-panel-head-top { animation: cs-in 420ms var(--ease) backwards; }
+
+/* Chips: rebote corto al tocar */
+.cs .series-chip { transition: background-color 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease), transform 160ms var(--ease); }
+.cs .series-chip:active { transform: scale(.94); }
 
 .cs .cl-links a[aria-current="page"] { color: var(--ink); }
 .cs .cl-links a[aria-current="page"]::after { transform: scaleX(1); }
@@ -76,6 +109,7 @@
 
 /* ── Vacío ─────────────────────────────────────────────────── */
 .cs .series-vacio { color: var(--muted); padding: 4rem 1rem; display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+.cs .series-vacio[hidden] { display: none; }
 .cs .series-vacio h3 { font: 800 26px/1.1 var(--f-wide); font-stretch: 125%; text-transform: uppercase; color: var(--ink); }
 .cs .series-vacio p { margin: 0 0 .5rem; }
 

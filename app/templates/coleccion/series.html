@@ -340,6 +340,8 @@
             if (ok) mostradas++;
             if (!pasaBusqueda) ocultasPorBusqueda++;
         }
+        let j = 0;   // orden de entrada de las fichas visibles (animación escalonada)
+        for (const f of abierta.filas) if (!f.el.hidden) f.el.style.setProperty('--j', j++);
         const total = abierta.filas.length;
         const pct = +abierta.card.dataset.pct;
         pFraccion.textContent = abierta.card.querySelector('.serie-fraccion').textContent.trim()
@@ -377,7 +379,8 @@
         plegarDesc();              // cada serie arranca con la descripción plegada
 
         const pct = +it.card.dataset.pct;
-        pBarra.firstElementChild.style.width = pct + '%';
+        pBarra.firstElementChild.style.width = '0%';
+        requestAnimationFrame(() => requestAnimationFrame(() => { pBarra.firstElementChild.style.width = pct + '%'; }));
         pBarra.classList.toggle('serie-panel-barra--completa', pct === 100);
         panel.classList.toggle('serie-panel--completa', pct === 100);
 
@@ -503,6 +506,73 @@
     ordenar();
     const m = location.hash.match(/^#serie-(\d+)$/);
     if (m && porId.has(m[1])) abrir(porId.get(m[1]));
+})();
+</script>
+<script>
+// ── Animaciones: entrada al hacer scroll, contadores y reacomodo al filtrar ──
+(function () {
+    const root = document.getElementById('cl');
+    const grid = document.getElementById('serieGrid');
+    if (!root || !grid) return;
+    const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function play(card, delay) {
+        card.classList.remove('cs-in');
+        void card.offsetWidth;                   // reinicia la animación
+        card.style.setProperty('--d', delay + 'ms');
+        card.classList.add('cs-in');
+    }
+    grid.addEventListener('animationend', e => {
+        if (e.target.classList.contains('serie-tarjeta')) e.target.classList.remove('cs-in');
+    });
+
+    // Tarjetas: aparecen cuando entran en pantalla, escalonadas por tanda.
+    if ('IntersectionObserver' in window && !quieto) {
+        root.classList.add('reveal');
+        const io = new IntersectionObserver(entries => {
+            let n = 0;
+            entries.filter(e => e.isIntersecting).forEach(e => {
+                const card = e.target;
+                io.unobserve(card);
+                card.classList.add('in');
+                play(card, Math.min(n++, 8) * 70);
+            });
+        }, { rootMargin: '0px 0px -40px 0px' });
+        grid.querySelectorAll('.serie-tarjeta').forEach(c => io.observe(c));
+    }
+
+    // Al cambiar filtro u orden, las tarjetas visibles se reacomodan en cascada.
+    function reacomodar() {
+        if (quieto) return;
+        let k = 0;
+        grid.querySelectorAll('.serie-tarjeta:not([hidden])').forEach(card => {
+            card.classList.add('in');
+            if (k < 12) play(card, k * 35);
+            k++;
+        });
+    }
+    document.querySelectorAll('.series-chip').forEach(c => c.addEventListener('click', reacomodar));
+    const sortSel = document.getElementById('serieSort');
+    if (sortSel) sortSel.addEventListener('change', reacomodar);
+
+    // Números del resumen: cuentan desde cero.
+    if (!quieto && root.classList.contains('anim')) {
+        root.querySelectorAll('.cl-stats dd').forEach((dd, i) => {
+            const nodo = dd.firstChild;
+            if (!nodo || nodo.nodeType !== 3) return;
+            const fin = parseInt(nodo.textContent, 10);
+            if (!fin) return;
+            const resto = nodo.textContent.replace(/^\s*\d+/, '');
+            const dur = 1100, t0 = performance.now() + 250 + i * 90;
+            nodo.textContent = '0' + resto;
+            (function paso(t) {
+                const x = Math.min(Math.max((t - t0) / dur, 0), 1);
+                const e = 1 - Math.pow(1 - x, 3);
+                nodo.textContent = Math.round(fin * e) + resto;
+                if (x < 1) requestAnimationFrame(paso);
+            })(performance.now());
+        });
+    }
 })();
 </script>
 {% endblock %}
